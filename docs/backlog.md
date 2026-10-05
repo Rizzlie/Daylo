@@ -30,6 +30,14 @@ Fresh API lint and production build passed without cache. Nx serve started with 
 
 Retrospective: restricted child-process `spawn EPERM` was not treated as success despite a zero wrapper exit code; approved expanded-permission checks passed. Verify child-process cleanup after stopping Nx. Reuse delivered code and keep later task boundaries intact.
 
+### F01-03 frontend shell smoke coverage — 2026-10-05
+
+Implemented within the owner-confirmed scope: replaced the obsolete `Welcome` sample with observable `Daylo` heading/title and Polish preparation-message assertions. Chromium projects cover desktop 1440 × 900 and mobile emulation 390 × 844. Existing Nx serves the real frontend and waits for readiness; the normal E2E target disables cache. README documents test, headed/debug/UI and report commands. HTML reports and failure artifacts use ignored `dist` paths; additional ignore rules protect direct-CLI artifacts and browser authentication state. No application features, API calls, database runtime or dependencies were added.
+
+Verified: fresh E2E passed 2 tests after installing the missing Chromium revision, fresh E2E lint passed, report server returned HTML with HTTP 200, and ignore/configuration checks passed. Independent visual/keyboard/console/network inspection remains incomplete: Chrome DevTools profile was occupied, CUA had no browser provider, and CLI was unavailable. Interactive debugging modes were inspected in configuration, not exercised. Owner acceptance is pending; F01 remains incomplete. See [F01-03 delivery record](tasks/F01-03-frontend-smoke-tests.md#delivery-and-review-record).
+
+Retrospective: confirm browser installation and resolved Nx serve/readiness dependencies; verify nested authentication-state ignore rules; explicitly stop owned child servers after interactive wrappers exit. Automated E2E does not establish independent browser acceptance.
+
 ### Requested M05 theme slice — 2026-10-05
 
 Implemented: global Angular Material light/dark theme from `docs/design/tokens.json`, system default, document-level explicit variant hooks, typography and supported card/form-field styling. Production build and lint passed; shell browser checks passed at desktop/mobile widths. See [theme verification](design/design-system.md#theme-implementation--2026-10-05) for evidence and limitations. Human acceptance, rendered Material controls/overlays, theme preference UI/persistence and the remainder of M05 are pending. This slice does not complete M05 or authorize further implementation.
