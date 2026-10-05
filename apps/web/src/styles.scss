@@ -1,0 +1,13 @@
+@use './theme/daylo';
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--daylo-canvas);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-large);
+}

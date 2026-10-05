@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "yeet": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/.curated/yeet/SKILL.md",
+      "computedHash": "34420aa2df73715c710c2e660ab212fbb7fd3c89b6e047e3763eb5540787fd22"
+    }
+  }
+}

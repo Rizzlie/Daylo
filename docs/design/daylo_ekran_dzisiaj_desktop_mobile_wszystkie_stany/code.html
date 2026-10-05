@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daylo — Widok Desktopowy & Mobilny (Jasny / Ciemny, Interaktywny)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            daylo: {
+              accent: '#F05023',
+              accentHover: '#D9431A',
+              accentGlow: 'rgba(240, 80, 35, 0.15)',
+              lightBg: '#FFF8F4',
+              lightSurface: '#FFFFFF',
+              lightBorder: '#EFEAE6',
+              lightText: '#1F1B18',
+              lightMuted: '#7A726C',
+              darkBg: '#18181B',
+              darkSurface: '#242428',
+              darkSurfaceElevated: '#2C2C32',
+              darkBorder: '#35353C',
+              darkText: '#F4F4F6',
+              darkMuted: '#A1A1AA'
+            }
+          },
+          boxShadow: {
+            sidebar: '4px 0 24px -2px rgba(0, 0, 0, 0.03)',
+            card: '0 8px 30px -4px rgba(240, 80, 35, 0.04), 0 2px 10px -2px rgba(0, 0, 0, 0.03)',
+            cardDark: '0 8px 30px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+            popup: '0 12px 36px -4px rgba(0, 0, 0, 0.12)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.25); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(150, 150, 150, 0.45); }
+    
+    .timeline-line::before {
+      content: '';
+      position: absolute;
+      left: 17px;
+      top: 14px;
+      bottom: 14px;
+      width: 2px;
+      background: #EFEAE6;
+    }
+    .dark .timeline-line::before {
+      background: #35353C;
+    }
+
+    /* Transition smooth */
+    .theme-transition {
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    /* Desktop dark roles from docs/design/tokens.json; mobile remains independent. */
+    .dark #desktopContainer { color-scheme: dark; }
+    .dark #desktopSidebar { box-shadow: 4px 0 24px -2px rgba(0, 0, 0, 0.24); }
+    .dark #desktopContainer :is(input, select, textarea) {
+      border-color: #A1A1AA;
+      accent-color: #FF9D7C;
+    }
+    .dark #desktopContainer :is(button, a, input, select, textarea):focus-visible {
+      outline: 2px solid #FF9D7C;
+      outline-offset: 3px;
+    }
+    .dark #desktopContainer .task-title.line-through {
+      color: #A1A1AA;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body id="appBody" class="bg-[#FFF8F4] text-[#1F1B18] font-sans antialiased min-h-screen theme-transition flex flex-col">
+
+  <!-- Top Controller Banner for State Exploration -->
+  <aside class="w-full bg-[#1F1B18] text-white py-2 px-4 text-xs z-50 flex flex-wrap items-center justify-between gap-3 shadow-md border-b border-white/10">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5 font-bold tracking-tight text-[#FF6A3D]">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>DAYLO DESIGN SYSTEM & PROTOTYPE</span>
+      </div>
+      <span class="hidden md:inline text-white/40">|</span>
+      <span class="hidden md:inline text-gray-300 font-medium text-[11px]">Material 3 / Angular Material compliant UI</span>
+    </div>
+
+    <!-- Interactive Mode Switchers -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Dark/Light toggle -->
+      <button onclick="toggleGlobalTheme()" id="themeBtn" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs transition">
+        <span id="themeBtnIcon">🌙</span>
+        <span id="themeBtnText">Tryb ciemny</span>
+      </button>
+
+      <!-- Sidebar toggle switch -->
+      <button onclick="toggleSidebarDesktop()" id="sidebarBtn" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs transition">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+        <span id="sidebarBtnText">Zwiń sidebar</span>
+      </button>
+
+      <!-- Viewport focus: Desktop vs Mobile mockup view -->
+      <div class="flex rounded-full bg-white/10 p-0.5 border border-white/15">
+        <button onclick="switchView('desktop')" id="viewDeskBtn" class="px-2.5 py-0.5 rounded-full bg-[#F05023] text-white font-semibold text-[11px]">Desktop</button>
+        <button onclick="switchView('mobile')" id="viewMobBtn" class="px-2.5 py-0.5 rounded-full text-white/70 hover:text-white font-medium text-[11px]">Mobile</button>
+      </div>
+
+      <!-- Empty state toggle -->
+      <button onclick="toggleEmptyState()" id="emptyStateBtn" class="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-gray-200 font-medium text-[11px] transition">
+        Stan pusty: <span id="emptyStatus" class="font-bold text-emerald-400">Wył</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============================================================ -->
+  <!-- 1. DESKTOP VIEW CONTAINER                                   -->
+  <!-- ============================================================ -->
+  <div id="desktopContainer" class="flex-1 flex overflow-hidden min-h-[calc(100vh-42px)]">
+
+    <!-- DESKTOP SIDEBAR -->
+    <nav id="desktopSidebar" class="w-64 transition-all duration-300 ease-in-out border-r border-[#EFEAE6] bg-[#FFFFFF] flex flex-col justify-between shrink-0 shadow-sidebar z-20 dark:border-[#35353C] dark:bg-[#242428]">
+      
+      <!-- Top Brand & Navigation -->
+      <div class="p-4">
+        <!-- Logo Header -->
+        <div class="flex items-center justify-between pb-5 border-b border-[#F4EFEA] mb-4 dark:border-[#35353C]">
+          <div class="flex items-center gap-3 overflow-hidden">
+            <!-- Characteristic Sunrise & Check Logo Mark -->
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#FF6A3D] to-[#F04E23] flex items-center justify-center shrink-0 shadow-md shadow-orange-500/25">
+              <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="11" r="8" stroke-dasharray="36 14"></circle>
+                <path d="m9 11 2 2 4-4"></path>
+                <circle cx="12" cy="19" r="1" fill="currentColor"></circle>
+              </svg>
+            </div>
+            <div class="sidebar-text-element transition-opacity duration-200">
+              <span class="font-extrabold tracking-tight text-2xl text-[#1F1B18] block leading-none dark:text-[#F4F4F6]">daylo</span>
+              <span class="text-[10px] font-semibold text-[#F05023] uppercase tracking-wider block mt-1 dark:text-[#FF9D7C]">minimal planner</span>
+            </div>
+          </div>
+
+          <!-- Collapse / Expand Button -->
+          <button 
+            onclick="toggleSidebarDesktop()" 
+            title="Zwiń/Rozwiń menu" 
+            class="w-7 h-7 rounded-lg border border-[#EFEAE6] bg-[#FFF8F4] text-[#7A726C] hover:text-[#F05023] hover:border-[#F05023]/40 flex items-center justify-center transition-colors dark:border-[#35353C] dark:bg-[#18181B] dark:text-[#A1A1AA] dark:hover:text-[#FF9D7C] dark:hover:border-[#FF9D7C]"
+          >
+            <svg id="collapseIcon" class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <div class="space-y-1.5">
+          <!-- Dzisiaj (Aktywna) -->
+          <a href="#dzisiaj" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-[#FFF1EC] text-[#F05023] font-bold text-sm border border-[#F05023]/15 shadow-2xs group transition-all dark:bg-[#493129] dark:text-[#FF9D7C] dark:border-[#FF9D7C]/20">
+            <div class="w-5 h-5 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+                <rect x="3" y="4" width="18" height="18" rx="3"/>
+                <path d="M16 2v4M8 2v4M3 10h18"/>
+                <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
+              </svg>
+            </div>
+            <span class="sidebar-text-element whitespace-nowrap">Dzisiaj</span>
+            <span class="sidebar-text-element ml-auto text-xs bg-[#F05023] text-white px-2 py-0.5 rounded-full font-bold dark:bg-[#FF9D7C] dark:text-[#3E160B]">5</span>
+          </a>
+
+          <!-- Grupy -->
+          <a href="#grupy" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[#7A726C] hover:text-[#1F1B18] hover:bg-[#FAF6F3] font-semibold text-sm transition-all group dark:text-[#A1A1AA] dark:hover:text-[#F4F4F6] dark:hover:bg-[#2C2C32]">
+            <div class="w-5 h-5 flex items-center justify-center shrink-0 text-[#7A726C] group-hover:text-[#1F1B18] dark:text-[#A1A1AA] dark:group-hover:text-[#F4F4F6]">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <span class="sidebar-text-element whitespace-nowrap">Grupy</span>
+            <span class="sidebar-text-element ml-auto text-[11px] text-[#A29A93] bg-[#F2EDE8] px-2 py-0.5 rounded-full font-medium dark:text-[#A1A1AA] dark:bg-[#35353C]">2 aktywne</span>
+          </a>
+        </div>
+
+        <!-- Groups Quick List (w sidebarze) -->
+        <div class="sidebar-text-element mt-6 pt-4 border-t border-[#F4EFEA] dark:border-[#35353C]">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#A29A93] px-3 block mb-2 dark:text-[#A1A1AA]">Moje przestrzenie</span>
+          <div class="space-y-1">
+            <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-[#7A726C] hover:bg-[#FAF6F3] cursor-pointer dark:text-[#A1A1AA] dark:hover:bg-[#2C2C32]">
+              <span class="w-2 h-2 rounded-full bg-[#E57373]"></span>
+              <span>🏠 Dom</span>
+              <span class="ml-auto text-[10px] text-gray-400 dark:text-[#A1A1AA]">2</span>
+            </div>
+            <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-[#7A726C] hover:bg-[#FAF6F3] cursor-pointer dark:text-[#A1A1AA] dark:hover:bg-[#2C2C32]">
+              <span class="w-2 h-2 rounded-full bg-[#4DB6AC]"></span>
+              <span>👤 Osobiste</span>
+              <span class="ml-auto text-[10px] text-gray-400 dark:text-[#A1A1AA]">4</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Anchored: Ustawienia & User Avatar Profile -->
+      <div class="p-3 border-t border-[#F4EFEA] space-y-2 dark:border-[#35353C]">
+        <!-- Ustawienia -->
+        <a href="#ustawienia" class="flex items-center gap-3 px-3 py-2 rounded-2xl text-[#7A726C] hover:text-[#1F1B18] hover:bg-[#FAF6F3] font-semibold text-sm transition-all group dark:text-[#A1A1AA] dark:hover:text-[#F4F4F6] dark:hover:bg-[#2C2C32]">
+          <div class="w-5 h-5 flex items-center justify-center shrink-0 text-[#7A726C] group-hover:text-[#1F1B18] dark:text-[#A1A1AA] dark:group-hover:text-[#F4F4F6]">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <span class="sidebar-text-element whitespace-nowrap">Ustawienia</span>
+        </a>
+
+        <!-- User Profile Avatar Card -->
+        <div class="flex items-center gap-3 p-2 rounded-2xl bg-[#FFF9F5] border border-[#EFEAE6] shadow-2xs dark:bg-[#2C2C32] dark:border-[#35353C]">
+          <!-- Avatar Placeholder MS -->
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#F05023] to-[#FF8C66] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm shadow-orange-500/20">
+            MS
+          </div>
+          <div class="sidebar-text-element overflow-hidden">
+            <p class="text-xs font-bold text-[#1F1B18] truncate leading-tight dark:text-[#F4F4F6]">Maciej</p>
+            <p class="text-[10px] font-medium text-[#7A726C] truncate dark:text-[#A1A1AA]">maciej@daylo.app</p>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- DESKTOP MAIN VIEWPORT -->
+    <main class="flex-1 overflow-y-auto px-6 py-8 md:px-12 md:py-10 max-w-7xl mx-auto w-full">
+      
+      <!-- Greeting Header (Nad główną kartą) -->
+      <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-3xl font-extrabold tracking-tight text-[#1F1B18] dark:text-[#F4F4F6]">Cześć, Maciej!</h1>
+            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-[#F05023] bg-[#FFF1EC] border border-[#F05023]/20 px-3 py-1 rounded-full shadow-2xs dark:text-[#FF9D7C] dark:bg-[#493129] dark:border-[#FF9D7C]/20">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#F05023] animate-pulse"></span>
+              Slay queen.
+            </span>
+          </div>
+          <p class="text-sm font-semibold text-[#7A726C] mt-1 capitalize dark:text-[#A1A1AA]">Piątek, 2 października 2025</p>
+        </div>
+
+        <!-- Quick Summary Metrics -->
+        <div class="flex items-center gap-3 bg-white border border-[#EFEAE6] rounded-2xl px-4 py-2 shadow-2xs text-xs font-medium text-[#7A726C] dark:bg-[#242428] dark:border-[#35353C] dark:text-[#A1A1AA]">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#F05023]"></span>
+            <span>Do zrobienia: <strong class="text-[#1F1B18] dark:text-[#F4F4F6]">5</strong></span>
+          </div>
+          <span class="text-gray-300 dark:text-[#A1A1AA]">•</span>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span>Ukończone: <strong class="text-[#1F1B18] dark:text-[#F4F4F6]" id="topDoneCount">2</strong></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- EMPTY STATE VIEW (Toggled via header banner) -->
+      <div id="emptyStateView" class="hidden bg-white rounded-3xl border border-[#EFEAE6] p-12 text-center max-w-xl mx-auto my-8 shadow-card dark:bg-[#242428] dark:border-[#35353C] dark:shadow-cardDark">
+        <div class="w-16 h-16 rounded-3xl bg-[#FFF1EC] text-[#F05023] flex items-center justify-center mx-auto mb-4 border border-[#F05023]/20 dark:bg-[#493129] dark:text-[#FF9D7C] dark:border-[#FF9D7C]/20">
+          <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-[#1F1B18] mb-1 dark:text-[#F4F4F6]">Czysty dzień, Maciej!</h3>
+        <p class="text-xs text-[#7A726C] max-w-xs mx-auto mb-5 dark:text-[#A1A1AA]">Wszystkie zaplanowane zadania zostały wykonane lub jeszcze nic nie dodano.</p>
+        <button onclick="toggleEmptyState()" class="bg-[#F05023] text-white text-xs font-semibold px-4 py-2 rounded-2xl shadow-sm hover:bg-[#D9431A] dark:bg-[#FF9D7C] dark:text-[#3E160B] dark:hover:bg-[#FF9D7C]/90">
+          Wróć do listy zadań
+        </button>
+      </div>
+
+      <!-- MAIN SHARED CARD CONTAINER (Główna zawartość we wspólnej, zaokrąglonej karcie) -->
+      <div id="mainTaskCard" class="bg-[#FFFFFF] rounded-3xl border border-[#EFEAE6] shadow-card p-6 md:p-8 transition-all dark:bg-[#242428] dark:border-[#35353C] dark:shadow-cardDark">
+        
+        <!-- Szybkie dodawanie zadania na górze karty -->
+        <section class="mb-8 pb-6 border-b border-[#F4EFEA] dark:border-[#35353C]">
+          <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+            <div class="relative flex-1">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#A29A93] dark:text-[#A1A1AA]">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              </div>
+              <input 
+                id="deskQuickInput"
+                type="text" 
+                placeholder="Co chcesz zrobić?" 
+                class="w-full text-sm font-medium bg-[#FFF9F5] border border-[#EFEAE6] rounded-2xl pl-10 pr-4 py-3 text-[#1F1B18] placeholder-[#9D958E] focus:outline-none focus:ring-2 focus:ring-[#F05023]/25 focus:border-[#F05023] transition-all dark:bg-[#2C2C32] dark:border-[#35353C] dark:text-[#F4F4F6] dark:placeholder:text-[#A1A1AA] dark:focus:ring-[#FF9D7C]/30 dark:focus:border-[#FF9D7C]"
+              />
+            </div>
+
+            <!-- Przycisk Dodaj -->
+            <button 
+              onclick="addDesktopTask()" 
+              class="bg-[#F05023] hover:bg-[#D9431A] active:scale-98 text-white font-bold text-sm px-6 py-3 rounded-2xl transition-all shadow-sm shadow-orange-500/25 flex items-center justify-center gap-2 dark:bg-[#FF9D7C] dark:text-[#3E160B] dark:hover:bg-[#FF9D7C]/90"
+            >
+              <span>Dodaj</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <!-- Pasek pod polem: Więcej opcji oraz hint domyślności -->
+          <div class="mt-3 flex items-center justify-between px-1">
+            <button 
+              type="button" 
+              onclick="toggleDesktopMoreOptions()" 
+              class="text-xs font-semibold text-[#F05023] hover:text-[#D9431A] flex items-center gap-1.5 transition-colors group dark:text-[#FF9D7C] dark:hover:text-[#FF9D7C]"
+            >
+              <span id="deskMoreOptLabel">Więcej opcji</span>
+              <svg id="deskMoreOptIcon" class="w-3.5 h-3.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <span class="text-xs text-[#9D958E] font-medium dark:text-[#A1A1AA]">Domyślnie dzisiaj • Osobiste</span>
+          </div>
+
+          <!-- Widok rozszerzonego formularza dodawania zadania -->
+          <div id="deskExpandedOptions" class="hidden mt-4 p-5 bg-[#FFF9F5] rounded-2xl border border-[#EFEAE6] space-y-4 animate-in fade-in duration-200 dark:bg-[#2C2C32] dark:border-[#35353C]">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-[#7A726C] uppercase tracking-wider mb-1.5 dark:text-[#A1A1AA]">Termin wykonania</label>
+                <input type="date" value="2025-10-02" class="w-full text-xs font-medium bg-white border border-[#EFEAE6] rounded-xl px-3 py-2 text-[#1F1B18] focus:border-[#F05023] focus:outline-none dark:bg-[#242428] dark:border-[#35353C] dark:text-[#F4F4F6] dark:focus:border-[#FF9D7C]">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-[#7A726C] uppercase tracking-wider mb-1.5 dark:text-[#A1A1AA]">Godzina (opcjonalna oś czasu)</label>
+                <input type="time" placeholder="--:--" class="w-full text-xs font-medium bg-white border border-[#EFEAE6] rounded-xl px-3 py-2 text-[#1F1B18] focus:border-[#F05023] focus:outline-none dark:bg-[#242428] dark:border-[#35353C] dark:text-[#F4F4F6] dark:focus:border-[#FF9D7C]">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-[#7A726C] uppercase tracking-wider mb-1.5 dark:text-[#A1A1AA]">Współdzielenie / Grupa</label>
+                <select class="w-full text-xs font-medium bg-white border border-[#EFEAE6] rounded-xl px-3 py-2 text-[#1F1B18] focus:border-[#F05023] focus:outline-none dark:bg-[#242428] dark:border-[#35353C] dark:text-[#F4F4F6] dark:focus:border-[#FF9D7C]">
+                  <option selected>👤 Osobiste</option>
+                  <option>🏠 Dom (Wspólne)</option>
+                  <option>💼 Praca (Wspólne)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-[#7A726C] uppercase tracking-wider mb-1.5 dark:text-[#A1A1AA]">Opis zadania & notatki</label>
+              <textarea rows="2" placeholder="Dodaj pomocnicze szczegóły, linki lub podpunkty..." class="w-full text-xs bg-white border border-[#EFEAE6] rounded-xl p-3 text-[#1F1B18] placeholder-[#9D958E] focus:border-[#F05023] focus:outline-none resize-none dark:bg-[#242428] dark:border-[#35353C] dark:text-[#F4F4F6] dark:placeholder:text-[#A1A1AA] dark:focus:border-[#FF9D7C]"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- RESPONSYWNY UKŁAD 2-KOLUMNOWY DLA DESKTOPU -->
+        <!-- Lewa kolumna: Plan dnia (Timeline) -->
+        <!-- Prawa kolumna: Do zrobienia + Zaległe -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          <!-- ============================================== -->
+          <!-- LEWA KOLUMNA: 1. PLAN DNIA (7 kolumn na desktopie) -->
+          <!-- ============================================== -->
+          <div class="lg:col-span-7">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#F05023]"></span>
+                <h2 class="text-sm font-extrabold uppercase tracking-wider text-[#1F1B18] dark:text-[#F4F4F6]">Plan dnia</h2>
+                <span class="text-xs text-[#7A726C] font-normal dark:text-[#A1A1AA]">(chronologiczna oś czasu)</span>
+              </div>
+              <span class="text-xs font-bold text-[#F05023] bg-[#FFF1EC] px-2.5 py-0.5 rounded-full border border-[#F05023]/15 dark:text-[#FF9D7C] dark:bg-[#493129] dark:border-[#FF9D7C]/20">3 punkty</span>
+            </div>
+
+            <!-- Oś czasu: czyste punkty bez bloków i sztywnego czasu trwania -->
+            <div class="relative pl-3 space-y-4 timeline-line">
+              
+              <!-- Punkt 1: 10:00 — Spisać licznik — Dom -->
+              <div class="relative flex items-center gap-4 group">
+                <!-- Punkt na osi -->
+                <div class="w-4 h-4 rounded-full bg-white border-[3px] border-[#F05023] z-10 shrink-0 shadow-2xs group-hover:scale-110 transition-transform dark:bg-[#242428] dark:border-[#FF9D7C]"></div>
+                
+                <!-- Wiersz zadania (kompaktowy, czytelny) -->
+                <div class="flex-1 bg-[#FFFDFC] border border-[#EFEAE6] rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:border-[#E0D7D0] transition-all dark:bg-[#2C2C32] dark:border-[#35353C] dark:hover:border-[#A1A1AA]">
+                  <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                    <input type="checkbox" onchange="toggleTaskDoneDesktop(this)" class="w-4 h-4 rounded-md text-[#F05023] border-[#D7CFC8] focus:ring-[#F05023]/25 cursor-pointer dark:text-[#FF9D7C] dark:border-[#A1A1AA] dark:focus:ring-[#FF9D7C]/30">
+                    <span class="text-xs font-extrabold text-[#F05023] tracking-tight whitespace-nowrap dark:text-[#FF9D7C]">10:00</span>
+                    <span class="text-sm font-semibold text-[#1F1B18] truncate task-title dark:text-[#F4F4F6]">Spisać licznik</span>
+                  </label>
+                  
+                  <!-- Grupa Dom (Wspólny stan) -->
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-bold text-[#705646] bg-[#F4EAE1] px-2.5 py-1 rounded-full border border-[#E8DDD3] dark:text-[#FF9D7C] dark:bg-[#493129] dark:border-[#FF9D7C]/20" title="Zadanie współdzielone (wspólny stan ukończenia)">
+                      <svg class="w-3.5 h-3.5 text-[#8D6E5C] dark:text-[#FF9D7C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                      </svg>
+                      Dom
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Punkt 2: 18:00 — Trening siłowy — Osobiste -->
+              <div class="relative flex items-center gap-4 group">
+                <div class="w-4 h-4 rounded-full bg-white border-[3px] border-[#F05023] z-10 shrink-0 shadow-2xs group-hover:scale-110 transition-transform dark:bg-[#242428] dark:border-[#FF9D7C]"></div>
+                
+                <div class="flex-1 bg-[#FFFDFC] border border-[#EFEAE6] rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:border-[#E0D7D0] transition-all dark:bg-[#2C2C32] dark:border-[#35353C] dark:hover:border-[#A1A1AA]">
+                  <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                    <input type="checkbox" onchange="toggleTaskDoneDesktop(this)" class="w-4 h-4 rounded-md text-[#F05023] border-[#D7CFC8] focus:ring-[#F05023]/25 cursor-pointer dark:text-[#FF9D7C] dark:border-[#A1A1AA] dark:focus:ring-[#FF9D7C]/30">
+                    <span class="text-xs font-extrabold text-[#F05023] tracking-tight whitespace-nowrap dark:text-[#FF9D7C]">18:00</span>
+                    <span class="text-sm font-semibold text-[#1F1B18] truncate task-title dark:text-[#F4F4F6]">Trening siłowy</span>
+                  </label>
+                  
+                  <span class="inline-flex items-center gap-1.5 text-xs font-medium text-[#7A726C] bg-[#F4EFEA] px-2.5 py-1 rounded-full shrink-0 dark:text-[#A1A1AA] dark:bg-[#35353C]">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Osobiste
+                  </span>
+                </div>
+              </div>
+
+              <!-- Punkt 3: 21:00 — Poczytać książkę — Osobiste -->
+              <div class="relative flex items-center gap-4 group">
+                <div class="w-4 h-4 rounded-full bg-white border-[3px] border-[#F05023] z-10 shrink-0 shadow-2xs group-hover:scale-110 transition-transform dark:bg-[#242428] dark:border-[#FF9D7C]"></div>
+                
+                <div class="flex-1 bg-[#FFFDFC] border border-[#EFEAE6] rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:border-[#E0D7D0] transition-all dark:bg-[#2C2C32] dark:border-[#35353C] dark:hover:border-[#A1A1AA]">
+                  <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                    <input type="checkbox" onchange="toggleTaskDoneDesktop(this)" class="w-4 h-4 rounded-md text-[#F05023] border-[#D7CFC8] focus:ring-[#F05023]/25 cursor-pointer dark:text-[#FF9D7C] dark:border-[#A1A1AA] dark:focus:ring-[#FF9D7C]/30">
+                    <span class="text-xs font-extrabold text-[#F05023] tracking-tight whitespace-nowrap dark:text-[#FF9D7C]">21:00</span>
+                    <span class="text-sm font-semibold text-[#1F1B18] truncate task-title dark:text-[#F4F4F6]">Poczytać książkę</span>
+                  </label>
+                  
+                  <span class="inline-flex items-center gap-1.5 text-xs font-medium text-[#7A726C] bg-[#F4EFEA] px-2.5 py-1 rounded-full shrink-0 dark:text-[#A1A1AA] dark:bg-[#35353C]">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Osobiste
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- PRAWA KOLUMNA: 2. DO ZROBIENIA & 3. ZALEGŁE (5 kolumn) -->
+          <!-- ============================================== -->
+          <div class="lg:col-span-5 space-y-6">
+            
+            <!-- 2. DO ZROBIENIA -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#8F8781]"></span>
+                  <h2 class="text-sm font-extrabold uppercase tracking-wider text-[#1F1B18] dark:text-[#F4F4F6]">Do zrobienia</h2>
+                  <span class="text-xs text-[#7A726C] font-normal dark:text-[#A1A1AA]">(bez godziny)</span>
+                </div>
+                <span class="text-xs font-bold text-[#7A726C] bg-[#F4EFEA] px-2.5 py-0.5 rounded-full dark:text-[#A1A1AA] dark:bg-[#35353C]">2</span>
+              </div>
+
+              <div class="space-y-2.5">
+                <!-- Zadanie 1 -->
+                <div class="bg-[#FFFDFC] border border-[#EFEAE6] rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:border-[#E0D7D0] transition-all dark:bg-[#2C2C32] dark:border-[#35353C] dark:hover:border-[#A1A1AA]">
+                  <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                    <input type="checkbox" onchange="toggleTaskDoneDesktop(this)" class="w-4 h-4 rounded-md text-[#F05023] border-[#D7CFC8] focus:ring-[#F05023]/25 cursor-pointer dark:text-[#FF9D7C] dark:border-[#A1A1AA] dark:focus:ring-[#FF9D7C]/30">
+                    <span class="text-sm font-semibold text-[#1F1B18] truncate task-title dark:text-[#F4F4F6]">Spakować rzeczy na jutro</span>
+                  </label>
+                  <span class="inline-flex items-center gap-1.5 text-xs font-medium text-[#7A726C] bg-[#F4EFEA] px-2.5 py-1 rounded-full shrink-0 dark:text-[#A1A1AA] dark:bg-[#35353C]">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Osobiste
+                  </span>
+                </div>
+
+                <!-- Zadanie 2 -->
+                <div class="bg-[#FFFDFC] border border-[#EFEAE6] rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:border-[#E0D7D0] transition-all dark:bg-[#2C2C32] dark:border-[#35353C] dark:hover:border-[#A1A1AA]">
+                  <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                    <input type="checkbox" onchange="toggleTaskDoneDesktop(this)" class="w-4 h-4 rounded-md text-[#F05023] border-[#D7CFC8] focus:ring-[#F05023]/25 cursor-pointer dark:text-[#FF9D7C] dark:border-[#A1A1AA] dark:focus:ring-[#FF9D7C]/30">
+                    <span class="text-sm font-semibold text-[#1F1B18] truncate task-title dark:text-[#F4F4F6]">Umówić serwis roweru</span>
+                  </label>
+                  <span class="inline-flex items-center gap-1.5 text-xs font-medium text-[#7A726C] bg-[#F4EFEA] px-2.5 py-1 rounded-full shrink-0 dark:text-[#A1A1AA] dark:bg-[#35353C]">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Osobiste
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. ZALEGŁE -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                  <h2 class="text-sm font-extrabold uppercase tracking-wider text-rose-700 dark:text-[#FDA4AF]">Zaległe</h2>
+                </div>
+                <span class="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-0.5 rounded-full dark:text-[#FDA4AF] dark:bg-[#3B2029] dark:border-[#FDA4AF]/30">1 zadanie</span>
+              </div>
+
+              <div class="space-y-2.5">
+                <div class="bg-[#FFF8F7] border border-rose-200 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:border-rose-300 transition-all dark:bg-[#3B2029] dark:border-[#FDA4AF]/30 dark:hover:border-[#FDA4AF]">
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <input type="checkbox" onchange="toggleTaskDoneDesktop(this)" class="w-4 h-4 rounded-md text-[#F05023] border-rose-300 focus:ring-rose-400 cursor-pointer dark:text-[#FF9D7C] dark:border-[#FDA4AF]/30 dark:focus:ring-[#FDA4AF]/30">
+                    <div class="min-w-0">
+                      <p class="text-sm font-bold text-[#1F1B18] truncate task-title dark:text-[#F4F4F6]">Przejrzeć dokumenty</p>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-[#FDA4AF]">
+                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                          Termin: 30 września
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <span class="inline-flex items-center gap-1.5 text-xs font-bold text-[#705646] bg-[#F4EAE1] px-2.5 py-1 rounded-full border border-[#E8DDD3] shrink-0 dark:text-[#FF9D7C] dark:bg-[#493129] dark:border-[#FF9D7C]/20">
+                    <svg class="w-3.5 h-3.5 text-[#8D6E5C] dark:text-[#FF9D7C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Dom
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 4. UKOŃCZONE (Sekcja domyślnie zwinięta)         -->
+        <!-- ============================================== -->
+        <section class="mt-8 pt-6 border-t border-[#F4EFEA] dark:border-[#35353C]">
+          <button 
+            type="button" 
+            onclick="toggleDesktopCompleted()" 
+            class="w-full flex items-center justify-between text-left py-2 px-3 rounded-2xl hover:bg-[#FFF9F5] transition-colors group cursor-pointer dark:hover:bg-[#2C2C32]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="text-sm font-extrabold uppercase tracking-wider text-[#7A726C] group-hover:text-[#1F1B18] transition-colors dark:text-[#A1A1AA] dark:group-hover:text-[#F4F4F6]">Ukończone</span>
+              <span class="text-xs font-bold text-[#7A726C] bg-[#F4EFEA] px-2.5 py-0.5 rounded-full dark:text-[#A1A1AA] dark:bg-[#35353C]">2</span>
+            </div>
+            
+            <div class="flex items-center gap-2 text-xs font-bold text-[#7A726C] group-hover:text-[#F05023] dark:text-[#A1A1AA] dark:group-hover:text-[#FF9D7C]">
+              <span id="deskCompletedLabel">Pokaż (2)</span>
+              <svg id="deskCompletedChevron" class="w-4 h-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </button>
+
+          <!-- Lista ukończonych (ukryta domyślnie) -->
+          <div id="deskCompletedList" class="hidden mt-3 space-y-2.5 pl-3">
+            <!-- Ukończone 1 -->
+            <div class="bg-[#FAF7F5] border border-[#EFEAE6] rounded-2xl p-3 flex items-center justify-between gap-3 opacity-75 dark:bg-[#2C2C32] dark:border-[#35353C] dark:opacity-100">
+              <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                <input type="checkbox" checked onchange="toggleTaskDoneDesktop(this)" class="w-4 h-4 rounded-md text-[#F05023] border-[#D7CFC8] focus:ring-[#F05023]/25 cursor-pointer dark:text-[#FF9D7C] dark:border-[#A1A1AA] dark:focus:ring-[#FF9D7C]/30">
+                <span class="text-sm font-medium text-gray-400 line-through truncate task-title dark:text-[#A1A1AA]">Odpisać na wiadomość</span>
+              </label>
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full shrink-0 dark:text-[#A1A1AA] dark:bg-[#35353C]">
+                Osobiste
+              </span>
+            </div>
+
+            <!-- Ukończone 2 -->
+            <div class="bg-[#FAF7F5] border border-[#EFEAE6] rounded-2xl p-3 flex items-center justify-between gap-3 opacity-75 dark:bg-[#2C2C32] dark:border-[#35353C] dark:opacity-100">
+              <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                <input type="checkbox" checked onchange="toggleTaskDoneDesktop(this)" class="w-4 h-4 rounded-md text-[#F05023] border-[#D7CFC8] focus:ring-[#F05023]/25 cursor-pointer dark:text-[#FF9D7C] dark:border-[#A1A1AA] dark:focus:ring-[#FF9D7C]/30">
+                <span class="text-sm font-medium text-gray-400 line-through truncate task-title dark:text-[#A1A1AA]">Podlać kwiaty</span>
+              </label>
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#705646] bg-[#F4EAE1] px-2.5 py-1 rounded-full shrink-0 dark:text-[#FF9D7C] dark:bg-[#493129]">
+                Dom
+              </span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. MOBILE VIEW CONTAINER (Mockup Viewport)                   -->
+  <!-- ============================================================ -->
+  <div id="mobileContainer" class="hidden flex-1 items-center justify-center p-6 bg-stone-200/50 dark:bg-zinc-950/80">
+    
+    <!-- Phone Mockup Device Frame (~390px width) -->
+    <div class="w-full max-w-[390px] h-[812px] bg-[#FFF8F4] dark:bg-[#18181B] rounded-[48px] border-[10px] border-[#1F1B18] dark:border-[#2C2C32] shadow-2xl flex flex-col overflow-hidden relative theme-transition">
+      
+      <!-- Speaker Notch & Dynamic Island -->
+      <div class="w-28 h-5 bg-[#1F1B18] dark:bg-[#2C2C32] rounded-b-2xl mx-auto z-40 flex items-center justify-center">
+        <div class="w-10 h-1 bg-white/20 rounded-full"></div>
+      </div>
+
+      <!-- Scrollable Mobile Screen Content -->
+      <div class="flex-1 overflow-y-auto px-4 pt-2 pb-24">
+        
+        <!-- Mobile Header Bar -->
+        <div class="flex items-center justify-between mb-4 pt-1">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#FF6A3D] to-[#F04E23] flex items-center justify-center text-white">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="12" cy="11" r="8" stroke-dasharray="36 14"/><path d="m9 11 2 2 4-4"/></svg>
+            </div>
+            <span class="font-extrabold text-xl tracking-tight text-[#1F1B18] dark:text-white">daylo</span>
+          </div>
+
+          <div class="w-8 h-8 rounded-full bg-[#FFF1EC] dark:bg-[#2C2C32] text-[#F05023] font-bold text-xs flex items-center justify-center border border-[#F05023]/20">
+            MS
+          </div>
+        </div>
+
+        <!-- Greeting -->
+        <div class="mb-3">
+          <div class="flex items-baseline justify-between">
+            <h2 class="text-xl font-bold text-[#1F1B18] dark:text-white">Cześć, Maciej!</h2>
+            <span class="text-[10px] font-bold text-[#F05023] bg-[#FFF1EC] dark:bg-[#2A1E1A] px-2 py-0.5 rounded-full">Slay queen.</span>
+          </div>
+          <p class="text-[11px] font-medium text-[#7A726C] dark:text-zinc-400">Piątek, 2 października</p>
+        </div>
+
+        <!-- Mobile Main Card -->
+        <div class="bg-white dark:bg-[#242428] rounded-3xl border border-[#EFEAE6] dark:border-[#35353C] p-4 shadow-card">
+          
+          <!-- Quick Add -->
+          <div class="flex items-center gap-2 mb-4">
+            <input type="text" placeholder="Co chcesz zrobić?" class="flex-1 text-xs bg-[#FFF9F5] dark:bg-[#1E1E22] border border-[#EFEAE6] dark:border-[#35353C] rounded-xl px-3 py-2 text-[#1F1B18] dark:text-white focus:outline-none">
+            <button class="bg-[#F05023] text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0">Dodaj</button>
+          </div>
+
+          <!-- Timeline Mobile -->
+          <div class="mb-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-[#7A726C] dark:text-zinc-400">Plan dnia</span>
+              <span class="text-[10px] text-[#F05023] font-semibold">3 zadania</span>
+            </div>
+            <div class="space-y-2.5 pl-2 border-l-2 border-[#EFEAE6] dark:border-[#35353C] ml-1">
+              <div class="bg-[#FFFDFC] dark:bg-[#2C2C32] border border-[#EFEAE6] dark:border-[#35353C] rounded-xl p-2 flex items-center justify-between text-xs">
+                <span class="font-bold text-[#F05023]">10:00 <span class="font-medium text-[#1F1B18] dark:text-zinc-200 ml-1">Spisać licznik</span></span>
+                <span class="text-[9px] bg-[#F4EAE1] text-[#705646] px-1.5 py-0.5 rounded-md font-semibold">Dom</span>
+              </div>
+              <div class="bg-[#FFFDFC] dark:bg-[#2C2C32] border border-[#EFEAE6] dark:border-[#35353C] rounded-xl p-2 flex items-center justify-between text-xs">
+                <span class="font-bold text-[#F05023]">18:00 <span class="font-medium text-[#1F1B18] dark:text-zinc-200 ml-1">Trening siłowy</span></span>
+                <span class="text-[9px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-md">Osobiste</span>
+              </div>
+              <div class="bg-[#FFFDFC] dark:bg-[#2C2C32] border border-[#EFEAE6] dark:border-[#35353C] rounded-xl p-2 flex items-center justify-between text-xs">
+                <span class="font-bold text-[#F05023]">21:00 <span class="font-medium text-[#1F1B18] dark:text-zinc-200 ml-1">Poczytać książkę</span></span>
+                <span class="text-[9px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-md">Osobiste</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Do zrobienia Mobile -->
+          <div class="mb-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-[#7A726C] dark:text-zinc-400 mb-2">Do zrobienia</div>
+            <div class="space-y-1.5 text-xs">
+              <div class="bg-[#FFFDFC] dark:bg-[#2C2C32] border border-[#EFEAE6] dark:border-[#35353C] rounded-xl p-2 flex items-center justify-between">
+                <span class="text-[#1F1B18] dark:text-zinc-200">Spakować rzeczy na jutro</span>
+                <span class="text-[9px] text-stone-500">Osobiste</span>
+              </div>
+              <div class="bg-[#FFFDFC] dark:bg-[#2C2C32] border border-[#EFEAE6] dark:border-[#35353C] rounded-xl p-2 flex items-center justify-between">
+                <span class="text-[#1F1B18] dark:text-zinc-200">Umówić serwis roweru</span>
+                <span class="text-[9px] text-stone-500">Osobiste</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zaległe Mobile -->
+          <div class="bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 rounded-xl p-2.5 flex items-center justify-between text-xs">
+            <div>
+              <p class="font-semibold text-rose-900 dark:text-rose-200">Przejrzeć dokumenty</p>
+              <p class="text-[10px] text-rose-600 dark:text-rose-400">Termin: 30 września</p>
+            </div>
+            <span class="text-[9px] bg-[#F4EAE1] text-[#705646] px-1.5 py-0.5 rounded-md font-semibold">Dom</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Mobile Bottom Navigation Bar (z safe area) -->
+      <nav class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-[#242428]/95 backdrop-blur-md border-t border-[#EFEAE6] dark:border-[#35353C] px-6 py-2 flex items-center justify-between shadow-nav">
+        <button class="flex flex-col items-center gap-1 text-[#F05023]">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+            <rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="15" r="1.5" fill="currentColor"/>
+          </svg>
+          <span class="text-[10px] font-bold">Dzisiaj</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-[#7A726C] dark:text-zinc-400">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857" />
+          </svg>
+          <span class="text-[10px] font-semibold">Grupy</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-[#7A726C] dark:text-zinc-400">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572" />
+          </svg>
+          <span class="text-[10px] font-semibold">Ustawienia</span>
+        </button>
+      </nav>
+
+    </div>
+  </div>
+
+  <!-- INTERACTIVE LOGIC & JAVASCRIPT PROTOTYPE -->
+  <script>
+    let isDark = false;
+    let isSidebarCollapsed = false;
+    let isEmptyState = false;
+
+    // Toggle Dark / Light Theme across desktop and mobile frames
+    function toggleGlobalTheme() {
+      isDark = !isDark;
+      const body = document.getElementById('appBody');
+      const btnText = document.getElementById('themeBtnText');
+      const btnIcon = document.getElementById('themeBtnIcon');
+      
+      if (isDark) {
+        body.classList.add('dark');
+        body.style.backgroundColor = '#18181B';
+        body.style.color = '#F4F4F6';
+        btnText.innerText = 'Tryb jasny';
+        btnIcon.innerText = '☀️';
+      } else {
+        body.classList.remove('dark');
+        body.style.backgroundColor = '#FFF8F4';
+        body.style.color = '#1F1B18';
+        btnText.innerText = 'Tryb ciemny';
+        btnIcon.innerText = '🌙';
+      }
+    }
+
+    // Toggle Desktop Sidebar Collapse / Expand
+    function toggleSidebarDesktop() {
+      isSidebarCollapsed = !isSidebarCollapsed;
+      const sidebar = document.getElementById('desktopSidebar');
+      const textElements = document.querySelectorAll('.sidebar-text-element');
+      const collapseIcon = document.getElementById('collapseIcon');
+      const btnText = document.getElementById('sidebarBtnText');
+
+      if (isSidebarCollapsed) {
+        sidebar.classList.remove('w-64');
+        sidebar.classList.add('w-20');
+        textElements.forEach(el => el.classList.add('hidden'));
+        collapseIcon.classList.add('rotate-180');
+        btnText.innerText = 'Rozwiń sidebar';
+      } else {
+        sidebar.classList.remove('w-20');
+        sidebar.classList.add('w-64');
+        textElements.forEach(el => el.classList.remove('hidden'));
+        collapseIcon.classList.remove('rotate-180');
+        btnText.innerText = 'Zwiń sidebar';
+      }
+    }
+
+    // Switch between Desktop and Mobile mockup views
+    function switchView(view) {
+      const desk = document.getElementById('desktopContainer');
+      const mob = document.getElementById('mobileContainer');
+      const btnDesk = document.getElementById('viewDeskBtn');
+      const btnMob = document.getElementById('viewMobBtn');
+
+      if (view === 'desktop') {
+        desk.classList.remove('hidden');
+        mob.classList.add('hidden');
+        mob.classList.remove('flex');
+        btnDesk.classList.add('bg-[#F05023]', 'text-white');
+        btnDesk.classList.remove('text-white/70');
+        btnMob.classList.remove('bg-[#F05023]', 'text-white');
+        btnMob.classList.add('text-white/70');
+      } else {
+        desk.classList.add('hidden');
+        mob.classList.remove('hidden');
+        mob.classList.add('flex');
+        btnMob.classList.add('bg-[#F05023]', 'text-white');
+        btnMob.classList.remove('text-white/70');
+        btnDesk.classList.remove('bg-[#F05023]', 'text-white');
+        btnDesk.classList.add('text-white/70');
+      }
+    }
+
+    // Toggle Empty Day State
+    function toggleEmptyState() {
+      isEmptyState = !isEmptyState;
+      const emptyView = document.getElementById('emptyStateView');
+      const mainCard = document.getElementById('mainTaskCard');
+      const statusLabel = document.getElementById('emptyStatus');
+
+      if (isEmptyState) {
+        emptyView.classList.remove('hidden');
+        mainCard.classList.add('hidden');
+        statusLabel.innerText = 'Włączony';
+        statusLabel.className = 'font-bold text-amber-400';
+      } else {
+        emptyView.classList.add('hidden');
+        mainCard.classList.remove('hidden');
+        statusLabel.innerText = 'Wył';
+        statusLabel.className = 'font-bold text-emerald-400';
+      }
+    }
+
+    // Toggle Desktop More Options in Task Form
+    function toggleDesktopMoreOptions() {
+      const form = document.getElementById('deskExpandedOptions');
+      const label = document.getElementById('deskMoreOptLabel');
+      const icon = document.getElementById('deskMoreOptIcon');
+
+      if (form.classList.contains('hidden')) {
+        form.classList.remove('hidden');
+        label.innerText = 'Mniej opcji';
+        icon.classList.add('rotate-180');
+      } else {
+        form.classList.add('hidden');
+        label.innerText = 'Więcej opcji';
+        icon.classList.remove('rotate-180');
+      }
+    }
+
+    // Toggle Completed section in desktop
+    function toggleDesktopCompleted() {
+      const list = document.getElementById('deskCompletedList');
+      const label = document.getElementById('deskCompletedLabel');
+      const chevron = document.getElementById('deskCompletedChevron');
+
+      if (list.classList.contains('hidden')) {
+        list.classList.remove('hidden');
+        label.innerText = 'Zwiń ukończone';
+        chevron.classList.add('rotate-180');
+      } else {
+        list.classList.add('hidden');
+        label.innerText = 'Pokaż (2)';
+        chevron.classList.remove('rotate-180');
+      }
+    }
+
+    // Toggle Task Done checkbox
+    function toggleTaskDoneDesktop(checkbox) {
+      const row = checkbox.closest('div');
+      const title = row.querySelector('.task-title');
+      if (checkbox.checked) {
+        if (title) title.classList.add('line-through', 'opacity-50', 'text-gray-400');
+      } else {
+        if (title) title.classList.remove('line-through', 'opacity-50', 'text-gray-400');
+      }
+    }
+
+    // Quick Add Desktop Task
+    function addDesktopTask() {
+      const input = document.getElementById('deskQuickInput');
+      const val = input.value.trim();
+      if (!val) {
+        input.focus();
+        return;
+      }
+      alert('Dodano nowe zadanie: "' + val + '" do sekcji Do zrobienia.');
+      input.value = '';
+    }
+  </script>
+</body>
+</html>

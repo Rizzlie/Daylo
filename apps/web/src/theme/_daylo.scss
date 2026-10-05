@@ -1,0 +1,161 @@
+@use '@angular/material' as mat;
+@use './theme-colors' as colors;
+
+// Shadows contain multiple values, so they cannot use the color-only light-dark().
+@mixin shadows($dark: false) {
+  @if $dark {
+    --daylo-shadow-sidebar: 4px 0 24px -2px rgba(0, 0, 0, 0.24);
+    --daylo-shadow-card: 0 8px 30px -4px rgba(0, 0, 0, 0.4);
+    --daylo-shadow-bottom-navigation: 0 -4px 16px rgba(0, 0, 0, 0.24);
+  } @else {
+    --daylo-shadow-sidebar: 4px 0 24px -2px rgba(0, 0, 0, 0.03);
+    --daylo-shadow-card: 0 8px 30px -4px rgba(240, 80, 35, 0.04),
+      0 2px 10px -2px rgba(0, 0, 0, 0.03);
+    --daylo-shadow-bottom-navigation: 0 -4px 16px rgba(0, 0, 0, 0.04);
+  }
+}
+
+// Exact semantic roles from docs/design/tokens.json. Document scope includes overlays.
+html {
+  color-scheme: light dark;
+  @include shadows();
+
+  @include mat.theme((
+    color: (
+      primary: colors.$primary-palette,
+      tertiary: colors.$tertiary-palette,
+    ),
+    typography: (
+      plain-family: ('Plus Jakarta Sans Variable', system-ui, sans-serif),
+      brand-family: ('Plus Jakarta Sans Variable', system-ui, sans-serif),
+      bold-weight: 700,
+      medium-weight: 500,
+      regular-weight: 400,
+    ),
+    density: 0,
+  ));
+
+  @include mat.theme-overrides((
+    primary: light-dark(#C43D17, #FF9D7C),
+    on-primary: light-dark(#FFFFFF, #3E160B),
+    primary-container: light-dark(#FFF1EC, #493129),
+    on-primary-container: light-dark(#C43D17, #FF9D7C),
+    surface-tint: light-dark(#C43D17, #FF9D7C),
+    background: light-dark(#FFF8F4, #18181B),
+    on-background: light-dark(#1F1B18, #F4F4F6),
+    surface: light-dark(#FFFFFF, #242428),
+    surface-bright: light-dark(#FFFFFF, #2C2C32),
+    surface-dim: light-dark(#FFF8F4, #18181B),
+    surface-container-lowest: light-dark(#FFFFFF, #18181B),
+    surface-container-low: light-dark(#FFFFFF, #242428),
+    surface-container: light-dark(#FFFDFC, #2C2C32),
+    surface-container-high: light-dark(#FFFDFC, #2C2C32),
+    surface-container-highest: light-dark(#FFF9F5, #2C2C32),
+    surface-variant: light-dark(#FFF9F5, #2C2C32),
+    on-surface: light-dark(#1F1B18, #F4F4F6),
+    on-surface-variant: light-dark(#756D67, #A1A1AA),
+    outline: light-dark(#8A7D75, #A1A1AA),
+    outline-variant: light-dark(#EFEAE6, #35353C),
+    body-large-size: 16px,
+    body-large-line-height: 24px,
+    body-large-weight: 400,
+    body-large-tracking: 0,
+    body-medium-size: 14px,
+    body-medium-line-height: 20px,
+    body-medium-weight: 400,
+    body-medium-tracking: 0,
+    body-small-size: 12px,
+    body-small-line-height: 16px,
+    body-small-weight: 400,
+    body-small-tracking: 0,
+    title-medium-size: 18px,
+    title-medium-line-height: 24px,
+    title-medium-weight: 600,
+    title-medium-tracking: 0,
+    label-large-size: 14px,
+    label-large-line-height: 20px,
+    label-large-weight: 500,
+    label-large-tracking: 0,
+    display-small-size: 40px,
+    display-small-line-height: 48px,
+    display-small-weight: 700,
+  ));
+
+  --daylo-brand: #F05023;
+  --daylo-canvas: light-dark(#FFF8F4, #18181B);
+  --daylo-surface: var(--mat-sys-surface);
+  --daylo-surface-raised: light-dark(#FFFDFC, #2C2C32);
+  --daylo-input-surface: light-dark(#FFF9F5, #2C2C32);
+  --daylo-text: var(--mat-sys-on-surface);
+  --daylo-muted: var(--mat-sys-on-surface-variant);
+  --daylo-border: var(--mat-sys-outline-variant);
+  --daylo-control-outline: var(--mat-sys-outline);
+  --daylo-focus: var(--mat-sys-primary);
+  // Overdue status is separate from Material validation errors.
+  --daylo-overdue: light-dark(#D61F4B, #FDA4AF);
+  --daylo-overdue-surface: light-dark(#FFF1F2, #3B2029);
+  --daylo-radius-control: 12px;
+  --daylo-radius-row: 16px;
+  --daylo-radius-pill: 9999px;
+  --daylo-radius-card: 32px;
+  --daylo-space-xs: 4px;
+  --daylo-space-sm: 8px;
+  --daylo-space-md: 16px;
+  --daylo-space-lg: 24px;
+  --daylo-space-xl: 32px;
+  --daylo-space-xxl: 48px;
+  --daylo-motion-feedback: 150ms;
+  --daylo-motion-sidebar: 200ms;
+
+  @include mat.form-field-overrides((
+    outlined-container-shape: var(--daylo-radius-control),
+    outlined-outline-color: var(--daylo-control-outline),
+    filled-container-color: var(--daylo-input-surface),
+    container-text-size: 16px,
+    container-text-line-height: 24px,
+    container-text-weight: 400,
+    container-text-tracking: 0,
+  ));
+
+  @include mat.card-overrides((
+    elevated-container-color: var(--daylo-surface),
+    outlined-container-color: var(--daylo-surface),
+    filled-container-color: var(--daylo-surface),
+    elevated-container-shape: var(--daylo-radius-card),
+    elevated-container-elevation: var(--daylo-shadow-card),
+    outlined-container-shape: var(--daylo-radius-card),
+    filled-container-shape: var(--daylo-radius-card),
+  ));
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']):not([data-theme='dark']) {
+    @include shadows(true);
+  }
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  @include shadows(true);
+}
+
+@media (width < 768px) {
+  html {
+    --daylo-radius-card: 24px;
+    @include mat.theme-overrides((
+      display-small-size: 28px,
+      display-small-line-height: 36px,
+    ));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    --daylo-motion-feedback: 0ms;
+    --daylo-motion-sidebar: 0ms;
+  }
+}
