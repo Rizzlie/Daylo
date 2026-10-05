@@ -90,6 +90,16 @@ The headed configuration shows both browser projects; debug opens the Playwright
 
 HTML reports live in `dist/.playwright/apps/web-e2e/playwright-report`, test results in its sibling `test-output`, and CI blob reports in `blob-report`. Screenshots and traces are retained on failure, including a first local failure without retries. The report never opens automatically. These artifacts and browser authentication state are ignored by Git and must not be committed.
 
+## Workspace boundary checks
+
+The root ESLint configuration uses `@nx/enforce-module-boundaries` for platform, scope and type constraints, circular dependencies and forbidden external packages. Run it through the existing Nx lint targets:
+
+```powershell
+npm exec nx -- run-many -t lint -p web api web-e2e --skipNxCache
+```
+
+F01-04 uses only the built-in Nx rule. It adds no custom rules, metadata validator, fixture harness or workspace targets. Tag completeness, path consistency and capability-tag ownership are not automatically validated. Public entrypoints follow Nx's built-in import checks; no additional canonical-alias validation is implemented. CI wiring remains F01-05.
+
 ## API shell
 
 The empty NestJS application lives in `apps/api`. Install dependencies with `npm ci`, then use:

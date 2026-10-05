@@ -32,6 +32,7 @@ export default [
                     allow: [],
                     ignoredCircularDependencies: [],
                     allowCircularSelfDependency: false,
+                    checkNestedExternalImports: true,
                     depConstraints: [
                         {
                             sourceTag: "platform:web",
@@ -40,7 +41,8 @@ export default [
                         },
                         {
                             sourceTag: "platform:api",
-                            onlyDependOnLibsWithTags: ["platform:api", "platform:shared"]
+                            onlyDependOnLibsWithTags: ["platform:api", "platform:shared"],
+                            bannedExternalImports: ["@angular/*"]
                         },
                         {
                             sourceTag: "platform:shared",
@@ -71,7 +73,8 @@ export default [
                         },
                         {
                             sourceTag: "type:util",
-                            onlyDependOnLibsWithTags: ["type:util"]
+                            onlyDependOnLibsWithTags: ["type:util"],
+                            bannedExternalImports: ["@angular/*", "@nestjs/*", "@prisma/client", "@prisma/*"]
                         },
                         {
                             sourceTag: "type:api-client",

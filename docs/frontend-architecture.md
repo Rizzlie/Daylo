@@ -1,6 +1,6 @@
 # Daylo — Frontend Architecture and Library Boundaries
 
-Status: Approved library organization and tag policy, recorded 2026-10-05. Nx and ESLint configuration will be implemented and verified in F01. This document does not authorize scaffolding.
+Status: Approved architecture direction, recorded 2026-10-05. F01-04 is limited by owner instruction to the built-in Nx ESLint boundary rule. Custom metadata validation and additional canonical-entrypoint checks are outside that delivery; the requirements below describe the architecture policy. This document does not authorize scaffolding.
 
 ## Organization
 

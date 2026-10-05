@@ -1,6 +1,6 @@
 # Daylo — Backend Architecture and Library Boundaries
 
-Status: Accepted direction, recorded 2026-10-05. Implementation and boundary verification remain pending. This document does not authorize scaffolding.
+Status: Approved architecture direction, recorded 2026-10-05. F01-04 is limited by owner instruction to the built-in Nx ESLint boundary rule. Custom metadata validation and additional canonical-entrypoint checks are outside that delivery; the requirements below describe the architecture policy. This document does not authorize scaffolding.
 
 ## Modular monolith
 
