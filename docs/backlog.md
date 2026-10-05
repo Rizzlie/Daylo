@@ -22,6 +22,14 @@ Verified: API and existing web lint and production builds passed. Nx serve start
 
 Retrospective: the generator's inherited CommonJS/bundler TypeScript combination was corrected locally to Node16 module/resolution before verification. Generator dry-run was unavailable because it installs an additional plugin. Restricted-session Nx socket/process failures required disabling the daemon/plugin isolation and running dependency installation and checks with expanded permissions. Inspect generated configuration before validating future slices.
 
+### F01-02 API shell review — 2026-10-05
+
+The owner confirmed the bounded review scope. Existing bootstrap, empty root module, `/api` prefix, default port 3000 with `PORT` override, API application tags and documented Nx commands were reviewed; no application correction was needed.
+
+Fresh API lint and production build passed without cache. Nx serve started with `PORT=3102`, and `GET /api` returned the expected JSON 404. The verification server was stopped and its port released. Browser review, business tests, database readiness and generated-contract checks are inapplicable to this endpoint-free review. Inspector attachment was unavailable because port 9229 was occupied; HTTP verification passed. Owner acceptance remains pending; F01 and subsequent tasks remain incomplete. See [F01-02 review record](tasks/F01-02-nestjs-shell-review.md#delivery-and-review-record).
+
+Retrospective: restricted child-process `spawn EPERM` was not treated as success despite a zero wrapper exit code; approved expanded-permission checks passed. Verify child-process cleanup after stopping Nx. Reuse delivered code and keep later task boundaries intact.
+
 ### Requested M05 theme slice — 2026-10-05
 
 Implemented: global Angular Material light/dark theme from `docs/design/tokens.json`, system default, document-level explicit variant hooks, typography and supported card/form-field styling. Production build and lint passed; shell browser checks passed at desktop/mobile widths. See [theme verification](design/design-system.md#theme-implementation--2026-10-05) for evidence and limitations. Human acceptance, rendered Material controls/overlays, theme preference UI/persistence and the remainder of M05 are pending. This slice does not complete M05 or authorize further implementation.
