@@ -21,8 +21,8 @@ Task discussions remain **not started** unless their individual records state ot
 | Task | Title | Delivery status |
 | --- | --- | --- |
 | [F01-01](tasks/F01-01-angular-shell-review.md) | Angular shell review and completion | Closed: agreed scope implemented, checked and owner-accepted on 2026-10-05; E2E remains in F01-03 |
-| [F01-02](tasks/F01-02-nestjs-shell-review.md) | NestJS shell review and acceptance | Existing shell reviewed and freshly verified on 2026-10-05; owner accepted the simplified scope on 2026-10-05 |
-| [F01-03](tasks/F01-03-frontend-smoke-tests.md) | Frontend shell E2E smoke coverage | Implemented; desktop/mobile E2E and lint passed; independent browser inspection incomplete, owner accepted the simplified scope on 2026-10-05 |
+| [F01-02](tasks/F01-02-nestjs-shell-review.md) | NestJS shell review and acceptance | Existing shell reviewed and freshly verified on 2026-10-05; owner acceptance pending |
+| [F01-03](tasks/F01-03-frontend-smoke-tests.md) | Frontend shell E2E smoke coverage | Implemented; desktop/mobile E2E and lint passed; independent browser inspection incomplete, owner acceptance pending |
 | [F01-04](tasks/F01-04-library-boundaries.md) | Library boundaries (built-in Nx rule) | Built-in Nx rule only; project lint and production builds passed; owner accepted the simplified scope on 2026-10-05 |
 | [F01-05](tasks/F01-05-commit-conventions-and-ci.md) | Commit conventions and foundation CI | Pending |
 
