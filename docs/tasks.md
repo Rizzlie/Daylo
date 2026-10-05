@@ -12,7 +12,7 @@ Name each task file `{TASK-CODE}-{short-description}.md`. The description uses E
 4. Implement only that task, run applicable checks and browser inspection, and record evidence and limitations.
 5. Request owner acceptance of delivered behavior; update the task and parent backlog accurately. Keep the next task pending until requested.
 
-All task discussions are initially **not started**. Existing API-shell and theme implementation evidence is preserved; the new discussion requirement applies before any further implementation. Dependencies are prerequisites, not authorization. Work remains sequential and single-agent.
+Task discussions remain **not started** unless their individual records state otherwise. F01-01 was discussed and its bounded completion scope authorized on 2026-10-05. Existing API-shell and theme implementation evidence is preserved; the discussion requirement applies before further implementation. Dependencies are prerequisites, not authorization. Work remains sequential and single-agent.
 
 ## Tasks
 
@@ -20,7 +20,7 @@ All task discussions are initially **not started**. Existing API-shell and theme
 
 | Task | Title | Delivery status |
 | --- | --- | --- |
-| [F01-01](tasks/F01-01-angular-shell-review.md) | Angular shell review and completion | Existing shell; compliance review/acceptance pending |
+| [F01-01](tasks/F01-01-angular-shell-review.md) | Angular shell review and completion | Closed: agreed scope implemented, checked and owner-accepted on 2026-10-05; E2E remains in F01-03 |
 | [F01-02](tasks/F01-02-nestjs-shell-review.md) | NestJS shell review and acceptance | Implemented and verified; owner acceptance pending |
 | [F01-03](tasks/F01-03-frontend-smoke-tests.md) | Frontend shell E2E smoke coverage | Pending |
 | [F01-04](tasks/F01-04-library-boundaries.md) | Library boundaries and metadata checks | Pending |
