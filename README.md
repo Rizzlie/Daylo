@@ -37,6 +37,38 @@ Code and documentation use English. User-facing UI text uses Polish.
 
 Only explicitly requested slices are authorized; the full **F01: Nx workspace** item remains pending.
 
+## Frontend shell
+
+Use Node.js 24.19.0 and npm 11.17.0, the verified local baseline. Install the locked dependencies with `npm ci` from the workspace root. Frontend framework and tooling dependencies are pinned to their existing exact locked versions; this task does not upgrade packages.
+
+| Tool | Pinned version |
+| --- | --- |
+| Nx and frontend Nx plugins | 23.2.1 |
+| Angular runtime, compiler and language service | 22.1.8 |
+| Angular CLI, build, devkit and schematics | 22.1.9 |
+| Angular Material and CDK | 22.2.1 |
+| TypeScript | 6.0.3 |
+| Analog Angular/Vitest integration | 2.6.4 |
+| Vite / Vitest | 8.3.2 / 4.1.11 |
+| Angular ESLint / ESLint | 22.5.0 / 9.39.5 |
+| Playwright | 1.63.0 |
+| Plus Jakarta Sans Variable | 5.3.0 |
+
+The client-rendered Angular app lives in `apps/web`, tagged `platform:web`, `scope:app`, `type:app`. Use its Nx targets:
+
+```powershell
+npm exec nx -- run web:serve
+npm exec nx -- run web:lint
+npm exec nx -- run web:test
+npm exec nx -- run web:build
+```
+
+Serve defaults to development at `http://localhost:4200/`. If the port is occupied, use `npm exec nx -- run web:serve --port=4300`. Build defaults to production and writes to `dist/apps/web`; unit tests use Vitest. The root `npm test` script is not the web test target.
+
+The initial page shows the `Daylo` heading and a Polish preparation message. Its document title is `Daylo` and language is Polish. Themes follow system appearance by default; document-level `data-theme="light"` or `data-theme="dark"` overrides remain available. Plus Jakarta Sans is bundled locally; Material Symbols Outlined is loaded from Google Fonts for planned icon use, with preconnect links to its stylesheet and font hosts. Product navigation, authentication and task screens remain pending.
+
+The existing generated E2E sample expects an absent `Welcome` heading and is not acceptance coverage. Its replacement with a smoke test observing the agreed `Daylo` heading belongs to F01-03. API proxy wiring and full-stack E2E setup remain pending before API-consuming features.
+
 ## API shell
 
 The empty NestJS application lives in `apps/api`. Install dependencies with `npm ci`, then use:

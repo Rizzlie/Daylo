@@ -1,8 +1,18 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0. No complete implementation item has been accepted. Requested implementation slices are recorded below; other work remains pending.
+Status: Planning baseline, version 1.0. The agreed F01-01 task scope was accepted on 2026-10-05; no parent foundation or MVP item is fully accepted. Requested implementation slices are recorded below; other work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### Authorized F01-01 Angular shell completion — 2026-10-05
+
+Implemented: minimal semantic Daylo root page with a Polish preparation message, responsive surface using existing light/dark tokens, `Daylo` title and `pl` language, frontend commands/prerequisites/version documentation and exact direct frontend dependency pins using existing lockfile resolutions. Material Symbols Outlined and Google Fonts preconnect links were restored after the owner's subsequent request to retain fonts for planned icons. No package upgrade or product feature was introduced.
+
+Verified: fresh web lint, unit test and production build passed. Manifest/lock metadata consistency passed. Browser inspection passed at desktop 1440 × 900 and emulated mobile 390 × 844 in both system themes, with no horizontal overflow, console errors/warnings or failed requests. These checks preceded Material Symbols restoration; their no-external-resource observation is historical, since the icon stylesheet now loads from Google Fonts. Its restored stylesheet returned HTTP 200 with no console errors/warnings in a subsequent browser check. See [F01-01 delivery record](tasks/F01-01-angular-shell-review.md#authorized-completion-delivery--2026-10-05).
+
+Accepted: owner instruction `Akceptuje aktualny zakres`, 2026-10-05, closes the agreed F01-01 scope including restored Material Symbols. Automated shell smoke coverage under F01-03 and the remaining F01 tasks are pending. This acceptance does not complete F01 or authorize another task.
+
+Retrospective: pin existing resolutions without upgrading; record browser-visible behavior separately from build and component-creation results. Restricted process startup required approved expanded-permission verification.
 
 ### Requested F01 API shell slice — 2026-10-05
 
