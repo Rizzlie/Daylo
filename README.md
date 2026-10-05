@@ -67,7 +67,28 @@ Serve defaults to development at `http://localhost:4200/`. If the port is occupi
 
 The initial page shows the `Daylo` heading and a Polish preparation message. Its document title is `Daylo` and language is Polish. Themes follow system appearance by default; document-level `data-theme="light"` or `data-theme="dark"` overrides remain available. Plus Jakarta Sans is bundled locally; Material Symbols Outlined is loaded from Google Fonts for planned icon use, with preconnect links to its stylesheet and font hosts. Product navigation, authentication and task screens remain pending.
 
-The existing generated E2E sample expects an absent `Welcome` heading and is not acceptance coverage. Its replacement with a smoke test observing the agreed `Daylo` heading belongs to F01-03. API proxy wiring and full-stack E2E setup remain pending before API-consuming features.
+API proxy wiring and full-stack E2E setup remain pending before API-consuming features.
+
+## Frontend shell smoke tests
+
+Install the Playwright Chromium browser once after `npm ci` with `npm exec playwright -- install chromium`. Use the existing Nx project for test runs and debugging:
+
+```powershell
+npm exec nx -- run web-e2e:e2e --skipNxCache
+npm exec nx -- run web-e2e:lint
+npm exec nx -- run web-e2e:e2e:headed --skipNxCache
+npm exec nx -- run web-e2e:e2e:debug --skipNxCache
+npm exec nx -- run web-e2e:e2e:ui --skipNxCache
+npm exec nx -- run web-e2e:e2e-report
+```
+
+The smoke test opens the real Angular shell and checks its `Daylo` heading, document title and Polish preparation message. Projects `chromium-desktop` (1440 × 900) and `chromium-mobile` (390 × 844, touch/mobile emulation) run by default. Mobile emulation does not replace a physical phone check. To select one project, append `--project=chromium-desktop` or `--project=chromium-mobile` to the E2E command.
+
+Nx starts `web:serve` and waits for `http://localhost:4200` before the tests. Keep that port free when starting a run; Playwright reuses the server owned by the Nx task graph. The normal E2E target disables cache; retain `--skipNxCache` when requesting fresh evidence or using inferred CI targets. Tests do not mock responses. This endpoint-free shell needs only the frontend; API, isolated PostgreSQL and provider fixtures will be added for their corresponding functional tasks.
+
+The headed configuration shows both browser projects; debug opens the Playwright Inspector for desktop, and UI opens the interactive test runner. Stop interactive sessions with Ctrl+C. The report target serves the latest HTML report at a loopback address (default port 9323) until stopped. These interactive commands are for local debugging, not CI verification.
+
+HTML reports live in `dist/.playwright/apps/web-e2e/playwright-report`, test results in its sibling `test-output`, and CI blob reports in `blob-report`. Screenshots and traces are retained on failure, including a first local failure without retries. The report never opens automatically. These artifacts and browser authentication state are ignored by Git and must not be committed.
 
 ## API shell
 

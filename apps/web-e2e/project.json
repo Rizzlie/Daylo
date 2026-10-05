@@ -7,5 +7,24 @@
     "web"
   ],
   "// targets": "to see all targets run: nx show project web-e2e --web",
-  "targets": {}
+  "tags": ["platform:web", "scope:app", "type:e2e"],
+  "targets": {
+    "e2e": {
+      "cache": false,
+      "configurations": {
+        "headed": { "command": "playwright test --headed" },
+        "debug": { "command": "playwright test --debug --project=chromium-desktop" },
+        "ui": { "command": "playwright test --ui" }
+      }
+    },
+    "e2e-report": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "continuous": true,
+      "options": {
+        "cwd": "apps/web-e2e",
+        "command": "playwright show-report ../../dist/.playwright/apps/web-e2e/playwright-report --host=127.0.0.1"
+      }
+    }
+  }
 }
