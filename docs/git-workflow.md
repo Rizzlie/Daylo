@@ -24,7 +24,7 @@ test(groups): cover invitation acceptance
 
 Breaking changes use `!` before the colon and/or a `BREAKING CHANGE:` footer; describe the incompatibility and migration. Separate unrelated changes into focused commits. PR titles follow the same convention and summarize the final net change, not the conversation history.
 
-During F01, add commitlint with the conventional preset, a local commit-message hook, and CI validation of PR titles and PR commit messages. Check valid/invalid examples. Hooks are convenience; CI is the enforcement point. Define the checked commit range against the actual target branch and preserve sufficient Git history. No npm dependency, hook, or workflow is installed by this document. Squash merging is a recommendation, not a repository setting changed here; if adopted, the final squash title must also follow the convention.
+F01-05 provides commitlint with the conventional preset, a Husky commit-message hook, and CI validation of PR titles and PR commit messages. Check valid/invalid examples. Hooks are convenience; CI is the enforcement point. Define the checked commit range against the actual target branch and preserve sufficient Git history. The implementation uses commitlint 21.2.3 and Husky 9.1.7; `npm ci` activates the local hook. PR title checks run even on title edits, with default ignore patterns disabled. Git-generated merge commits use conventional-preset default handling. PR commit checks use the merge base of the event base/head SHA with full history; missing history fails. See the README for commands and `.github/workflows/ci.yml` for the implementation. Squash merging is a recommendation, not a repository setting changed here; if adopted, the final squash title must also follow the convention.
 
 ## PR workflow
 
