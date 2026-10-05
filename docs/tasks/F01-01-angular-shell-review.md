@@ -111,3 +111,11 @@ Update this record and the parent backlog after delivery/review. Do not mark the
 Restored the original Material Symbols Outlined Google Fonts stylesheet and preconnect links at the owner's explicit request for planned icon use. README and current acceptance criteria reflect that decision. The earlier delivery's no-external-resource observation applies only to the version checked before this restoration. No visible icons or other product features were added.
 
 Verification: Nx development serve compiled successfully. Chrome DevTools network inspection confirmed the restored Google Fonts stylesheet returned HTTP 200; console inspection found no errors or warnings. The review-owned server and browser tab were stopped afterward. Broad lint/unit/production checks were not repeated for this link-only restoration; rendered-icon verification belongs to the future icon-using UI slice.
+
+### Publication record — 2026-10-05
+
+- Owner authorization: explicitly invoked `yeet` to commit F01-01 changes using Conventional Commits, push a task branch and create a draft PR with English descriptions.
+- Branch: `f01-01-angular-shell-completion`, targeting `main`.
+- Implementation commit: `db0ab99` — `feat(web): complete the initial Daylo shell`.
+- Draft pull request: [#1 — feat(web): complete the initial Daylo shell](https://github.com/Rizzlie/Daylo/pull/1).
+- Scope: nine reviewed F01-01 files only; F01-02 was not modified. Existing verification evidence was reused without routine duplicate runs.
