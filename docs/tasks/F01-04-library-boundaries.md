@@ -1,72 +1,58 @@
-# F01-04 — Library boundaries and metadata checks
+# F01-04 — Library boundaries
 
 Parent backlog item: **F01** · [Task index](../tasks.md) · [Backlog](../backlog.md)
 
-Discussion status: **Not started — required before implementation.**
-Implementation authorization: **Not granted by this document.**
-Delivery status: Pending. No implementation or verification is claimed by this task file.
+Discussion status: **Completed; scope narrowed by the owner on 2026-10-05.**
+Implementation authorization: **Owner confirmed F01-04 and then requested only the built-in Nx ESLint boundary rule.**
+Delivery status: **Simplified implementation complete; project lint and production builds verified on 2026-10-05; owner accepted the simplified scope on 2026-10-05.**
 
 ## Assumptions and sources
 
-- The existing shells should be inspected and reused. F01 does not include authentication, database migrations or product features. Libraries are created only when necessary for shell and boundary verification.
-- Dependencies: F01-01, F01-02. Confirm their delivered and verified behavior before dependent work.
-- Read [product requirements](../product-requirements.md), [architecture](../architecture.md) and [backlog](../backlog.md). Apply the relevant [frontend](../frontend-architecture.md), [backend](../backend-architecture.md) and [design-system](../design/design-system.md) rules.
-- This is a proposed bounded task. Inspect discoverable implementation facts; resolve material product decisions with the owner during the discussion.
+- Reuse the existing Angular, NestJS and Playwright shells and their platform/scope/type tags.
+- Sources: [product requirements](../product-requirements.md), [architecture](../architecture.md), [backlog](../backlog.md), [frontend architecture](../frontend-architecture.md) and [backend architecture](../backend-architecture.md).
+- No business libraries, application scaffolding, runtime features or dependencies are needed.
 
-## Work to perform
+## Scope
 
-- [ ] Enforce the combined frontend/backend platform, scope, type and public-entrypoint policy.
-- [ ] Add tag metadata validation and narrow backend contract exceptions without weakening frontend rules.
+- Configure only `@nx/enforce-module-boundaries` in the root ESLint configuration.
+- Preserve combined frontend/backend platform, scope and type constraints, narrow backend contract exceptions, empty import allowlists and cycle detection.
+- Complete external-package restrictions using built-in Nx options.
+- Remove the custom `tools/workspace-boundaries` implementation and its workspace targets/configuration.
+- Exclude custom rules, metadata validators, syntax adapters and synthetic fixture infrastructure. CI wiring remains F01-05.
 
 ## Acceptance criteria
 
-The work above must satisfy this task-specific observable outcome:
+- Existing projects use the built-in Nx rule at error severity through their existing lint targets.
+- API projects reject Angular dependencies; utilities reject Angular, NestJS and Prisma dependencies; nested external dependencies are checked.
+- Existing platform/scope/type restrictions and backend contract exceptions remain configured.
+- No custom boundary tooling or root boundary-check targets remain.
+- Lint passes for web, api and web-e2e; production builds pass for web and api.
+- Record native-rule limitations without claiming full metadata or negative-scenario verification.
 
-Allowed and rejected import fixtures, cycles, deep imports, forbidden framework/Prisma imports and missing/duplicate/unknown/path-inconsistent tags produce the specified results. Do not create full business libraries for fixtures.
+## Verification
 
-The owner must confirm the final criteria during discussion. Applicable checks must pass, evidence and limitations must be recorded, and no blocking defect may remain. Implementation, verification and owner acceptance are tracked separately.
+- [x] `npm exec nx -- run-many -t lint -p web api web-e2e --skipNxCache`
+- [x] `npm exec nx -- run-many -t build -p web api --skipNxCache`
+- [x] `git diff --check` and inspect the final diff for custom-tooling references.
+- Browser and runtime acceptance checks are inapplicable: this change affects ESLint configuration and documentation only.
 
-## Verification plan
+## Discussion topics and decision record
 
-- [ ] Allowed and rejected import fixtures, cycles, deep imports, forbidden framework/Prisma imports and missing/duplicate/unknown/path-inconsistent tags produce the specified results.
-- [ ] Do not create full business libraries for fixtures.
-
-- Inspect available Nx targets and use project generators/targets where applicable; select exact commands after inspection rather than inventing flags.
-- Run affected lint, meaningful tests and production builds. For API contract changes, export/validate OpenAPI, regenerate the Angular client and check drift.
-- For user-facing changes, run applicable real-stack Playwright scenarios and independently inspect the running UI through an available browser tool at relevant desktop/mobile widths, including keyboard behavior and console/network errors where supported.
-- Use synthetic data and keep secrets, authentication state, reports, screenshots and traces out of version control.
-- Record unavailable checks as incomplete. For review/manual-only tasks, mark inapplicable automated checks with a reason; do not rerun unrelated checks solely to fill the report.
-
-## Discussion before implementation
-
-Discuss this task with the owner before application changes:
-
-1. Which representative allowed/rejected fixtures prove each approved boundary without adding product placeholders?
-2. Confirm assumptions, dependencies, scope boundaries and the observable acceptance scenarios above.
-3. Agree on implementation approach, affected areas, required checks and any remaining limitations; resolve material ambiguities explicitly.
-
-Record the discussion outcome below. Agreement on documentation alone is not implementation authorization. Start implementation only after the discussion is complete and the owner explicitly requests implementation of the agreed scope. Do not interpret silence or a request to discuss as approval.
-
-### Decision record
-
-- Discussion date: Pending.
-- Agreed assumptions and behavior: Pending.
-- Agreed scope and exclusions: Pending.
-- Agreed approach and verification: Pending.
-- Unresolved questions: The task-specific discussion topic above; further questions may emerge from inspection.
-- Owner implementation authorization: Pending; record the actual instruction and date when provided.
+- The original discussion included custom metadata and public-entrypoint checks and fixtures.
+- The owner explicitly narrowed the implementation: “Let's just use nx boundaries rule in eslint, do not create custom workspace-boundaries”. This supersedes the earlier broader scope.
+- Approach: use the existing root rule and project lint targets; remove the custom implementation and restore Nx/package configuration.
+- Metadata completeness/cardinality, path consistency, capability-tag ownership and additional canonical-alias validation are outside this delivery. The native rule's import checks remain enabled.
+- No unresolved implementation questions. Broader enforcement requires a separately requested scope.
 
 ## Scope boundaries
 
-Only the work listed above belongs to this task. Follow the parent backlog boundary and approved architecture; do not implement subsequent tasks, speculative libraries or deferred MVP features. Preserve existing delivered work and original design exports. Git initialization, commits, publication and deployment require their own authorization.
+Only this ESLint configuration and related documentation belong to F01-04. Do not start subsequent tasks. Commits, publication and deployment require their own authorization.
 
 ## Delivery and review record
 
-- Delivered behavior: Pending.
-- Checks executed and outcomes: Pending.
-- Browser scenarios and viewport coverage: Pending or N/A with a reason.
-- Known limitations / incomplete verification: Pending.
-- Owner acceptance: Pending.
-- Retrospective and workflow improvements: Pending.
-
-Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.
+- Delivered behavior: retained the existing Nx platform/scope/type policy and added API Angular restrictions, framework-neutral utility restrictions and nested external-import checking. Removed all custom boundary files, rules, fixture harnesses, metadata validation and root workspace targets. No runtime code, libraries or dependencies changed.
+- Checks and outcomes: fresh Nx lint passed for web, api and web-e2e; fresh production builds passed for web and api, all with cache skipped. `git diff --check` passed and the final configuration has no custom-tooling references. The sandbox initially denied child-process spawning (`EPERM`); checks succeeded with expanded process permissions. Results from the removed custom fixture harness do not verify this final scope.
+- Browser verification: inapplicable; no user-facing change.
+- Limitations: project lint exercises the current shells, which contain no business libraries. Representative allowed/rejected library scenarios and metadata validity were not independently verified. Built-in import checks do not establish canonical-alias enforcement or capability ownership. CI wiring remains F01-05.
+- Owner acceptance: the owner approved the simplified result on 2026-10-05 and requested a PR using `yeet`. F01 remains incomplete.
+- Retrospective: the initial implementation exceeded the owner's desired complexity. Prefer existing Nx capabilities and state their limits before proposing custom enforcement.

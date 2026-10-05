@@ -38,6 +38,14 @@ Verified: fresh E2E passed 2 tests after installing the missing Chromium revisio
 
 Retrospective: confirm browser installation and resolved Nx serve/readiness dependencies; verify nested authentication-state ignore rules; explicitly stop owned child servers after interactive wrappers exit. Automated E2E does not establish independent browser acceptance.
 
+### F01-04 library boundaries — 2026-10-05
+
+The owner narrowed delivery to the built-in `@nx/enforce-module-boundaries` ESLint rule. The existing platform/scope/type policy and narrow backend contract exceptions are retained. API Angular restrictions, framework-neutral utilities and nested external-import checks complete this configuration. Custom boundary tooling, metadata validation, fixtures and root workspace targets were removed. No libraries, runtime changes or dependencies were added.
+
+Verified for the simplified configuration: fresh Nx lint passed for web/api/web-e2e, fresh production builds passed for web/api, and `git diff --check` passed. Tag completeness, path consistency, capability-tag ownership and additional canonical-entrypoint validation are outside this delivery. CI wiring remains F01-05; the owner accepted the simplified scope on 2026-10-05; F01 remains incomplete. See [F01-04 delivery record](tasks/F01-04-library-boundaries.md#delivery-and-review-record).
+
+Retrospective: the initial implementation exceeded the desired complexity. Prefer the existing Nx rule and record its enforcement limits before proposing custom tooling.
+
 ### Requested M05 theme slice — 2026-10-05
 
 Implemented: global Angular Material light/dark theme from `docs/design/tokens.json`, system default, document-level explicit variant hooks, typography and supported card/form-field styling. Production build and lint passed; shell browser checks passed at desktop/mobile widths. See [theme verification](design/design-system.md#theme-implementation--2026-10-05) for evidence and limitations. Human acceptance, rendered Material controls/overlays, theme preference UI/persistence and the remainder of M05 are pending. This slice does not complete M05 or authorize further implementation.
@@ -62,7 +70,7 @@ Dependencies: F01 -> F02 -> F03 -> F04 -> F05 -> F06. Establish Playwright in F0
 
 Create the workspace and minimal runnable application shells. Add Nx tags and rules for the agreed platform boundaries, a Playwright smoke test, and development instructions. Create only libraries needed for the shells and boundary verification. Do not implement authentication, task features, or database migrations in F01.
 
-Implement the tag policy in [Frontend architecture](frontend-architecture.md): one platform/scope/type tag per project, root ESLint module-boundary constraints at error severity, metadata validation, public-entrypoint restrictions, and positive/negative verification fixtures. Preserve the `area/features/name` library layout. Do not mark boundaries verified based only on linting valid imports.
+Implement the tag policy in [Frontend architecture](frontend-architecture.md): one platform/scope/type tag per project, root ESLint module-boundary constraints at error severity, metadata validation, public-entrypoint restrictions, and positive/negative verification fixtures. Preserve the `area/features/name` library layout. F01-04 was narrowed by the owner to the built-in Nx ESLint rule; custom metadata validation and synthetic positive/negative fixtures are excluded from that delivery. Linting valid current imports does not establish complete policy verification.
 
 Pin mutually compatible tool versions when implementing F01 and record the chosen versions. Use official generators where appropriate. Review the resulting workspace before proceeding.
 
