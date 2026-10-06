@@ -46,6 +46,14 @@ Verified for the simplified configuration: fresh Nx lint passed for web/api/web-
 
 Retrospective: the initial implementation exceeded the desired complexity. Prefer the existing Nx rule and record its enforcement limits before proposing custom tooling.
 
+### F01-05 commit conventions and CI — 2026-10-05
+
+Implemented the owner-requested affected PR checks with three GitHub Actions jobs: conventions, quality and E2E. PRs use explicit event base/head SHA and full history; main pushes use full target sets. Commitlint and Husky enforce local/CI message conventions, with strict PR titles checked on edits. Shared workflow/runtime inputs affect application targets, and E2E installs Chromium only when selected. Versions and commands are documented; no custom boundary validation or runtime features were added.
+
+Locally verified: clean npm ci, positive/negative commit/title examples and actual hook execution, merge-base commit validation, representative affected selections, empty-diff/missing-history handling, six lint/unit/build tasks and two desktop/mobile smoke cases. actionlint validated workflow syntax and git diff --check passed. GitHub-hosted execution/artifact upload and owner acceptance remain pending; F01 remains incomplete. See [F01-05 delivery record](tasks/F01-05-commit-conventions-and-ci.md#delivery-and-review-record).
+
+Retrospective: test affected selection for global CI inputs, remove inherited failing test placeholders, and use native npm.cmd for PowerShell pipelines. Local verification does not establish hosted CI success.
+
 ### Requested M05 theme slice — 2026-10-05
 
 Implemented: global Angular Material light/dark theme from `docs/design/tokens.json`, system default, document-level explicit variant hooks, typography and supported card/form-field styling. Production build and lint passed; shell browser checks passed at desktop/mobile widths. See [theme verification](design/design-system.md#theme-implementation--2026-10-05) for evidence and limitations. Human acceptance, rendered Material controls/overlays, theme preference UI/persistence and the remainder of M05 are pending. This slice does not complete M05 or authorize further implementation.

@@ -2,6 +2,13 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "neverConnectToCloud": true,
   "analytics": false,
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": [
+      "{workspaceRoot}/.node-version",
+      "{workspaceRoot}/.github/workflows/ci.yml"
+    ]
+  },
   "targetDefaults": {
     "@angular/build:application": {
       "cache": true,

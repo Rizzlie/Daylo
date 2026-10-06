@@ -113,3 +113,34 @@ npm exec nx -- run api:build
 The server listens on port `3000` by default; `PORT` overrides it. Routes will use the `/api` prefix. No controllers are registered, so `GET /api` currently returns NestJS's JSON 404 response. Database, authentication, and API contracts are pending. No API test target is configured until meaningful behavior exists to test.
 
 In a restricted agent session that blocks Nx sockets or plugin subprocesses, set `NX_DAEMON=false` and `NX_ISOLATE_PLUGINS=false` for that session. Disabling the daemon also disables automatic server restarts on file changes.
+
+## Commit conventions and CI
+
+Use English Conventional Commits for commit messages and PR titles, for example `ci(workspace): add affected PR checks`. Commitlint CLI/config-conventional 21.2.3 and Husky 9.1.7 are pinned in the npm lockfile. `npm ci` installs the local `commit-msg` hook through `prepare`; Git for Windows provides the shell used by Husky. Hook files keep LF endings. The hook validates messages only; it does not run lint or tests. English wording and imperative phrasing remain review responsibilities.
+
+Check examples in PowerShell without creating commits:
+
+```powershell
+'ci(workspace): add affected PR checks' | npm.cmd exec --no -- commitlint --strict
+'update CI' | npm.cmd exec --no -- commitlint --strict
+'ci(workspace): add affected PR checks' | npm.cmd exec --no -- commitlint --config commitlint.pr.config.cjs --strict
+```
+
+The first and third examples pass; the second fails. PR-title validation disables commitlint's default merge/revert ignores. Git-generated merge commits retain the preset's default handling when checking real commit history.
+
+`.github/workflows/ci.yml` runs on PRs targeting `main` (including title edits and draft PRs), and pushes to `main`. Three jobs check conventions, quality and E2E. PR jobs check out the branch head with full history and pass the event's base/head SHA to Nx; commitlint checks from their merge base to the head. Missing history fails the check. Titles enter the command through an environment variable, not shell interpolation. Jobs use read-only repository permissions and no application secrets.
+
+For PRs, Nx runs only affected projects and their dependents:
+
+```powershell
+$taskBase = git rev-parse origin/main
+$taskHead = git rev-parse HEAD
+npm exec nx -- affected -t lint test build --base=$taskBase --head=$taskHead
+npm exec nx -- affected -t e2e --base=$taskBase --head=$taskHead
+```
+
+These commands compare committed revisions. For local work before committing, use `npm exec nx -- affected -t lint test build --uncommitted`. Pushes to `main` run the full `lint`, `test`, `build` and `e2e` targets. Quality currently covers web/API/E2E lint, web unit tests and both production builds. The root's obsolete failing test placeholder was removed; no API unit-test target exists yet.
+
+The E2E job selects projects first and installs Chromium with OS dependencies only when an E2E target is selected. The existing web-to-E2E dependency includes desktop/mobile smoke when the frontend changes. The uncached `e2e` target uses the real frontend. API/database integration remains in later tasks. Reports and failure artifacts are uploaded for seven days, including failed runs.
+
+`.node-version` pins Node.js 24.19.0. Workflow/runtime files are shared Nx inputs so their changes affect application checks too. Official checkout 7.0.1, setup-node 7.0.0 and upload-artifact 7.0.1 actions are pinned by commit SHA; npm download caching is enabled, with no Nx Cloud or persisted Nx result cache. Boundary checking remains the built-in Nx ESLint rule from F01-04. CI does not add custom metadata validation or change branch protection.
