@@ -30,7 +30,7 @@ Task discussions remain **not started** unless their individual records state ot
 
 | Task | Title | Delivery status |
 | --- | --- | --- |
-| [F02-01](tasks/F02-01-local-postgresql-runtime.md) | Local PostgreSQL and runtime configuration | Pending |
+| [F02-01](tasks/F02-01-local-postgresql-runtime.md) | Local PostgreSQL and runtime configuration | Implemented and verified; owner acceptance pending |
 | [F02-02](tasks/F02-02-database-readiness.md) | Database-aware API readiness | Pending |
 
 ### F03
