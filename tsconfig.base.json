@@ -14,7 +14,11 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "strict": false,
-    "paths": {}
+    "paths": {
+      "@daylo/api/core/configuration": [
+        "./libs/api/core/configuration/src/index.ts"
+      ]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }

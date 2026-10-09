@@ -4,7 +4,7 @@ Daylo is a personal and shared task planner built incrementally with coding agen
 
 ## Project status
 
-Planning documentation, project-local agent skills, an Angular shell with Daylo themes, and an empty NestJS API shell. Foundation and MVP acceptance remain pending; see the backlog for delivered slices.
+Planning documentation, project-local agent skills, an Angular shell with Daylo themes, an empty NestJS API shell, and a Docker Compose PostgreSQL development runtime. Foundation and MVP acceptance remain pending; see the backlog for delivered slices.
 
 The repository will be initialized by its owner.
 
@@ -67,7 +67,7 @@ Serve defaults to development at `http://localhost:4200/`. If the port is occupi
 
 The initial page shows the `Daylo` heading and a Polish preparation message. Its document title is `Daylo` and language is Polish. Themes follow system appearance by default; document-level `data-theme="light"` or `data-theme="dark"` overrides remain available. Plus Jakarta Sans is bundled locally; Material Symbols Outlined is loaded from Google Fonts for planned icon use, with preconnect links to its stylesheet and font hosts. Product navigation, authentication and task screens remain pending.
 
-API proxy wiring and full-stack E2E setup remain pending before API-consuming features.
+Development requests under `/api` are proxied to the NestJS server at `http://localhost:3000`. Full-stack E2E setup remains pending before API-consuming features.
 
 ## Frontend shell smoke tests
 
@@ -100,6 +100,33 @@ npm exec nx -- run-many -t lint -p web api web-e2e --skipNxCache
 
 F01-04 uses only the built-in Nx rule. It adds no custom rules, metadata validator, fixture harness or workspace targets. Tag completeness, path consistency and capability-tag ownership are not automatically validated. Public entrypoints follow Nx's built-in import checks; no additional canonical-alias validation is implemented. CI wiring remains F01-05.
 
+## Local runtime
+
+Install and start Docker Desktop. Copy the documented local configuration once, then start PostgreSQL from the workspace root:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d postgres
+docker compose ps
+```
+
+The Compose service uses the official `postgres:17-alpine` image, exposes PostgreSQL at `localhost:5433`, and stores development data in the named `daylo-postgres-data` volume. Port `5433` avoids the PostgreSQL service already using the owner's standard `5432` port; change `POSTGRES_PORT` and the port in `DATABASE_URL` together if needed. The example credentials are local development values only. Change `POSTGRES_PASSWORD` and its matching `DATABASE_URL` password together. The checked-in `.env.example` contains no production secret; `.env` and environment-specific variants remain ignored.
+
+Stop the container while retaining data:
+
+```powershell
+docker compose down
+```
+
+Reset the development database only when its data can be discarded:
+
+```powershell
+docker compose down -v
+docker compose up -d postgres
+```
+
+The reset command permanently deletes the named development volume. Automated tests will use separate database configuration in their later task.
+
 ## API shell
 
 The empty NestJS application lives in `apps/api`. Install dependencies with `npm ci`, then use:
@@ -110,7 +137,7 @@ npm exec nx -- run api:lint
 npm exec nx -- run api:build
 ```
 
-The server listens on port `3000` by default; `PORT` overrides it. Routes will use the `/api` prefix. No controllers are registered, so `GET /api` currently returns NestJS's JSON 404 response. Database, authentication, and API contracts are pending. No API test target is configured until meaningful behavior exists to test.
+The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, and `FRONTEND_ORIGIN` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error. Routes use the `/api` prefix. No controllers are registered, so `GET /api` currently returns NestJS's JSON 404 response. Prisma access, database-aware readiness, authentication, and API contracts remain pending. Configuration validation tests live in the `api-core-configuration` project.
 
 In a restricted agent session that blocks Nx sockets or plugin subprocesses, set `NX_DAEMON=false` and `NX_ISOLATE_PLUGINS=false` for that session. Disabling the daemon also disables automatic server restarts on file changes.
 

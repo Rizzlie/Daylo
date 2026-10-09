@@ -1,0 +1,22 @@
+{
+  "name": "api-core-configuration",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/core/configuration/src",
+  "projectType": "library",
+  "tags": [
+    "platform:api",
+    "scope:core",
+    "type:api-infrastructure"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "coverage/libs/api/core/configuration"
+      }
+    }
+  }
+}

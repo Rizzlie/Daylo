@@ -58,6 +58,14 @@ Retrospective: test affected selection for global CI inputs, remove inherited fa
 
 Implemented: global Angular Material light/dark theme from `docs/design/tokens.json`, system default, document-level explicit variant hooks, typography and supported card/form-field styling. Production build and lint passed; shell browser checks passed at desktop/mobile widths. See [theme verification](design/design-system.md#theme-implementation--2026-10-05) for evidence and limitations. Human acceptance, rendered Material controls/overlays, theme preference UI/persistence and the remainder of M05 are pending. This slice does not complete M05 or authorize further implementation.
 
+### Authorized F02-01 local PostgreSQL runtime — 2026-10-06
+
+Implemented: Docker Compose runs the official PostgreSQL 17 Alpine image with a health check and persistent development volume; documented local configuration stays outside Git, and reset is an explicit destructive command. Daylo uses host port `5433` because the owner's existing healthy `homey-postgres` container occupies `5432`. The API consumes Zod 4-validated runtime configuration through a tagged Nx infrastructure library, and Angular development serving proxies `/api` to NestJS. Prisma, migrations and database-aware readiness remain in F03 and F02-02. The owner-requested Zod follow-up was applied and freshly verified on 2026-10-09.
+
+Verified: Compose rendering, container health, PostgreSQL readiness/query and host port reachability passed. Six configuration tests, lint for API/configuration/web, and both production builds passed without cache. Valid API startup, explicit missing/invalid configuration failures, and the real Angular-to-NestJS proxy path passed. No rendered UI changed, so browser viewport inspection was inapplicable. Owner acceptance is pending; F02 remains incomplete until F02-02 is delivered and accepted. See [F02-01 delivery record](tasks/F02-01-local-postgresql-runtime.md#delivery-and-review-record).
+
+Retrospective: inspect host port ownership before starting Compose, verify dependency module format in addition to peer ranges, and check generator-modified root files for newline-only churn before final validation.
+
 ## 1. Foundation backlog
 
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
