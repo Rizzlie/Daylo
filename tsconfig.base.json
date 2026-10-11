@@ -20,6 +20,9 @@
       ],
       "@daylo/api/core/database": [
         "./libs/api/core/database/src/index.ts"
+      ],
+      "@daylo/api/core/transactions/contracts": [
+        "./libs/api/core/transactions/contracts/src/index.ts"
       ]
     }
   },

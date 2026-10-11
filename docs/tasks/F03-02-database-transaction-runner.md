@@ -2,9 +2,9 @@
 
 Parent backlog item: **F03** · [Task index](../tasks.md) · [Backlog](../backlog.md)
 
-Discussion status: **Not started — required before implementation.**
-Implementation authorization: **Not granted by this document.**
-Delivery status: Pending. No implementation or verification is claimed by this task file.
+Discussion status: **Completed on 2026-10-11.**
+Implementation authorization: **Granted by the owner on 2026-10-11 for the agreed F03-02 scope.**
+Delivery status: **Implemented and verified on 2026-10-11; owner acceptance pending.**
 
 ## Assumptions and sources
 
@@ -15,9 +15,9 @@ Delivery status: Pending. No implementation or verification is claimed by this t
 
 ## Work to perform
 
-- [ ] Add database lifecycle and minimal transaction contracts/runner.
-- [ ] Area adapters can participate in the same transaction without exposing Prisma through public/internal contracts.
-- [ ] Business use cases remain in later tasks.
+- [x] Add database lifecycle and minimal transaction contracts/runner.
+- [x] Area adapters can participate in the same transaction without exposing Prisma through public/internal contracts.
+- [x] Business use cases remain in later tasks.
 
 ## Acceptance criteria
 
@@ -29,8 +29,8 @@ The owner must confirm the final criteria during discussion. Applicable checks m
 
 ## Verification plan
 
-- [ ] Integration checks prove same-transaction participation, commit/rollback and NestJS provider resolution.
-- [ ] Invitation acceptance behavior is verified in M03-03.
+- [x] Integration checks prove same-transaction participation, commit/rollback and NestJS provider resolution.
+- [x] Invitation acceptance behavior remains assigned to M03-03 and is not claimed by this task.
 
 - Inspect available Nx targets and use project generators/targets where applicable; select exact commands after inspection rather than inventing flags.
 - Run affected lint, meaningful tests and production builds. For API contract changes, export/validate OpenAPI, regenerate the Angular client and check drift.
@@ -50,12 +50,12 @@ Record the discussion outcome below. Agreement on documentation alone is not imp
 
 ### Decision record
 
-- Discussion date: Pending.
-- Agreed assumptions and behavior: Pending.
-- Agreed scope and exclusions: Pending.
-- Agreed approach and verification: Pending.
-- Unresolved questions: The task-specific discussion topic above; further questions may emerge from inspection.
-- Owner implementation authorization: Pending; record the actual instruction and date when provided.
+- Discussion date: 2026-10-11.
+- Agreed assumptions and behavior: The database infrastructure owns Prisma lifecycle and executes atomic work. Feature use cases receive a narrow `TransactionRunner` contract and pass an opaque transaction context to participating adapters so all required operations use the same PostgreSQL transaction without exposing Prisma through the contract.
+- Agreed scope and exclusions: Add the transaction contract library, Prisma lifecycle provider and transaction runner. Prove the infrastructure with two test adapters using the existing `users` and `user_preferences` tables. Business repositories, invitation behavior, endpoints, schema or migration changes, event publication and UI remain excluded.
+- Agreed approach and verification: Use a NestJS runtime token for the runner, connect and disconnect the Prisma client through Nest lifecycle hooks, and implement the runner with a Prisma interactive transaction. Verify NestJS provider resolution and real-PostgreSQL commit, rollback and shared-context participation; run affected lint/tests and the API production build. Browser and Playwright verification are not applicable because the task has no user-facing behavior.
+- Unresolved questions: None.
+- Owner implementation authorization: Granted on 2026-10-11 with the instruction `ok to zacznijmy implementacje` after reviewing the purpose and proposed scope.
 
 ## Scope boundaries
 
@@ -63,11 +63,12 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 
 ## Delivery and review record
 
-- Delivered behavior: Pending.
-- Checks executed and outcomes: Pending.
-- Browser scenarios and viewport coverage: Pending or N/A with a reason.
-- Known limitations / incomplete verification: Pending.
+- Delivered behavior: Added a framework-neutral transaction contract library with an opaque `TransactionContext`, generic `TransactionRunner` and explicit NestJS token. The database infrastructure now owns a Prisma 7 client backed by the PostgreSQL adapter, connects and disconnects through NestJS lifecycle hooks, executes interactive transactions and validates that adapters use a context created by its runner. `ApiCoreDatabaseModule` exports the runner token and `PrismaService` for data-access implementations. No schema, migration, endpoint or business-use-case behavior changed.
+- Checks executed and outcomes: Fresh contract/database lint and the database test target passed without cache. The final ordinary suite covers 10 non-database tests and skips the opt-in integration suite when `RUN_DATABASE_INTEGRATION` is absent. Against a newly created `daylo_f03_02_verify` PostgreSQL database with the existing migration applied, all 11 tests passed, including NestJS provider resolution, lifecycle initialization/closure, two adapters committing through one context, both writes rolling back after an error and foreign-context rejection. A fresh API production build passed. After CI exposed that the ignored generated client was absent on a clean checkout, the database test and API build targets were made dependent on `prisma-generate`; deleting the local client and rerunning the full affected lint/test/build command then passed with 10 unit tests and the API production build. `git diff --check` passed.
+- Browser scenarios and viewport coverage: N/A. F03-02 changes backend infrastructure only and exposes no user-facing or HTTP behavior.
+- Known limitations / incomplete verification: Business repositories and transaction orchestration remain in their feature tasks. Invitation acceptance is intentionally deferred to M03-03, and post-commit event publication remains a later updates task. The integration suite requires the explicit `RUN_DATABASE_INTEGRATION=true` flag and a migrated test database. The isolated verification database was removed and PostgreSQL was returned to its prior stopped state.
+- Draft pull request: [#9 — feat(api): add database transaction runner](https://github.com/Rizzlie/Daylo/pull/9).
 - Owner acceptance: Pending.
-- Retrospective and workflow improvements: Pending.
+- Retrospective and workflow improvements: Gate real-database suites with an explicit opt-in flag rather than inferring intent from `DATABASE_URL`, because local configuration may be present while PostgreSQL is stopped. Keep transaction-context construction private to infrastructure and verify both compile-time contract separation and runtime context provenance. Before claiming a build that imports ignored generated code, remove the local artifact and verify that Nx regenerates it through declared target dependencies.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.

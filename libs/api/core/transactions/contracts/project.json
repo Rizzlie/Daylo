@@ -1,0 +1,12 @@
+{
+  "name": "api-core-transactions-contracts",
+  "$schema": "../../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/core/transactions/contracts/src",
+  "projectType": "library",
+  "tags": [
+    "platform:api",
+    "scope:core",
+    "type:api-contract"
+  ],
+  "targets": {}
+}
