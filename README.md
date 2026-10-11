@@ -4,7 +4,7 @@ Daylo is a personal and shared task planner built incrementally with coding agen
 
 ## Project status
 
-Planning documentation, project-local agent skills, an Angular shell with Daylo themes, an empty NestJS API shell, and a Docker Compose PostgreSQL development runtime. Foundation and MVP acceptance remain pending; see the backlog for delivered slices.
+Planning documentation, project-local agent skills, an Angular shell with Daylo themes, a NestJS API shell with database readiness, and a Docker Compose PostgreSQL development runtime. Foundation and MVP acceptance remain pending; see the backlog for delivered slices.
 
 The repository will be initialized by its owner.
 
@@ -129,7 +129,7 @@ The reset command permanently deletes the named development volume. Automated te
 
 ## API shell
 
-The empty NestJS application lives in `apps/api`. Install dependencies with `npm ci`, then use:
+The NestJS application lives in `apps/api`. Install dependencies with `npm ci`, then use:
 
 ```powershell
 npm exec nx -- run api:serve
@@ -137,7 +137,9 @@ npm exec nx -- run api:lint
 npm exec nx -- run api:build
 ```
 
-The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, and `FRONTEND_ORIGIN` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error. Routes use the `/api` prefix. No controllers are registered, so `GET /api` currently returns NestJS's JSON 404 response. Prisma access, database-aware readiness, authentication, and API contracts remain pending. Configuration validation tests live in the `api-core-configuration` project.
+The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, and `FRONTEND_ORIGIN` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error. Routes use the `/api` prefix.
+
+`GET /api/health/ready` checks PostgreSQL with a `SELECT 1` query and a 1000 ms deadline. It returns HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when the database is available. A failed or timed-out check returns HTTP 503 with `{"status":"error","checks":{"database":"down"}}`; the response does not expose connection details or raw database errors. Prisma persistence, authentication, and generated API contracts remain pending. Configuration validation tests live in the `api-core-configuration` project, and readiness tests live in `api-core-database`.
 
 In a restricted agent session that blocks Nx sockets or plugin subprocesses, set `NX_DAEMON=false` and `NX_ISOLATE_PLUGINS=false` for that session. Disabling the daemon also disables automatic server restarts on file changes.
 

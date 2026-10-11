@@ -2,9 +2,9 @@
 
 Parent backlog item: **F02** · [Task index](../tasks.md) · [Backlog](../backlog.md)
 
-Discussion status: **Not started — required before implementation.**
-Implementation authorization: **Not granted by this document.**
-Delivery status: Pending. No implementation or verification is claimed by this task file.
+Discussion status: **Completed with the owner on 2026-10-09.**
+Implementation authorization: **Granted by the owner on 2026-10-09.**
+Delivery status: **Implemented and verified on 2026-10-11; owner acceptance pending.**
 
 ## Assumptions and sources
 
@@ -15,7 +15,7 @@ Delivery status: Pending. No implementation or verification is claimed by this t
 
 ## Work to perform
 
-- [ ] Add API readiness including a database probe and explicit unavailable response; document the endpoint.
+- [x] Add API readiness including a database probe and explicit unavailable response; document the endpoint.
 
 ## Acceptance criteria
 
@@ -27,7 +27,7 @@ The owner must confirm the final criteria during discussion. Applicable checks m
 
 ## Verification plan
 
-- [ ] Readiness succeeds with DB available and fails when DB is down; recovery succeeds after DB returns.
+- [x] Readiness succeeds with DB available and fails when DB is down; recovery succeeds after DB returns.
 
 - Inspect available Nx targets and use project generators/targets where applicable; select exact commands after inspection rather than inventing flags.
 - Run affected lint, meaningful tests and production builds. For API contract changes, export/validate OpenAPI, regenerate the Angular client and check drift.
@@ -47,12 +47,12 @@ Record the discussion outcome below. Agreement on documentation alone is not imp
 
 ### Decision record
 
-- Discussion date: Pending.
-- Agreed assumptions and behavior: Pending.
-- Agreed scope and exclusions: Pending.
-- Agreed approach and verification: Pending.
-- Unresolved questions: The task-specific discussion topic above; further questions may emerge from inspection.
-- Owner implementation authorization: Pending; record the actual instruction and date when provided.
+- Discussion date: 2026-10-09.
+- Agreed assumptions and behavior: Expose `GET /api/health/ready`. Return HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when a PostgreSQL `SELECT 1` probe succeeds. Return HTTP 503 with `{"status":"error","checks":{"database":"down"}}` when the probe fails or exceeds 1000 ms. Do not expose connection details or raw database errors.
+- Agreed scope and exclusions: Add only database-aware readiness and its endpoint documentation. Prisma, migrations, database lifecycle/transaction support, liveness, Swagger/OpenAPI and rendered UI changes remain in later tasks.
+- Agreed approach and verification: Add a focused `api-core-database` infrastructure library, integrate it into the API composition root, and cover the response contract and failure mapping with meaningful tests. Verify the real runtime sequence database available, unavailable and available again, plus affected lint, tests and the API production build.
+- Unresolved questions: None.
+- Owner implementation authorization: Granted through the instruction “tak, zatwierdzam” on 2026-10-09 after reviewing the proposed contract, scope and verification.
 
 ## Scope boundaries
 
@@ -60,11 +60,11 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 
 ## Delivery and review record
 
-- Delivered behavior: Pending.
-- Checks executed and outcomes: Pending.
-- Browser scenarios and viewport coverage: Pending or N/A with a reason.
-- Known limitations / incomplete verification: Pending.
+- Delivered behavior: Added `GET /api/health/ready` through the focused `api-core-database` infrastructure library. The endpoint runs `SELECT 1` with a 1000 ms overall deadline and returns the agreed stable 200/503 bodies without connection details or raw database errors. The API composition root imports the module, and the README documents the endpoint and scope boundary.
+- Checks executed and outcomes: Fresh `api-core-database:test` passed three service and two controller tests covering success, query failure, timeout and 503 mapping. Fresh lint passed for `api-core-database` and `api`; the API production build passed. A real API and PostgreSQL sequence returned 200 with `{"status":"ok","checks":{"database":"up"}}`, then 503 with `{"status":"error","checks":{"database":"down"}}` while PostgreSQL was stopped, then the same 200 response after PostgreSQL became healthy again. All Nx checks ran without cache.
+- Browser scenarios and viewport coverage: Not applicable. This backend-only endpoint has no rendered UI change; the real HTTP contract was exercised directly.
+- Known limitations / incomplete verification: Swagger/OpenAPI export and Angular client generation remain intentionally deferred to F04/F05 under the agreed scope. The local API and PostgreSQL processes started for verification were stopped afterward.
 - Owner acceptance: Pending.
-- Retrospective and workflow improvements: Pending.
+- Retrospective and workflow improvements: The restricted session again blocked Nx plugin subprocesses, so verification used the documented daemon/plugin-isolation settings outside the sandbox. Docker Desktop was initially stopped; checking engine readiness before Compose reduced ambiguity, and the final sequence restored the database before cleanup.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.
