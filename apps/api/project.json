@@ -9,6 +9,17 @@
     "type:app"
   ],
   "targets": {
+    "build": {
+      "dependsOn": [
+        "^build",
+        {
+          "projects": [
+            "api-core-database"
+          ],
+          "target": "prisma-generate"
+        }
+      ]
+    },
     "prune-lockfile": {
       "dependsOn": [
         "build"

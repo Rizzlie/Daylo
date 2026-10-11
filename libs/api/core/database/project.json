@@ -15,7 +15,10 @@
         "{projectRoot}/src/generated/prisma"
       ],
       "options": {
-        "command": "prisma generate"
+        "command": "prisma generate",
+        "env": {
+          "DATABASE_URL": "postgresql://daylo:daylo-local@localhost:5433/daylo"
+        }
       }
     },
     "prisma-migrate-deploy": {
@@ -34,6 +37,9 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
+      "dependsOn": [
+        "prisma-generate"
+      ],
       "outputs": [
         "{options.reportsDirectory}"
       ],

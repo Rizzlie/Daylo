@@ -24,7 +24,9 @@ npm exec nx -- run api-core-database:prisma-verify
 `prisma-migrate-deploy` applies committed migrations. `prisma-verify` expects an
 already migrated, isolated PostgreSQL database and rolls its synthetic records
 back before exiting. The generated client is reproducible output and is not
-committed.
+committed. The database test target and API build depend on `prisma-generate`,
+which uses a non-secret placeholder URL because client generation does not
+connect to PostgreSQL.
 
 This library owns Daylo's PostgreSQL readiness probe and the
 `GET /api/health/ready` controller.
