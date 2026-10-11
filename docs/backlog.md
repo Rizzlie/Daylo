@@ -74,6 +74,14 @@ Verified: five focused service/controller tests passed, lint passed for the data
 
 Retrospective: check Docker engine readiness before Compose verification and stop processes owned by the verification run. Restricted Nx plugin subprocesses required the documented daemon/plugin-isolation settings and execution outside the sandbox.
 
+### Authorized F03-01 Prisma schema and migrations — 2026-10-11
+
+Implemented: pinned Prisma 7.10 CLI/client and PostgreSQL adapter dependencies; the agreed User, Preferences, Session, OAuthTransaction, Group, Membership, Invitation and Task models; and an initial versioned migration. UUID identifiers, native PostgreSQL date/time values, UTC timestamps, uniqueness, indexes, required relations and deletion rules are encoded in the schema/migration. Database checks protect normalized emails, invitation resolution, task completion and positive task versions. Nx targets own client generation, migration deployment and repeatable schema verification. Avatar persistence/transport is omitted as agreed. Runtime Prisma lifecycle/transaction support remains F03-02.
+
+Verified: Prisma format/validation and client generation passed. The migration applied to a newly created empty isolated PostgreSQL database; the synthetic verifier confirmed eight tables, ten required foreign keys/deletion rules, identity/email, session token/CSRF, OAuth state/nonce and membership uniqueness, plus database checks. Schema/database drift was empty. Five database-library tests, database/API lint and the API production build passed without cache. No UI or HTTP contract changed, so browser inspection was inapplicable. The isolated database was deleted and PostgreSQL was returned to its prior stopped state. Owner acceptance is pending; F03 remains incomplete until F03-02 is delivered and the parent scope is accepted.
+
+Retrospective: provide an explicit non-secret `DATABASE_URL` for Prisma 7 tooling when no local `.env` exists, do not trust a zero wrapper exit after sandboxed Nx reports `spawn EPERM`, and verify hand-authored checks and foreign-key deletion behavior against an empty real database.
+
 ## 1. Foundation backlog
 
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
