@@ -9,6 +9,29 @@
     "type:api-infrastructure"
   ],
   "targets": {
+    "prisma-generate": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/src/generated/prisma"
+      ],
+      "options": {
+        "command": "prisma generate"
+      }
+    },
+    "prisma-migrate-deploy": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "prisma migrate deploy"
+      }
+    },
+    "prisma-verify": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/api/core/database/scripts/verify-schema.mjs"
+      }
+    },
     "test": {
       "executor": "@nx/vitest:test",
       "outputs": [
