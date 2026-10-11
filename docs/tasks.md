@@ -38,7 +38,7 @@ Task discussions remain **not started** unless their individual records state ot
 | Task | Title | Delivery status |
 | --- | --- | --- |
 | [F03-01](tasks/F03-01-prisma-schema-and-migrations.md) | Prisma schema and migrations | Implemented and verified; owner acceptance pending |
-| [F03-02](tasks/F03-02-database-transaction-runner.md) | Database lifecycle and transaction runner | Pending |
+| [F03-02](tasks/F03-02-database-transaction-runner.md) | Database lifecycle and transaction runner | Implemented and verified; owner acceptance pending |
 
 ### F04
 
