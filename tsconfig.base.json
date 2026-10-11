@@ -17,6 +17,9 @@
     "paths": {
       "@daylo/api/core/configuration": [
         "./libs/api/core/configuration/src/index.ts"
+      ],
+      "@daylo/api/core/database": [
+        "./libs/api/core/database/src/index.ts"
       ]
     }
   },

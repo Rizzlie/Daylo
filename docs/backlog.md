@@ -66,6 +66,14 @@ Verified: Compose rendering, container health, PostgreSQL readiness/query and ho
 
 Retrospective: inspect host port ownership before starting Compose, verify dependency module format in addition to peer ranges, and check generator-modified root files for newline-only churn before final validation.
 
+### Authorized F02-02 database-aware API readiness — 2026-10-11
+
+Implemented: `GET /api/health/ready` probes PostgreSQL with `SELECT 1` through a focused `api-core-database` infrastructure library. The endpoint returns the agreed stable 200/503 response bodies, applies a 1000 ms overall deadline, and suppresses connection details and raw database errors. The API composition root and README are updated. Prisma, migrations, liveness, Swagger/OpenAPI and generated clients remain in their later tasks.
+
+Verified: five focused service/controller tests passed, lint passed for the database library and API, and the API production build passed without cache. A real API/PostgreSQL sequence returned 200 while available, 503 while PostgreSQL was stopped, and 200 again after recovery, with the exact agreed response bodies. No rendered UI changed, so browser viewport inspection is inapplicable. Owner acceptance is pending; F02 is implemented but remains unaccepted.
+
+Retrospective: check Docker engine readiness before Compose verification and stop processes owned by the verification run. Restricted Nx plugin subprocesses required the documented daemon/plugin-isolation settings and execution outside the sandbox.
+
 ## 1. Foundation backlog
 
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
