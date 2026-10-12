@@ -1,6 +1,6 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-12. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI execution remains unverified. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-12. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
 
@@ -139,6 +139,8 @@ Local verification passed: client and web lint/tests, API lint/all 20 tests/buil
 Retrospective: explicit LF attributes are necessary for strict cross-platform artifact comparison; verify negative drift and cached build behavior when adding build dependencies. F06 remains pending; no commit or publication was requested.
 
 Accepted: owner instruction "wygląda ok, akceptuje", 2026-10-12, closes F05-02 and the parent F05 together with the previously accepted F05-01. Hosted CI execution remains unverified; acceptance does not establish hosted verification as passed. The acceptance update changes documentation only; no checks were rerun, and no commit, publication or subsequent implementation was requested.
+
+Hosted CI follow-up: On 2026-10-12, the owner reported all PR #13 jobs passed. GitHub results confirmed all three Foundation CI jobs succeeded in [run 38278120066](https://github.com/Rizzlie/Daylo/actions/runs/38278120066) for `cb9de11`, including contract drift/build checks and shell E2E. The F05-02 hosted-execution limitation is resolved. No new local verification or subsequent implementation was started.
 
 ## 1. Foundation backlog
 
