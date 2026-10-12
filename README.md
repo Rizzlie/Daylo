@@ -141,7 +141,33 @@ The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATA
 
 `GET /api/health/ready` checks PostgreSQL with a `SELECT 1` query and a 1000 ms deadline. It returns HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when the database is available. A failed or timed-out check returns HTTP 503 with the standard `SERVICE_UNAVAILABLE` error envelope established in F04-01; the response does not expose connection details or raw database errors. Configuration validation tests live in `api-core-configuration`; readiness tests live in `api-core-database` and `api`.
 
-Swagger UI is at `http://localhost:3000/api/docs`, and OpenAPI 3.0 JSON is at `/api/openapi.json`. `GET /api/auth/session` currently always returns HTTP 401 with `AUTHENTICATION_REQUIRED`. Its declared 200 contract contains `status: pending | active` and `user: { id, email, displayName }`; actual authenticated session lookup remains F06. See [API conventions](docs/api-conventions.md). Run schema/API tests with `npm exec nx -- run-many -t test -p shared-schemas api`. OpenAPI export and generated Angular clients remain F05.
+Swagger UI is at `http://localhost:3000/api/docs`, and OpenAPI 3.0 JSON is at `/api/openapi.json`. `GET /api/auth/session` currently always returns HTTP 401 with `AUTHENTICATION_REQUIRED`. Its declared 200 contract contains `status: pending | active` and `user: { id, email, displayName }`; actual authenticated session lookup remains F06. See [API conventions](docs/api-conventions.md). Run schema/API tests with `npm exec nx -- run-many -t test -p shared-schemas api`.
+
+## OpenAPI and generated Angular client
+
+Export and validate the specification, then generate Angular models and services with one command from the workspace root:
+
+```powershell
+npm run api:generate
+```
+
+This script delegates to the existing Nx generation target and its export/validation dependencies. Individual targets remain available:
+
+```powershell
+npm exec nx -- run api:openapi-export
+npm exec nx -- run api:openapi-validate
+npm exec nx -- run web-shared-api-client:generate
+npm exec nx -- run web-shared-api-client:typecheck
+npm exec nx -- run web-shared-api-client:lint
+```
+
+Generation first builds the offline exporter, exports and validates `docs/api/openapi.json`, then replaces only `libs/web/shared/api-client/src/generated`. Export/validation require installed npm dependencies, but no `.env`, secrets, HTTP server or running PostgreSQL. NestJS preview mode scans the actual application controller graph without constructing providers or running database lifecycle hooks. Normal API startup still loads and validates runtime configuration.
+
+Client generation requires a running Docker engine with Linux containers and access to the workspace bind mount. It uses the official `openapitools/openapi-generator-cli` image pinned to version 7.26.0 and its SHA-256 digest; the first run needs network access to download that image. Java is not required on the host. Generator options pin Angular 22.1.8, RxJS 7.8.2 and TypeScript 6.0.3. Generation stages output under ignored `dist`, publishing only unmodified TypeScript sources, without timestamps, machine paths or generator bookkeeping.
+
+Use the public import `@daylo/web/shared/api-client` from future handwritten data-access libraries. The client includes `AuthenticationService.getCurrentSession()` and `HealthService.getReadiness()`. When wiring the frontend, supply `provideHttpClient()` and `provideApi('')` for same-origin `/api` requests; the generator's standalone default base URL is `http://localhost`. The library is consumed as source and has no publishable package or separate packaging build. Its `typecheck` target compiles all generated services/models with Angular's compiler. Generated templates have narrowly scoped lint style exceptions; Nx boundaries remain enforced.
+
+Keep the specification and generated sources in version control, and never edit generated files manually. Regenerate after changing API contracts. No frontend workflow is connected to the client yet. Automatic drift checks and CI/build dependencies remain F05-02.
 
 In a restricted agent session that blocks Nx sockets or plugin subprocesses, set `NX_DAEMON=false` and `NX_ISOLATE_PLUGINS=false` for that session. Disabling the daemon also disables automatic server restarts on file changes.
 

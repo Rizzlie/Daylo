@@ -1,0 +1,268 @@
+{
+  "components": {
+    "schemas": {
+      "CurrentSessionResponseDto_Output": {
+        "$ref": "#/components/schemas/CurrentSessionResponse_Output"
+      },
+      "CurrentSessionResponse_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "pending",
+              "active"
+            ],
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SessionUser_Output"
+          }
+        },
+        "required": [
+          "status",
+          "user"
+        ],
+        "type": "object"
+      },
+      "DatabaseReadinessResponseDto_Output": {
+        "$ref": "#/components/schemas/DatabaseReadinessResponse_Output"
+      },
+      "DatabaseReadinessResponse_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "checks": {
+            "additionalProperties": false,
+            "properties": {
+              "database": {
+                "enum": [
+                  "up"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "database"
+            ],
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "ok"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "checks"
+        ],
+        "type": "object"
+      },
+      "HttpErrorCode_Output": {
+        "pattern": "^[A-Z][A-Z0-9_]*$",
+        "type": "string"
+      },
+      "HttpErrorResponse_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/HttpErrorCode_Output"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue_Output"
+            },
+            "type": "array"
+          },
+          "message": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "statusCode": {
+            "maximum": 599,
+            "minimum": 400,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "ReadinessErrorResponseDto_Output": {
+        "$ref": "#/components/schemas/HttpErrorResponse_Output"
+      },
+      "SessionErrorResponseDto_Output": {
+        "$ref": "#/components/schemas/HttpErrorResponse_Output"
+      },
+      "SessionUser_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "ValidationIssue_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "path": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "path",
+          "code",
+          "message"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "contact": {},
+    "description": "Daylo public API. Session authentication and CSRF enforcement are implemented in F06. The current-session endpoint currently always returns 401. Cookie and CSRF header names will be defined in F06-03.",
+    "title": "Daylo API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/auth/session": {
+      "get": {
+        "description": "Requires a valid backend-owned session cookie. Pending users may read their identity. Missing, expired or revoked sessions return 401. Until F06 implements session lookup, this endpoint always returns 401, including when a cookie is supplied.",
+        "operationId": "getCurrentSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentSessionResponseDto_Output"
+                }
+              }
+            },
+            "description": "The authenticated user and their application access status (implemented in F06)."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTHENTICATION_REQUIRED",
+                  "message": "Authentication required",
+                  "statusCode": 401
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SessionErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "Authentication required: session missing, expired or revoked."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_SERVER_ERROR",
+                  "message": "Internal server error",
+                  "statusCode": 500
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SessionErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "An unexpected internal error."
+          }
+        },
+        "summary": "Get the current Daylo session",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/health/ready": {
+      "get": {
+        "operationId": "getReadiness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatabaseReadinessResponseDto_Output"
+                }
+              }
+            },
+            "description": "The database is available."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_SERVER_ERROR",
+                  "message": "Internal server error",
+                  "statusCode": 500
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "An unexpected internal error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "SERVICE_UNAVAILABLE",
+                  "message": "Service unavailable",
+                  "statusCode": 503
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "The database is unavailable."
+          }
+        },
+        "summary": "Check database readiness",
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  },
+  "servers": [],
+  "tags": []
+}

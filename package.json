@@ -5,6 +5,7 @@
   "private": true,
   "description": "Daylo is a personal and shared task planner built incrementally with coding agents.",
   "scripts": {
+    "api:generate": "nx run web-shared-api-client:generate",
     "prepare": "husky"
   },
   "devDependencies": {

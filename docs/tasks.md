@@ -51,7 +51,7 @@ Task discussions remain **not started** unless their individual records state ot
 
 | Task | Title | Delivery status |
 | --- | --- | --- |
-| [F05-01](tasks/F05-01-openapi-angular-client-generation.md) | OpenAPI export and Angular client generation | Pending |
+| [F05-01](tasks/F05-01-openapi-angular-client-generation.md) | OpenAPI export and Angular client generation | Closed: implemented, verified and owner-accepted on 2026-10-12 |
 | [F05-02](tasks/F05-02-generated-client-drift-checks.md) | Generated-client drift checks | Pending |
 
 ### F06

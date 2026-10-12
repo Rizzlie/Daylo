@@ -1,6 +1,6 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-12. F02, F03 and F04 are implemented, verified and owner-accepted. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-12. F02, F03 and F04 are implemented, verified and owner-accepted. F05-01 is implemented, verified and owner-accepted; F05-02 remains pending. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
 
@@ -119,6 +119,16 @@ Verified: fresh lint passed for API, auth feature and shared schemas; all 28 API
 Accepted: owner instruction "akceptuje F04-02. Nie commituj jeszcze nic, zaktualizuj tylko docsy", 2026-10-12, closes F04-02. Together with the previously accepted F04-01, F04 is complete and owner-accepted. This instruction authorizes documentation updates only; commits and subsequent implementation remain unauthorized.
 
 Retrospective: verify root output-schema naming against the actual nestjs-zod/Zod versions, dedupe NestJS in cross-library Vitest tests, and review Swagger's displayed examples rather than relying only on specification validity.
+
+### Authorized F05-01 offline OpenAPI and Angular client — 2026-10-12
+
+Implemented: Nx targets build/export/validate OpenAPI from the existing application graph and generate the internal Angular client. The specification is stored at `docs/api/openapi.json`, and unmodified client sources at `libs/web/shared/api-client/src/generated`. The official Docker generator is pinned to version 7.26.0 and its digest; configuration matches Angular 22.1.8. Runtime configuration loading is separated from NestJS preview export, without changing session/readiness behavior. No npm dependency or frontend workflow was added.
+
+Verified: offline export from an empty working directory without runtime configuration or PostgreSQL matched the artifact; repeated generation produced identical hashes for the specification and all 19 client files. OpenAPI validation, client Angular compilation, relevant lint/tests and API/web production builds passed. Real API/PostgreSQL smoke returned readiness 200 and session 401; served and offline specifications matched. No rendered UI changed, so browser inspection was inapplicable. See the [F05-01 delivery record](tasks/F05-01-openapi-angular-client-generation.md#delivery-and-review-record).
+
+Accepted: owner instruction "ok super, akceptuje zmiany", 2026-10-12, closes F05-01 including the verified `npm run api:generate` convenience command. Fresh lint passed for all nine workspace projects without cache. F05 remains incomplete: drift enforcement and CI/build integration are F05-02, which remains pending. No commit or publication was requested.
+
+Retrospective: preview mode still requires resolvable DI tokens; keep environment loading separate and import configuration dependencies explicitly. Preserve generator output with scoped style exceptions, exclude bookkeeping from source, and explain Docker/Java prerequisites early.
 
 ## 1. Foundation backlog
 
