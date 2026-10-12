@@ -1,6 +1,6 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-12. F02, F03 and F04 are implemented, verified and owner-accepted. F05-01 is implemented, verified and owner-accepted; F05-02 remains pending. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-12. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI execution remains unverified. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
 
@@ -129,6 +129,16 @@ Verified: offline export from an empty working directory without runtime configu
 Accepted: owner instruction "ok super, akceptuje zmiany", 2026-10-12, closes F05-01 including the verified `npm run api:generate` convenience command. Fresh lint passed for all nine workspace projects without cache. F05 remains incomplete: drift enforcement and CI/build integration are F05-02, which remains pending. No commit or publication was requested.
 
 Retrospective: preview mode still requires resolvable DI tokens; keep environment loading separate and import configuration dependencies explicitly. Preserve generator output with scoped style exceptions, exclude bookkeeping from source, and explain Docker/Java prerequisites early.
+
+### F05-02 delivery — 2026-10-12
+
+Implemented temporary-output specification/client drift checking, consecutive-generation determinism, source-preservation checks, actionable file diagnostics and cleanup. Frontend builds depend on the uncached drift check and Angular client compilation; CI runs both explicitly before quality checks. Shared pinned Docker orchestration stays outside generated code. Artifact-only LF rules prevent Windows checkout differences. No API or generated client content changed.
+
+Local verification passed: client and web lint/tests, API lint/all 20 tests/build, client compilation, frontend production build, and identical temporary generations. An intentional backend contract version change blocked the ordinary frontend build while preserving all 20 source artifacts; the backend source was restored. A cached frontend build still ran both drift generations. Temporary output was cleaned. CI YAML parsing and `git diff --check` passed. Browser/E2E verification is inapplicable to this tooling-only change. Hosted CI execution and owner acceptance remain pending. See [F05-02](tasks/F05-02-generated-client-drift-checks.md).
+
+Retrospective: explicit LF attributes are necessary for strict cross-platform artifact comparison; verify negative drift and cached build behavior when adding build dependencies. F06 remains pending; no commit or publication was requested.
+
+Accepted: owner instruction "wygląda ok, akceptuje", 2026-10-12, closes F05-02 and the parent F05 together with the previously accepted F05-01. Hosted CI execution remains unverified; acceptance does not establish hosted verification as passed. The acceptance update changes documentation only; no checks were rerun, and no commit, publication or subsequent implementation was requested.
 
 ## 1. Foundation backlog
 

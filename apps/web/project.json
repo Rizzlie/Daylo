@@ -12,6 +12,11 @@
   "targets": {
     "build": {
       "executor": "@angular/build:application",
+      "dependsOn": [
+        "^build",
+        { "projects": ["web-shared-api-client"], "target": "check" },
+        { "projects": ["web-shared-api-client"], "target": "typecheck" }
+      ],
       "outputs": [
         "{options.outputPath}"
       ],
