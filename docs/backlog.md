@@ -90,6 +90,16 @@ Verified: fresh lint passed for the transaction-contract and database libraries,
 
 Retrospective: use an explicit opt-in flag for integration suites so a configured `DATABASE_URL` does not imply that PostgreSQL is running. Keep transaction-context construction in database infrastructure and require adapters to resolve their Prisma transaction client through that context. Remove ignored generated artifacts before clean-checkout verification and encode their generation in the Nx task graph.
 
+### Authorized F04-01 Zod validation and response serialization — 2026-10-12
+
+Implemented: added the platform-neutral `shared-schemas` Nx library and pinned `nestjs-zod` 5.5.0. Zod 4 schemas now define the stable public error envelope, validation details, readiness response and optional-value normalization. NestJS globally applies strict Zod request validation, declared-response serialization and safe error mapping. The readiness HTTP adapter now declares its response DTO and lives in the API application layer, keeping public transport contracts out of database infrastructure. API conventions document 400/401/403/404/409/500/503 semantics plus the approved cookie/CSRF requirements. Swagger, current-session, OpenAPI/client generation and authentication enforcement remain in F04-02, F05 and F06.
+
+Verified: fresh tests and lint passed without cache for the schema, API and database projects. Twenty-two ordinary tests passed; four existing opt-in database integration cases were skipped by design. API tests used an ephemeral NestJS listener to verify invalid-input details, removal of an undeclared internal field, hidden serialization diagnostics and stable 401/403/404/409/503 codes. The fresh API production build passed. No rendered UI changed, so browser inspection was inapplicable.
+
+Accepted: owner instruction `akceptuje`, 2026-10-12, closes F04-01. F04 remains incomplete until F04-02 is delivered and accepted; this acceptance does not authorize the next task.
+
+Retrospective: review and minimize root changes made by generators. Keep HTTP adapters above infrastructure rather than weakening Nx boundaries when a public schema dependency exposes misplaced transport code. Exclude application specs from the production TypeScript program when adding a colocated test target.
+
 ## 1. Foundation backlog
 
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.

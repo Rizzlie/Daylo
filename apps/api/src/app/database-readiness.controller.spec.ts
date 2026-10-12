@@ -1,10 +1,7 @@
 import { ServiceUnavailableException } from '@nestjs/common';
+import { DatabaseReadinessService } from '@daylo/api/core/database';
 import { DatabaseReadinessController } from './database-readiness.controller';
-import {
-  databaseReadyResponse,
-  databaseUnavailableResponse,
-} from './database-readiness.response';
-import { DatabaseReadinessService } from './database-readiness.service';
+import { databaseReadyResponse } from './database-readiness.response';
 
 describe('DatabaseReadinessController', () => {
   const database = {
@@ -26,7 +23,7 @@ describe('DatabaseReadinessController', () => {
     );
   });
 
-  it('throws a 503 with the stable unavailable response', async () => {
+  it('throws a 503 when the database is unavailable', async () => {
     database.isReady.mockResolvedValue(false);
 
     const readiness = controller.getReadiness();
@@ -36,7 +33,6 @@ describe('DatabaseReadinessController', () => {
     );
     await expect(readiness).rejects.toMatchObject({
       status: 503,
-      response: databaseUnavailableResponse,
     });
   });
 });

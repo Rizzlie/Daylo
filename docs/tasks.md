@@ -44,7 +44,7 @@ Task discussions remain **not started** unless their individual records state ot
 
 | Task | Title | Delivery status |
 | --- | --- | --- |
-| [F04-01](tasks/F04-01-zod-validation-and-serialization.md) | Zod validation and response serialization | Pending |
+| [F04-01](tasks/F04-01-zod-validation-and-serialization.md) | Zod validation and response serialization | Closed: implemented, verified and owner-accepted on 2026-10-12 |
 | [F04-02](tasks/F04-02-session-contract-and-swagger.md) | Current-session contract and Swagger | Pending |
 
 ### F05
