@@ -4,7 +4,7 @@ Parent backlog item: **F01** · [Task index](../tasks.md) · [Backlog](../backlo
 
 Discussion status: **Completed on 2026-10-05; owner agreed to the reviewed completion scope.**
 Implementation authorization: **Granted on 2026-10-05: `Tak, zróbmy to`.**
-Delivery status: Agreed F01-01 scope implemented, checked and accepted by the owner on 2026-10-05. F01-01 is closed for that scope; automated shell smoke coverage (F01-03) and full F01 completion remain pending.
+Delivery status: Agreed F01-01 scope implemented, checked and accepted by the owner on 2026-10-05. F01-01 is closed for that scope. Update on 2026-10-12: F01-03 smoke coverage is delivered and owner-accepted; F01 verification gaps remain recorded in F01-03/F01-05. Historical delivery notes below retain their original dates and scope.
 
 ## Assumptions and sources
 

@@ -4,7 +4,7 @@ Parent backlog item: **F03** · [Task index](../tasks.md) · [Backlog](../backlo
 
 Discussion status: **Completed on 2026-10-11.**
 Implementation authorization: **Granted by the owner on 2026-10-11 for the agreed F03-02 scope.**
-Delivery status: **Implemented and verified on 2026-10-11; owner acceptance pending.**
+Delivery status: **Closed — implemented, verified and owner-accepted on 2026-10-12.**
 
 ## Assumptions and sources
 
@@ -68,7 +68,7 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 - Browser scenarios and viewport coverage: N/A. F03-02 changes backend infrastructure only and exposes no user-facing or HTTP behavior.
 - Known limitations / incomplete verification: Business repositories and transaction orchestration remain in their feature tasks. Invitation acceptance is intentionally deferred to M03-03, and post-commit event publication remains a later updates task. The integration suite requires the explicit `RUN_DATABASE_INTEGRATION=true` flag and a migrated test database. The isolated verification database was removed and PostgreSQL was returned to its prior stopped state.
 - Draft pull request: [#9 — feat(api): add database transaction runner](https://github.com/Rizzlie/Daylo/pull/9).
-- Owner acceptance: Pending.
+- Owner acceptance: Granted on 2026-10-12 through the owner's blanket acceptance of previously implemented tasks: "zrobiliśmy je, ale nie zaakceptowałem po implementacji, akceptuje je oczywiscie". Acceptance covers the delivered scope; recorded verification limitations remain unchanged. No fresh verification, commit or subsequent implementation is claimed or authorized.
 - Retrospective and workflow improvements: Gate real-database suites with an explicit opt-in flag rather than inferring intent from `DATABASE_URL`, because local configuration may be present while PostgreSQL is stopped. Keep transaction-context construction private to infrastructure and verify both compile-time contract separation and runtime context provenance. Before claiming a build that imports ignored generated code, remove the local artifact and verify that Nx regenerates it through declared target dependencies.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.

@@ -1,8 +1,18 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0. The agreed F01-01 task scope was accepted on 2026-10-05; no parent foundation or MVP item is fully accepted. Requested implementation slices are recorded below; other work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-12. F02, F03 and F04 are implemented, verified and owner-accepted. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### Acceptance reconciliation — 2026-10-12
+
+The owner explicitly accepted previously implemented tasks: "zrobiliśmy je, ale nie zaakceptowałem po implementacji, akceptuje je oczywiscie". This records delivery acceptance for F01-02, F01-03, F01-05, F02-01, F02-02, F03-01 and F03-02, plus the already delivered global theme slice. Prior acceptance of F01-01, the simplified F01-04, F04-01 and F04-02 is preserved. Task files and the index now agree; F02/F03 acceptance dates in the index are reconciled to this explicit confirmation rather than their implementation dates.
+
+F02, F03 and F04 are closed and owner-accepted. All delivered F01 scopes are accepted, but independent browser inspection for F01-03 and GitHub-hosted execution/artifact verification for F01-05 remain unverified; acceptance does not turn those checks into passes. The theme acceptance covers delivered global styling only, not the pending rendered-control/overlay/focus review, preferences or navigation. M05-01 and the parent M05 are not complete.
+
+The dated delivery records below preserve historical verification and acceptance state at delivery time; their pending-acceptance statements are superseded by this reconciliation and the F04-01/F04-02 acceptance records. No application files were changed or checks rerun for this documentation update. No commit or subsequent implementation is authorized.
+
+Retrospective: reconcile task files, index and parent backlog when recording acceptance. Keep delivery dates, explicit acceptance dates and verification limitations separate; do not infer completed checks from owner approval.
 
 ### Authorized F01-01 Angular shell completion — 2026-10-05
 
@@ -99,6 +109,16 @@ Verified: fresh tests and lint passed without cache for the schema, API and data
 Accepted: owner instruction `akceptuje`, 2026-10-12, closes F04-01. F04 remains incomplete until F04-02 is delivered and accepted; this acceptance does not authorize the next task.
 
 Retrospective: review and minimize root changes made by generators. Keep HTTP adapters above infrastructure rather than weakening Nx boundaries when a public schema dependency exposes misplaced transport code. Exclude application specs from the production TypeScript program when adding a colocated test target.
+
+### Authorized F04-02 current-session contract and Swagger — 2026-10-12
+
+Implemented: shared Zod schemas define the pending/active session response and public user identity. The auth feature exposes `GET /api/auth/session` with operation ID `getCurrentSession`; runtime always returns the standard 401 `AUTHENTICATION_REQUIRED` envelope until real session lookup is added in F06. Swagger UI at `/api/docs` and OpenAPI 3.0 JSON at `/api/openapi.json` document readiness/session responses and errors. API conventions and README explain the current behavior and deferred cookie/CSRF names. Export and Angular client generation remain F05.
+
+Verified: fresh lint passed for API, auth feature and shared schemas; all 28 API/shared-schema tests and the API production build passed without cache. HTTP tests validate the served specification, Swagger assets, 401 behavior, pending/active response serialization, field privacy and safe serialization failures. Real API/PostgreSQL browser inspection exercised Swagger and the expected session 401; see the [F04-02 delivery record](tasks/F04-02-session-contract-and-swagger.md#delivery-and-review-record) for viewport evidence and limitations. No Angular feature changed.
+
+Accepted: owner instruction "akceptuje F04-02. Nie commituj jeszcze nic, zaktualizuj tylko docsy", 2026-10-12, closes F04-02. Together with the previously accepted F04-01, F04 is complete and owner-accepted. This instruction authorizes documentation updates only; commits and subsequent implementation remain unauthorized.
+
+Retrospective: verify root output-schema naming against the actual nestjs-zod/Zod versions, dedupe NestJS in cross-library Vitest tests, and review Swagger's displayed examples rather than relying only on specification validity.
 
 ## 1. Foundation backlog
 

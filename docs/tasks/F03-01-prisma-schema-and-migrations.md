@@ -4,7 +4,7 @@ Parent backlog item: **F03** · [Task index](../tasks.md) · [Backlog](../backlo
 
 Discussion status: **Completed with the owner on 2026-10-11.**
 Implementation authorization: **Granted by the owner on 2026-10-11.**
-Delivery status: **Implemented and verified on 2026-10-11; owner acceptance pending.**
+Delivery status: **Closed — implemented, verified and owner-accepted on 2026-10-12.**
 
 ## Assumptions and sources
 
@@ -65,7 +65,7 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 - Checks executed and outcomes: Prisma format and schema validation passed. Fresh `api-core-database:prisma-generate` produced Prisma Client 7.10.0. The initial migration applied successfully to a newly created isolated `daylo_f03_01_verify` PostgreSQL database. `api-core-database:prisma-verify` passed with synthetic, rolled-back records and confirmed all eight tables, all ten required foreign keys and deletion rules, unique Google subject/email, session token/CSRF hashes, OAuth state/nonce and group membership, normalized email and task completion checks. Prisma migrate diff reported no schema/database drift. Fresh Nx checks without cache passed for five database-library tests, database/API lint and the API production build; final database-library lint also passed after the verification script was extended. `git diff --check` passed.
 - Browser scenarios and viewport coverage: N/A. F03-01 changes persistence tooling and database structure without rendered UI or an HTTP contract.
 - Known limitations / incomplete verification: Prisma database lifecycle, a runtime client provider, opaque transaction participation and invitation transaction behavior remain F03-02. Business repositories, API schemas/endpoints, OpenAPI generation and frontend client/UI remain later tasks. The isolated verification database was removed and the PostgreSQL container returned to its prior stopped state. Nx formatting reported that no workspace formatter is configured; Prisma's own formatter handled the schema, and lint/diff checks passed.
-- Owner acceptance: Pending.
+- Owner acceptance: Granted on 2026-10-12 through the owner's blanket acceptance of previously implemented tasks: "zrobiliśmy je, ale nie zaakceptowałem po implementacji, akceptuje je oczywiscie". Acceptance covers the delivered scope; recorded verification limitations remain unchanged. No fresh verification, commit or subsequent implementation is claimed or authorized.
 - Retrospective and workflow improvements: Prisma 7 loads `prisma.config.ts` even for formatting/help, so non-connection commands require an explicit synthetic `DATABASE_URL` when no local `.env` exists. Treat sandboxed Nx `spawn EPERM` output as failure even if the wrapper reports exit code zero, then rerun the affected target with approved expanded permissions. Verify hand-authored database checks and relation deletion rules against an empty real database rather than relying only on Prisma schema validation.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.

@@ -5,6 +5,8 @@ export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/api',
   plugins: [nxViteTsPaths()],
+  // App and library exceptions must share the same NestJS constructor identity.
+  resolve: { dedupe: ['@nestjs/common', '@nestjs/core'] },
   test: {
     name: 'api',
     watch: false,

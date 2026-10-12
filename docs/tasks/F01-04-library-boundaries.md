@@ -55,4 +55,5 @@ Only this ESLint configuration and related documentation belong to F01-04. Do no
 - Browser verification: inapplicable; no user-facing change.
 - Limitations: project lint exercises the current shells, which contain no business libraries. Representative allowed/rejected library scenarios and metadata validity were not independently verified. Built-in import checks do not establish canonical-alias enforcement or capability ownership. CI wiring remains F01-05.
 - Owner acceptance: the owner approved the simplified result on 2026-10-05 and requested a PR using `yeet`. F01 remains incomplete.
+- Acceptance reconciliation, 2026-10-12: Original acceptance above is preserved. The owner has now accepted all delivered F01 scopes; browser/hosted-CI verification gaps remain documented in F01-03/F01-05. This documentation update does not authorize another commit or PR.
 - Retrospective: the initial implementation exceeded the owner's desired complexity. Prefer existing Nx capabilities and state their limits before proposing custom enforcement.

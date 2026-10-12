@@ -1,6 +1,6 @@
 # Daylo — Design System and Material Mapping
 
-Status: Refined specification, 2026-10-05. The visual direction is accepted. The global Material theme has been implemented; full rendered component review and human acceptance remain pending.
+Status: Refined specification, 2026-10-05. The visual direction is accepted. The delivered global Material theme was owner-accepted on 2026-10-12; full rendered component review remains pending. Historical verification records below retain their original scope and dates.
 
 ## Source of truth
 
