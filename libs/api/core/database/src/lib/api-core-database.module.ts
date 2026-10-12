@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TRANSACTION_RUNNER } from '@daylo/api/core/transactions/contracts';
-import { DatabaseReadinessController } from './database-readiness.controller';
 import { DatabaseReadinessService } from './database-readiness.service';
 import { PrismaTransactionRunner } from './prisma-transaction-runner';
 import { PrismaService } from './prisma.service';
 
 @Module({
-  controllers: [DatabaseReadinessController],
   providers: [
     DatabaseReadinessService,
     PrismaService,
@@ -16,6 +14,6 @@ import { PrismaService } from './prisma.service';
       useExisting: PrismaTransactionRunner,
     },
   ],
-  exports: [PrismaService, TRANSACTION_RUNNER],
+  exports: [DatabaseReadinessService, PrismaService, TRANSACTION_RUNNER],
 })
 export class ApiCoreDatabaseModule {}

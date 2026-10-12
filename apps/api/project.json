@@ -20,6 +20,15 @@
         }
       ]
     },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "coverage/apps/api"
+      }
+    },
     "prune-lockfile": {
       "dependsOn": [
         "build"

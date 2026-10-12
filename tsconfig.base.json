@@ -23,6 +23,9 @@
       ],
       "@daylo/api/core/transactions/contracts": [
         "./libs/api/core/transactions/contracts/src/index.ts"
+      ],
+      "@daylo/shared/schemas": [
+        "./libs/shared/schemas/src/index.ts"
       ]
     }
   },

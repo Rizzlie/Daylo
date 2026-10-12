@@ -149,6 +149,8 @@ Integrate through `nestjs-zod`:
 
 Public contracts use transport-friendly strings: dates as `YYYY-MM-DD`, times as `HH:mm`, and timestamps as ISO 8601 UTC strings. Empty optional text/time values are normalized to null in responses. Map database values explicitly.
 
+The concrete error envelope, status meanings and session cookie/CSRF transport requirements are recorded in [API conventions](api-conventions.md).
+
 Keep runtime business rules that cannot be represented in OpenAPI in backend services and tests. Do not generate public schemas directly from all Prisma fields.
 
 ## 5. REST API and Swagger
