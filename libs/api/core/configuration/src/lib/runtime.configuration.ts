@@ -6,6 +6,7 @@ export interface RuntimeConfiguration {
   databaseUrl: string;
   environment: NodeEnvironment;
   frontendOrigin: string;
+  initialOwnerEmail: string;
   googleClientId: string;
   googleClientSecret: string;
   googleCallbackUrl: string;
@@ -18,6 +19,8 @@ export const runtimeConfiguration = registerAs(
     databaseUrl: process.env['DATABASE_URL']?.trim() as string,
     environment: process.env['NODE_ENV']?.trim() as NodeEnvironment,
     frontendOrigin: new URL(process.env['FRONTEND_ORIGIN'] as string).origin,
+    initialOwnerEmail: process.env['INITIAL_OWNER_EMAIL']
+      ?.trim().toLowerCase() as string,
     googleClientId: process.env['GOOGLE_CLIENT_ID']?.trim() as string,
     googleClientSecret: process.env['GOOGLE_CLIENT_SECRET']?.trim() as string,
     googleCallbackUrl: process.env['GOOGLE_CALLBACK_URL']?.trim() as string,

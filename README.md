@@ -137,7 +137,7 @@ npm exec nx -- run api:lint
 npm exec nx -- run api:build
 ```
 
-The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, `FRONTEND_ORIGIN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error without echoing their values. Routes use the `/api` prefix.
+The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, `FRONTEND_ORIGIN`, `INITIAL_OWNER_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error without echoing their values. Set `INITIAL_OWNER_EMAIL` to the owner's verified Google email; it is trimmed and lowercased. Routes use the `/api` prefix.
 
 `GET /api/health/ready` checks PostgreSQL with a `SELECT 1` query and a 1000 ms deadline. It returns HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when the database is available. A failed or timed-out check returns HTTP 503 with the standard `SERVICE_UNAVAILABLE` error envelope established in F04-01; the response does not expose connection details or raw database errors. Configuration validation tests live in `api-core-configuration`; readiness tests live in `api-core-database` and `api`.
 
@@ -145,7 +145,7 @@ Swagger UI is at `http://localhost:3000/api/docs`, and OpenAPI 3.0 JSON is at `/
 
 ## OpenAPI and generated Angular client
 
-Google OIDC transaction setup and verification are documented in [Google authentication](docs/google-authentication.md). F06-01 provides backend Google navigation and token verification; even a valid callback temporarily returns safe HTTP 503 until admission and Daylo session creation arrive in F06-02/F06-03. The current-session endpoint still returns 401.
+Google OIDC transaction setup, verification and admission are documented in [Google authentication](docs/google-authentication.md). F06-01/F06-02 provide backend Google navigation, token verification and identity/admission persistence. Denied accounts receive safe HTTP 403; admitted callbacks temporarily return safe HTTP 503 until Daylo session creation arrives in F06-03. The current-session endpoint still returns 401.
 
 Export and validate the specification, then generate Angular models and services with one command from the workspace root:
 

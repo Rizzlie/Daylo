@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { ApiAuthDataAccessModule } from '@daylo/api/auth/data-access';
+import { ApiCoreDatabaseModule } from '@daylo/api/core/database';
+import { ApplicationAdmissionService } from './application-admission.service';
 import { CurrentSessionController } from './current-session.controller';
 import { GoogleOidcController } from './google-oidc.controller';
 import {
@@ -11,11 +13,12 @@ import {
 import { GoogleOidcService } from './google-oidc.service';
 
 @Module({
-  imports: [ConfigModule, ApiAuthDataAccessModule],
+  imports: [ConfigModule, ApiCoreDatabaseModule, ApiAuthDataAccessModule],
   controllers: [CurrentSessionController, GoogleOidcController],
   providers: [
     GoogleOidcProvider,
     GoogleOidcService,
+    ApplicationAdmissionService,
     {
       provide: GOOGLE_OAUTH_CLIENT,
       inject: [ConfigService],
@@ -40,4 +43,8 @@ import { GoogleOidcService } from './google-oidc.service';
     },
   ],
 })
-export class ApiAuthFeatureModule {}
+export class ApiAuthFeatureModule {
+  static register(options: Pick<ModuleMetadata, 'imports'>): DynamicModule {
+    return { module: ApiAuthFeatureModule, imports: options.imports ?? [] };
+  }
+}

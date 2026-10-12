@@ -3,6 +3,7 @@ import { validateEnvironment } from './validate-environment';
 const validEnvironment = {
   DATABASE_URL: 'postgresql://daylo:daylo-local@localhost:5432/daylo',
   FRONTEND_ORIGIN: 'http://localhost:4200',
+  INITIAL_OWNER_EMAIL: 'owner@example.test',
   NODE_ENV: 'development',
   PORT: '3000',
   GOOGLE_CLIENT_ID: 'synthetic.apps.googleusercontent.com',
@@ -17,6 +18,7 @@ describe('validateEnvironment', () => {
         ...validEnvironment,
         DATABASE_URL: ` ${validEnvironment.DATABASE_URL} `,
         FRONTEND_ORIGIN: ` ${validEnvironment.FRONTEND_ORIGIN} `,
+        INITIAL_OWNER_EMAIL: ' Owner@Example.test ',
         NODE_ENV: ` ${validEnvironment.NODE_ENV} `,
         PORT: ` ${validEnvironment.PORT} `,
       }),
@@ -31,6 +33,7 @@ describe('validateEnvironment', () => {
     'PORT',
     'DATABASE_URL',
     'FRONTEND_ORIGIN',
+    'INITIAL_OWNER_EMAIL',
     'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET',
     'GOOGLE_CALLBACK_URL',
@@ -110,6 +113,7 @@ describe('validateEnvironment', () => {
   });
 
   it('rejects invalid values with a specific startup error', () => {
+    expect(() => validateEnvironment({ ...validEnvironment, INITIAL_OWNER_EMAIL: 'invalid' })).toThrow('INITIAL_OWNER_EMAIL');
     expect(() =>
       validateEnvironment({ ...validEnvironment, PORT: '70000' }),
     ).toThrow('PORT must be an integer between 1 and 65535');

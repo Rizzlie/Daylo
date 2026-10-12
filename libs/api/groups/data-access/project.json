@@ -1,0 +1,13 @@
+{
+  "name": "api-groups-data-access",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/groups/data-access/src",
+  "projectType": "library",
+  "tags": [
+    "platform:api",
+    "scope:groups",
+    "type:api-data-access"
+  ],
+  "// targets": "to see all targets run: nx show project api-groups-data-access --web",
+  "targets": {}
+}

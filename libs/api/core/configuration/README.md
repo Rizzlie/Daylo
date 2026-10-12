@@ -8,6 +8,9 @@ Google authentication requires `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
 required except for loopback HTTP outside production. Errors never echo values.
 Offline OpenAPI export skips runtime configuration loading and needs no credentials.
 
+Application admission also requires `INITIAL_OWNER_EMAIL`, a valid verified Google
+email. Owner configuration is trimmed/lowercased, preserving dots and plus suffixes.
+
 ## Running unit tests
 
 Run `npm exec nx -- run api-core-configuration:test` from the workspace root.

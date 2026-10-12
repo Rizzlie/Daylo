@@ -1,7 +1,7 @@
 # Google authentication
 
-F06-01 implements the Google OIDC transaction layer only. Admission and user identity
-persistence belong to F06-02; Daylo sessions and CSRF belong to F06-03; frontend
+F06-01 implements Google OIDC transactions; F06-02 adds application admission and
+user identity persistence. Daylo sessions and CSRF belong to F06-03; frontend
 authentication states and the real Google smoke check belong to F06-04/F06-05.
 
 ## Local Google client
@@ -20,6 +20,7 @@ Keep the client credentials in ignored `.env.local` (loaded before `.env`) or `.
 GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_CALLBACK_URL=http://localhost:4200/api/auth/google/callback
+INITIAL_OWNER_EMAIL=owner@example.test
 ```
 
 Never commit real credentials. API startup validates these values alongside the
@@ -71,13 +72,43 @@ header is required for the callback; state, binding and nonce protect it.
 
 | Callback outcome | HTTP behavior |
 | --- | --- |
-| Valid Google identity | 503 `SERVICE_UNAVAILABLE`, `Daylo sign-in completion is not yet available`; no user/session created |
+| Admitted Google identity | Persist/refresh the user, then 503 `SERVICE_UNAVAILABLE`, `Daylo sign-in completion is not yet available`; no session created |
+| Verified outsider, ineligible invitation or email identity collision | 403 `ACCESS_FORBIDDEN`, `Access forbidden`; no identity writes or session |
 | Invalid/expired/replayed transaction, provider refusal, rejected token | 401 `GOOGLE_AUTHENTICATION_FAILED`, safe generic message |
 | Malformed query | 400 `VALIDATION_ERROR` |
 | Database/provider transport unavailable | 503 `SERVICE_UNAVAILABLE`, no infrastructure diagnostics |
 
 `GET /api/auth/session` still returns 401. F06-03 will replace the intermediate
-success 503 with admission/session completion and fixed frontend redirects.
+success 503 with session creation and fixed frontend redirects.
+
+## Identity and admission
+
+`INITIAL_OWNER_EMAIL` is required at API startup. Owner configuration and verified
+Google emails are trimmed and lowercased; dots and plus suffixes are preserved.
+Google subject is the stable identity key. A matching email belonging to another
+subject is denied even for the configured owner; accounts are never linked by email.
+
+The owner receives active access. Existing active users keep access after a verified
+email change. Other accounts, including existing pending users, require at least one
+matching pending invitation with expiry strictly later than the admission check.
+Expired, accepted, rejected, cancelled and wrong-email invitations do not admit them.
+Admission grants pending access without resolving invitations or creating membership.
+Invitation management and explicit acceptance/rejection remain M03.
+
+Admitted sign-in refreshes email and a supplied Google display name. A missing name
+preserves an existing name; new accounts use the email local part, bounded to 200
+characters. Avatars and provider tokens are not persisted. Denied sign-in leaves
+existing profiles unchanged and creates no user.
+
+Auth orchestrates one database transaction through the narrow Users and Groups
+contracts wired at the application root. Users serializes incoming subject/email
+keys with PostgreSQL transaction-scoped advisory locks in a fixed order, including
+first sign-in before a user row exists. Under the existing read-committed transaction
+runner, a waiting attempt reads the previous committed identity before deciding.
+The Groups admission query holds an eligible invitation with `FOR SHARE` through
+commit. Unique subject/email constraints remain the final database safeguards.
+Future profile writers must use the same identity-lock protocol; future invitation
+resolution remains a separately authorized transaction use case.
 
 ## Verification
 
@@ -110,7 +141,10 @@ Remove-Item Env:DATABASE_URL
 ```
 
 The opt-in suites verify persisted transactions, browser mismatch, expiry, eight
-concurrent repository/HTTP callbacks, replay, DI wiring and absence of user/session
-creation. They delete only their own transaction rows. Remove the isolated database
+concurrent repository/HTTP callbacks, replay, DI wiring, admission/profile behavior,
+exact invitation expiry, denied writes and absence of session creation. Concurrent
+admission covers one subject, conflicting subjects claiming one email, and profile
+changes. Signed-token HTTP cases cover owner, invitee, active user and outsider.
+They delete only their own synthetic records. Remove the isolated database
 after verification. Ordinary CI skips these database suites unless explicitly set up;
 full real-stack authentication browser fixtures remain F07.

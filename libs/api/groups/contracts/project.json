@@ -1,0 +1,14 @@
+{
+  "name": "api-groups-contracts",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/groups/contracts/src",
+  "projectType": "library",
+  "tags": [
+    "platform:api",
+    "scope:groups",
+    "type:api-contract",
+    "contract:invitation-admission"
+  ],
+  "// targets": "to see all targets run: nx show project api-groups-contracts --web",
+  "targets": {}
+}

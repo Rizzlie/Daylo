@@ -83,6 +83,9 @@ export const environmentSchema = z
   .object({
     DATABASE_URL: databaseUrlSchema,
     FRONTEND_ORIGIN: frontendOriginSchema,
+    INITIAL_OWNER_EMAIL: requiredString
+      .pipe(z.email().max(320))
+      .transform((value) => value.toLowerCase()),
     GOOGLE_CLIENT_ID: requiredString.regex(
       /^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/,
       {

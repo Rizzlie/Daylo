@@ -1,0 +1,13 @@
+{
+  "name": "api-groups-feature",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/groups/feature/src",
+  "projectType": "library",
+  "tags": [
+    "platform:api",
+    "scope:groups",
+    "type:api-feature"
+  ],
+  "// targets": "to see all targets run: nx show project api-groups-feature --web",
+  "targets": {}
+}
