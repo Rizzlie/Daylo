@@ -4,7 +4,7 @@ Parent backlog item: **F01** · [Task index](../tasks.md) · [Backlog](../backlo
 
 Discussion status: **Completed on 2026-10-05 for the bounded review scope.**
 Implementation authorization: **Owner confirmed the proposed review and verification scope on 2026-10-05.**
-Delivery status: Existing API shell reviewed and freshly verified; no application correction required. Owner acceptance pending.
+Delivery status: Closed — existing API shell reviewed, verified and owner-accepted on 2026-10-12; no application correction required.
 
 ## Assumptions and sources
 
@@ -15,19 +15,19 @@ Delivery status: Existing API shell reviewed and freshly verified; no applicatio
 
 ## Work to perform
 
-- [x] Review the empty NestJS shell: API bootstrap, `/api` prefix, configurable port, tags and documented targets. Owner acceptance remains pending.
+- [x] Review the empty NestJS shell: API bootstrap, `/api` prefix, configurable port, tags and documented targets. Owner acceptance recorded on 2026-10-12.
 
 ## Acceptance criteria
 
 The work above must satisfy this task-specific observable outcome:
 
-Implemented and verified per backlog; human acceptance pending. No endpoints or sample service are required for this task.
+Implemented and verified per backlog; owner-accepted on 2026-10-12. No endpoints or sample service are required for this task.
 
 The owner must confirm the final criteria during discussion. Applicable checks must pass, evidence and limitations must be recorded, and no blocking defect may remain. Implementation, verification and owner acceptance are tracked separately.
 
 ## Verification plan
 
-- [x] Existing shell inspected and freshly verified; human acceptance pending.
+- [x] Existing shell inspected and verified; owner acceptance recorded on 2026-10-12.
 - [x] No endpoints or sample service are required or added for this task.
 
 - Inspect available Nx targets and use project generators/targets where applicable; select exact commands after inspection rather than inventing flags.
@@ -52,7 +52,7 @@ Record the discussion outcome below. Agreement on documentation alone is not imp
 - Agreed assumptions and behavior: Reuse the existing endpoint-free NestJS shell; bootstrap, `/api` prefix, default port 3000 with `PORT` override, API application tags and documented Nx targets define this task's boundary. F01-01 is owner-accepted.
 - Agreed scope and exclusions: Review the existing code, run fresh API lint/build, check startup and JSON 404, and record results. No new endpoints, services, libraries, dependencies or subsequent tasks.
 - Agreed approach and verification: Inspect source and resolved Nx configuration; run existing API lint/build targets without cache; run `api:serve` and probe `GET /api`. Check `PORT` override on a free local port and stop the verification server afterward.
-- Unresolved questions: None for the agreed scope. Final owner acceptance remains pending.
+- Unresolved questions: None for the agreed scope. Owner acceptance recorded below.
 - Owner implementation authorization: The owner requested F01-02 and then confirmed the proposed bounded scope with `Tak potwierdzam ten zakres` on 2026-10-05.
 
 ## Scope boundaries
@@ -65,7 +65,7 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 - Checks executed and outcomes: `npm exec nx -- show project api --json` passed. Fresh `npm exec nx -- run-many -t lint build -p api --skipNxCache` passed with cache skipped. With `PORT=3102`, `npm exec nx -- run api:serve` compiled and started NestJS successfully; `GET http://localhost:3102/api` returned HTTP 404, `application/json; charset=utf-8`, and `{"message":"Cannot GET /api","error":"Not Found","statusCode":404}`. The override was verified at runtime; the default value was checked in source and retains the earlier port-3000 startup evidence in the backlog. Verification server stopped and port 3102 released.
 - Browser scenarios and viewport coverage: N/A; backend-only review with no user-facing change. Direct HTTP verification exercises the shell's observable response.
 - Known limitations / incomplete verification: No API test target exists because the shell contains no business behavior. Swagger/client checks and PostgreSQL readiness are outside this endpoint-free scope. Full boundary fixtures remain F01-04. Restricted execution initially reported `spawn EPERM` despite exit code 0; this was not counted as a pass, and approved expanded-permission execution passed. Runtime emitted environment color warnings and reported inspector port 9229 already occupied; HTTP startup and response passed, debugger attachment was not verified. Nx daemon/plugin isolation were disabled for this session.
-- Owner acceptance: Pending; scope confirmation is not delivery acceptance. F01 remains incomplete.
+- Owner acceptance: Granted on 2026-10-12 through the owner's blanket acceptance of previously implemented tasks: "zrobiliśmy je, ale nie zaakceptowałem po implementacji, akceptuje je oczywiscie". Acceptance covers the delivered scope; recorded verification limitations remain unchanged. No fresh verification, commit or subsequent implementation is claimed or authorized.
 - Retrospective and workflow improvements: Treat child-process errors as failed verification regardless of the wrapper exit code. Check server cleanup explicitly: Ctrl+C ended the Nx session but left its API child; the identified child was stopped separately. Reuse existing shell code and keep boundary enforcement, readiness and feature work in their own tasks.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.

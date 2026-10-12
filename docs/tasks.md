@@ -21,31 +21,31 @@ Task discussions remain **not started** unless their individual records state ot
 | Task | Title | Delivery status |
 | --- | --- | --- |
 | [F01-01](tasks/F01-01-angular-shell-review.md) | Angular shell review and completion | Closed: agreed scope implemented, checked and owner-accepted on 2026-10-05; E2E remains in F01-03 |
-| [F01-02](tasks/F01-02-nestjs-shell-review.md) | NestJS shell review and acceptance | Existing shell reviewed and freshly verified on 2026-10-05; owner acceptance pending |
-| [F01-03](tasks/F01-03-frontend-smoke-tests.md) | Frontend shell E2E smoke coverage | Implemented; desktop/mobile E2E and lint passed; independent browser inspection incomplete, owner acceptance pending |
+| [F01-02](tasks/F01-02-nestjs-shell-review.md) | NestJS shell review and acceptance | Closed: reviewed, verified and owner-accepted on 2026-10-12 |
+| [F01-03](tasks/F01-03-frontend-smoke-tests.md) | Frontend shell E2E smoke coverage | Delivered scope owner-accepted on 2026-10-12; desktop/mobile E2E and lint passed; independent browser inspection remains incomplete |
 | [F01-04](tasks/F01-04-library-boundaries.md) | Library boundaries (built-in Nx rule) | Built-in Nx rule only; project lint and production builds passed; owner accepted the simplified scope on 2026-10-05 |
-| [F01-05](tasks/F01-05-commit-conventions-and-ci.md) | Commit conventions and foundation CI | Implemented: affected PR checks, hooks and local verification passed; GitHub execution and owner acceptance pending |
+| [F01-05](tasks/F01-05-commit-conventions-and-ci.md) | Commit conventions and foundation CI | Delivered scope owner-accepted on 2026-10-12; local verification passed; GitHub-hosted execution remains unverified |
 
 ### F02
 
 | Task | Title | Delivery status |
 | --- | --- | --- |
-| [F02-01](tasks/F02-01-local-postgresql-runtime.md) | Local PostgreSQL and runtime configuration | Implemented and verified; owner acceptance pending |
-| [F02-02](tasks/F02-02-database-readiness.md) | Database-aware API readiness | Implemented and verified; owner acceptance pending |
+| [F02-01](tasks/F02-01-local-postgresql-runtime.md) | Local PostgreSQL and runtime configuration | Closed: implemented, verified and owner-accepted on 2026-10-12 |
+| [F02-02](tasks/F02-02-database-readiness.md) | Database-aware API readiness | Closed: implemented, verified and owner-accepted on 2026-10-12 |
 
 ### F03
 
 | Task | Title | Delivery status |
 | --- | --- | --- |
-| [F03-01](tasks/F03-01-prisma-schema-and-migrations.md) | Prisma schema and migrations | Implemented and verified; owner acceptance pending |
-| [F03-02](tasks/F03-02-database-transaction-runner.md) | Database lifecycle and transaction runner | Implemented and verified; owner acceptance pending |
+| [F03-01](tasks/F03-01-prisma-schema-and-migrations.md) | Prisma schema and migrations | Closed: implemented, verified and owner-accepted on 2026-10-12 |
+| [F03-02](tasks/F03-02-database-transaction-runner.md) | Database lifecycle and transaction runner | Closed: implemented, verified and owner-accepted on 2026-10-12 |
 
 ### F04
 
 | Task | Title | Delivery status |
 | --- | --- | --- |
 | [F04-01](tasks/F04-01-zod-validation-and-serialization.md) | Zod validation and response serialization | Closed: implemented, verified and owner-accepted on 2026-10-12 |
-| [F04-02](tasks/F04-02-session-contract-and-swagger.md) | Current-session contract and Swagger | Pending |
+| [F04-02](tasks/F04-02-session-contract-and-swagger.md) | Current-session contract and Swagger | Closed: implemented, verified and owner-accepted on 2026-10-12 |
 
 ### F05
 
@@ -107,7 +107,7 @@ Task discussions remain **not started** unless their individual records state ot
 
 | Task | Title | Delivery status |
 | --- | --- | --- |
-| [M05-01](tasks/M05-01-theme-acceptance.md) | Theme acceptance and rendered-control review | Theme delivered; control review/acceptance pending |
+| [M05-01](tasks/M05-01-theme-acceptance.md) | Theme acceptance and rendered-control review | Delivered global theme owner-accepted on 2026-10-12; control/overlay/focus review remains pending |
 | [M05-02](tasks/M05-02-responsive-shell-and-identity.md) | Responsive shell and Daylo identity | Pending |
 | [M05-03](tasks/M05-03-preferences-and-settings.md) | Persisted preferences and Settings | Pending |
 | [M05-04](tasks/M05-04-accessibility-review.md) | Cross-feature accessibility review | Pending |

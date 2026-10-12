@@ -4,7 +4,7 @@ Parent backlog item: **F02** · [Task index](../tasks.md) · [Backlog](../backlo
 
 Discussion status: **Completed with the owner on 2026-10-06.**
 Implementation authorization: **Granted by the owner on 2026-10-06.**
-Delivery status: **Implemented and verified on 2026-10-06; owner acceptance pending.**
+Delivery status: **Closed — implemented, verified and owner-accepted on 2026-10-12, including the 2026-10-09 Zod follow-up.**
 
 ## Assumptions and sources
 
@@ -66,7 +66,7 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 - Checks executed and outcomes: `docker compose --env-file .env.example config` rendered successfully. Compose created the named volume and container; `docker compose ps` reported healthy on `0.0.0.0:5433`, `pg_isready` accepted connections, and `psql` returned database/user `daylo|daylo`. Host TCP reachability to `localhost:5433` passed. After the Zod follow-up, fresh `api-core-configuration` test and lint targets passed; the suite covers normalization, every missing required field, invalid port/environment/database protocol/frontend origin. A fresh API production build passed. The built API started on port 3101 with valid Zod-parsed configuration and returned its expected endpoint-free JSON 404 at `/api`; an invalid `NODE_ENV` exited with code 1 and the expected field-specific error. Earlier F02-01 verification also passed lint for `api`, `api-core-configuration`, and `web`, both production builds, missing/invalid configuration startup checks, and the real Angular-to-NestJS proxy request. Final `git diff --check` passed after repairing a generator newline artifact.
 - Browser scenarios and viewport coverage: N/A. This task changes local infrastructure and development routing without changing rendered UI. The proxy was exercised over HTTP through the real Angular development server and NestJS process; both verification processes were stopped and ports 3000/4200 released.
 - Known limitations / incomplete verification: F02-01 provides and validates `DATABASE_URL`, and host/database reachability passed. The API does not yet issue a database query during normal runtime; database-aware readiness and down-database behavior are explicitly F02-02. Prisma lifecycle and migrations remain F03. The PostgreSQL development container remains running as the requested local runtime. No production secrets were used or committed.
-- Owner acceptance: Pending review. F02 remains incomplete because F02-02 is pending.
+- Owner acceptance: Granted on 2026-10-12 through the owner's blanket acceptance of previously implemented tasks: "zrobiliśmy je, ale nie zaakceptowałem po implementacji, akceptuje je oczywiscie". Acceptance covers the delivered scope; recorded verification limitations remain unchanged. No fresh verification, commit or subsequent implementation is claimed or authorized.
 - Retrospective and workflow improvements: Inspect occupied host ports before the first Compose start; the discovered `5432` collision was resolved without stopping the owner's unrelated container. Check package module format as well as peer dependency ranges: `@nestjs/config` 12 accepts NestJS 11 but is ESM-only, so the implementation pins compatible 4.0.2. The Nx generator introduced malformed newline bytes in the root ESLint file; restoring its original content before final diff validation prevented unrelated churn.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.

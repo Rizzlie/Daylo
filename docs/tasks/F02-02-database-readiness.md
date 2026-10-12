@@ -4,7 +4,7 @@ Parent backlog item: **F02** · [Task index](../tasks.md) · [Backlog](../backlo
 
 Discussion status: **Completed with the owner on 2026-10-09.**
 Implementation authorization: **Granted by the owner on 2026-10-09.**
-Delivery status: **Implemented and verified on 2026-10-11; owner acceptance pending.**
+Delivery status: **Closed — implemented, verified and owner-accepted on 2026-10-12.**
 
 ## Assumptions and sources
 
@@ -64,7 +64,7 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 - Checks executed and outcomes: Fresh `api-core-database:test` passed three service and two controller tests covering success, query failure, timeout and 503 mapping. Fresh lint passed for `api-core-database` and `api`; the API production build passed. A real API and PostgreSQL sequence returned 200 with `{"status":"ok","checks":{"database":"up"}}`, then 503 with `{"status":"error","checks":{"database":"down"}}` while PostgreSQL was stopped, then the same 200 response after PostgreSQL became healthy again. All Nx checks ran without cache.
 - Browser scenarios and viewport coverage: Not applicable. This backend-only endpoint has no rendered UI change; the real HTTP contract was exercised directly.
 - Known limitations / incomplete verification: Swagger/OpenAPI export and Angular client generation remain intentionally deferred to F04/F05 under the agreed scope. The local API and PostgreSQL processes started for verification were stopped afterward.
-- Owner acceptance: Pending.
+- Owner acceptance: Granted on 2026-10-12 through the owner's blanket acceptance of previously implemented tasks: "zrobiliśmy je, ale nie zaakceptowałem po implementacji, akceptuje je oczywiscie". Acceptance covers the delivered scope; recorded verification limitations remain unchanged. No fresh verification, commit or subsequent implementation is claimed or authorized.
 - Retrospective and workflow improvements: The restricted session again blocked Nx plugin subprocesses, so verification used the documented daemon/plugin-isolation settings outside the sandbox. Docker Desktop was initially stopped; checking engine readiness before Compose reduced ambiguity, and the final sequence restored the database before cleanup.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.

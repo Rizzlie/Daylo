@@ -4,7 +4,7 @@ Parent backlog item: **M05** · [Task index](../tasks.md) · [Backlog](../backlo
 
 Discussion status: **Not started — required before implementation.**
 Implementation authorization: **Not granted by this document.**
-Delivery status: Global theme implemented; shell build/lint and desktop/mobile browser checks recorded. Controls/overlays/focus review and owner acceptance pending.
+Delivery status: Delivered global theme owner-accepted on 2026-10-12; shell build/lint and desktop/mobile browser checks recorded. Controls/overlays/focus review remains pending; M05-01 is not fully delivered.
 
 ## Assumptions and sources
 
@@ -22,14 +22,15 @@ Delivery status: Global theme implemented; shell build/lint and desktop/mobile b
 
 The work above must satisfy this task-specific observable outcome:
 
-Theme implemented; build/lint and shell desktop/mobile inspection passed per design-system record. Human acceptance and control/overlay/focus review pending.
+Theme implemented; build/lint and shell desktop/mobile inspection passed per design-system record. Delivered theme owner-accepted on 2026-10-12; control/overlay/focus review remains pending.
 
 The owner must confirm the final criteria during discussion. Applicable checks must pass, evidence and limitations must be recorded, and no blocking defect may remain. Implementation, verification and owner acceptance are tracked separately.
 
 ## Verification plan
 
-- [ ] Theme implemented; build/lint and shell desktop/mobile inspection passed per design-system record.
-- [ ] Human acceptance and control/overlay/focus review pending.
+- [x] Theme implemented; build/lint and shell desktop/mobile inspection passed per design-system record.
+- [x] Delivered global theme owner-accepted on 2026-10-12.
+- [ ] Control/overlay/focus review remains pending.
 
 - Inspect available Nx targets and use project generators/targets where applicable; select exact commands after inspection rather than inventing flags.
 - Run affected lint, meaningful tests and production builds. For API contract changes, export/validate OpenAPI, regenerate the Angular client and check drift.
@@ -66,7 +67,7 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 - Checks executed and outcomes: Pending.
 - Browser scenarios and viewport coverage: Pending or N/A with a reason.
 - Known limitations / incomplete verification: Pending.
-- Owner acceptance: Pending.
+- Owner acceptance: Delivered global theme accepted on 2026-10-12 through the owner's blanket acceptance of previously implemented work. This accepts only the delivered theme slice; rendered control/overlay/focus review and the remainder of M05 remain pending. No new implementation, verification or commit is authorized.
 - Retrospective and workflow improvements: Pending.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.
