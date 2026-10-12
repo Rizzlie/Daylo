@@ -1,0 +1,116 @@
+# Google authentication
+
+F06-01 implements the Google OIDC transaction layer only. Admission and user identity
+persistence belong to F06-02; Daylo sessions and CSRF belong to F06-03; frontend
+authentication states and the real Google smoke check belong to F06-04/F06-05.
+
+## Local Google client
+
+Create a project in Google Cloud Console, configure Google Auth Platform branding
+and External audience, and create a Web application OAuth client. Keep the local
+project in Testing. Register this exact authorized redirect URI:
+
+```text
+http://localhost:4200/api/auth/google/callback
+```
+
+Keep the client credentials in ignored `.env.local` (loaded before `.env`) or `.env`:
+
+```dotenv
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:4200/api/auth/google/callback
+```
+
+Never commit real credentials. API startup validates these values alongside the
+existing runtime settings. Callback origin must equal `FRONTEND_ORIGIN`; path must
+be `/api/auth/google/callback`, without credentials, query or fragment. Only loopback
+HTTP is permitted outside production; production requires HTTPS. Offline OpenAPI
+export does not load this configuration, connect to PostgreSQL or contact Google.
+
+Google references: [Auth Platform setup](https://support.google.com/cloud/answer/15544987?hl=en),
+[OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect).
+
+## Runtime behavior
+
+Start the existing PostgreSQL service and API/frontend Nx serve targets. If `PORT`
+from the API environment is picked up by Angular, set `$env:PORT = '4200'` in the
+frontend terminal before `npm exec nx -- run web:serve --port=4200`.
+Navigate
+the browser to `http://localhost:4200/api/auth/google`. Angular proxies the request
+and callback to NestJS; use the same host throughout the flow.
+
+The backend requests `openid email profile`, online access, random state and nonce.
+The ten-minute browser-binding cookie is named `daylo_oauth_browser`: HttpOnly,
+SameSite=Lax, path `/api/auth/google`, no Domain attribute. Secure is disabled only
+in development with an HTTP callback. Each start replaces this cookie; only the
+latest attempt in the same browser can complete. Persist only SHA-256 hashes of
+state/binding, plus nonce and expiry, using the existing `OAuthTransaction` model.
+Expired rows are removed on the next start.
+
+Callback consumes a matching unexpired transaction atomically before code exchange.
+Replay and concurrent callbacks cannot exchange the code again. Browser/state
+mismatch does not consume another browser's valid transaction. Provider refusal,
+missing code and failed token validation terminate the matching attempt. Malformed
+query shapes are rejected by Zod before the callback use case runs. Callback clears
+the binding cookie using the same cookie attributes.
+
+The pinned official `google-auth-library` 11.2.0 exchanges the code and verifies the
+RS256 signature against Google's cached public certificates, issuer and audience.
+Daylo additionally requires numeric issue/expiry dates, a currently unexpired token,
+matching nonce, stable nonempty subject, valid verified email and matching `azp`
+when present. Future issue/not-before dates allow at most 60 seconds of clock skew.
+Provider requests have a ten-second timeout and no automatic retries. No Google
+tokens are retained in the OAuth client, database, cookies or responses. Provider
+diagnostics are not logged or returned because they can include tokens.
+
+Both routes use `Cache-Control: no-store` and `Referrer-Policy: no-referrer`. Client
+supplied redirect targets are ignored. OAuth navigation is a browser redirect,
+not a call through the generated Angular HTTP service. No ordinary mutation CSRF
+header is required for the callback; state, binding and nonce protect it.
+
+| Callback outcome | HTTP behavior |
+| --- | --- |
+| Valid Google identity | 503 `SERVICE_UNAVAILABLE`, `Daylo sign-in completion is not yet available`; no user/session created |
+| Invalid/expired/replayed transaction, provider refusal, rejected token | 401 `GOOGLE_AUTHENTICATION_FAILED`, safe generic message |
+| Malformed query | 400 `VALIDATION_ERROR` |
+| Database/provider transport unavailable | 503 `SERVICE_UNAVAILABLE`, no infrastructure diagnostics |
+
+`GET /api/auth/session` still returns 401. F06-03 will replace the intermediate
+success 503 with admission/session completion and fixed frontend redirects.
+
+## Verification
+
+Ordinary HTTP tests replace only Google's external transport with synthetic signed
+tokens and certificates. There is no runtime environment flag for a controlled
+provider. They exercise the real verifier, use cases, HTTP cookies, Zod and error
+filter; the ordinary transaction-store fixture is complemented by real PostgreSQL
+tests. They do not prove that real Google credentials/sign-in work.
+
+```powershell
+npm exec nx -- run-many -t lint test -p api api-auth-feature api-auth-data-access api-core-configuration --skipNxCache
+npm exec nx -- run api:build --skipNxCache
+npm run api:generate
+npm exec nx -- run web-shared-api-client:check
+```
+
+For PostgreSQL acceptance checks, create a fresh isolated database whose name starts
+with `daylo_f06_` and apply migrations using the existing target. Use its actual
+local connection URL (the following credentials are synthetic development examples):
+
+```powershell
+$env:DATABASE_URL = 'postgresql://daylo:daylo-local@localhost:5433/daylo_f06_verification'
+npm exec nx -- run api-core-database:prisma-migrate-deploy --skipNxCache
+$env:F06_TEST_DATABASE_URL = $env:DATABASE_URL
+$env:RUN_F06_DATABASE_INTEGRATION = 'true'
+npm exec nx -- run-many -t test -p api api-auth-data-access --skipNxCache
+Remove-Item Env:RUN_F06_DATABASE_INTEGRATION
+Remove-Item Env:F06_TEST_DATABASE_URL
+Remove-Item Env:DATABASE_URL
+```
+
+The opt-in suites verify persisted transactions, browser mismatch, expiry, eight
+concurrent repository/HTTP callbacks, replay, DI wiring and absence of user/session
+creation. They delete only their own transaction rows. Remove the isolated database
+after verification. Ordinary CI skips these database suites unless explicitly set up;
+full real-stack authentication browser fixtures remain F07.

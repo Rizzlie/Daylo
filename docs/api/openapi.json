@@ -157,6 +157,116 @@
   },
   "openapi": "3.0.0",
   "paths": {
+    "/api/auth/google": {
+      "get": {
+        "description": "Navigate the browser to this endpoint; do not call through the generated HTTP client. Creates a ten-minute browser-bound single-use OIDC transaction. No Daylo session is created.",
+        "operationId": "startGoogleAuthentication",
+        "parameters": [],
+        "responses": {
+          "302": {
+            "description": "Redirect to Google. Sets the HttpOnly, SameSite=Lax daylo_oauth_browser cookie.",
+            "headers": {
+              "Location": {
+                "description": "Google authorization URL",
+                "schema": {
+                  "format": "uri",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "Authentication infrastructure unavailable."
+          }
+        },
+        "summary": "Start browser navigation to Google",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/google/callback": {
+      "get": {
+        "description": "Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Valid verification temporarily returns 503 until Daylo admission/session completion is implemented. Identity and provider tokens are never returned.",
+        "operationId": "completeGoogleAuthentication",
+        "parameters": [
+          {
+            "description": "Single-use browser-bound authentication state.",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Google authorization code; required for a successful provider response.",
+            "in": "query",
+            "name": "code",
+            "required": false,
+            "schema": {
+              "maxLength": 4096,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Google refusal/error identifier; cannot be combined with a successful response.",
+            "in": "query",
+            "name": "error",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "Malformed callback query."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "GOOGLE_AUTHENTICATION_FAILED: invalid, expired or reused transaction, denied consent, or invalid identity token."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "Verified identity cannot yet create a Daylo session, or authentication infrastructure unavailable."
+          }
+        },
+        "summary": "Process the Google authorization callback",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/api/auth/session": {
       "get": {
         "description": "Requires a valid backend-owned session cookie. Pending users may read their identity. Missing, expired or revoked sessions return 401. Until F06 implements session lookup, this endpoint always returns 401, including when a cookie is supplied.",

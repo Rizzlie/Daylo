@@ -1,8 +1,9 @@
 import { Controller, Get, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import SwaggerParser from '@apidevtools/swagger-parser';
-import { ApiAuthFeatureModule } from '@daylo/api/auth/feature';
-import { DatabaseReadinessService } from '@daylo/api/core/database';
+import { ApiAuthFeatureModule, GOOGLE_OAUTH_CLIENT } from '@daylo/api/auth/feature';
+import { DatabaseReadinessService, PrismaService } from '@daylo/api/core/database';
+import { OAuth2Client } from 'google-auth-library';
 import {
   currentSessionResponseSchema,
   httpErrorResponseSchema,
@@ -57,7 +58,10 @@ describe('session contract and OpenAPI', () => {
       providers: [
         { provide: DatabaseReadinessService, useValue: { isReady: async () => true } },
       ],
-    }).compile();
+    })
+      .overrideProvider(PrismaService).useValue({})
+      .overrideProvider(GOOGLE_OAUTH_CLIENT).useValue(new OAuth2Client({ clientId: 'synthetic.apps.googleusercontent.com' }))
+      .compile();
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix('api');
     setupOpenApi(app);

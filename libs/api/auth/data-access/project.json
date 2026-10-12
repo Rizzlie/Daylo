@@ -1,0 +1,23 @@
+{
+  "name": "api-auth-data-access",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/auth/data-access/src",
+  "projectType": "library",
+  "tags": [
+    "platform:api",
+    "scope:auth",
+    "type:api-data-access"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "dependsOn": [{ "projects": ["api-core-database"], "target": "prisma-generate" }],
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "coverage/libs/api/auth/data-access"
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Daylo API conventions
 
-Status: Validation established by F04-01; current-session contract and Swagger added in F04-02. Authentication enforcement is implemented in F06.
+Status: Validation established by F04-01; current-session contract and Swagger added in F04-02. Google OIDC transactions are implemented in F06-01; Daylo admission/session enforcement remains F06-02/F06-03.
 
 ## Public schemas
 
@@ -42,6 +42,19 @@ The foundation codes and status semantics are:
 | 503 | `SERVICE_UNAVAILABLE` | A required service, such as PostgreSQL readiness, is unavailable. |
 
 ## Session cookie and CSRF
+
+`GET /api/auth/google` (`startGoogleAuthentication`) is browser navigation: it sets
+the ten-minute `daylo_oauth_browser` binding cookie and redirects to Google.
+`GET /api/auth/google/callback` (`completeGoogleAuthentication`) consumes a
+browser-bound single-use transaction and validates Google's ID token. Invalid
+authentication returns the standard error envelope with HTTP 401 and code
+`GOOGLE_AUTHENTICATION_FAILED`; malformed query values return 400. Until F06-03
+connects admission/session completion, valid verification returns safe HTTP 503
+`SERVICE_UNAVAILABLE` without creating a user/session or exposing identity.
+Provider/database transport failure also returns safe 503. These navigation
+operations are documented in OpenAPI but must not be called through Angular's
+generated HTTP services. See [Google authentication](google-authentication.md)
+for configuration, transaction policy and verification.
 
 `GET /api/auth/session` (`getCurrentSession`) returns HTTP 401 with the standard
 `AUTHENTICATION_REQUIRED` envelope when a session is missing, expired or revoked.

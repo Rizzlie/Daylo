@@ -144,6 +144,31 @@ Hosted CI follow-up: On 2026-10-12, the owner reported all PR #13 jobs passed. G
 
 ## 1. Foundation backlog
 
+### F06-01 delivery — 2026-10-12
+
+Implemented the authorized Google OIDC transaction slice: ten-minute browser binding,
+hashed state/binding, atomic single-use PostgreSQL consumption, backend code exchange,
+complete Google token checks and safe cookie/error behavior. The existing environment
+validator now covers Google settings and callback policy. OpenAPI/client artifacts
+were regenerated through the official pipeline. Successful verification ends with
+the agreed safe 503 until admission/session completion in F06-02/F06-03.
+
+Relevant local lint/tests, real isolated PostgreSQL concurrency/replay tests,
+API/web production builds, Angular client compilation, offline OpenAPI validation
+and two-generation source-preserving drift verification passed. T3 browser inspection
+checked the real proxy/API stack and safe callback rejection on desktop/mobile with
+synthetic credentials. Real Google sign-in, full authentication browser E2E and hosted
+F06-01 CI remain unverified. The owner accepted the delivered scope with "ok akceptuje
+zmiany" on 2026-10-12, closing F06-01. F06 remains incomplete until its remaining
+tasks are delivered and accepted. Acceptance does not authorize the next task,
+commits or publication. See [F06-01](tasks/F06-01-google-oidc-flow.md) for evidence
+and retrospective. This acceptance update changes documentation only; no checks
+were rerun.
+
+Publication: the owner separately authorized a PR on 2026-10-12. The accepted
+F06-01 scope is published in [draft PR #15](https://github.com/Rizzlie/Daylo/pull/15),
+registered with the task thread. Hosted F06-01 CI is pending.
+
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
 
 | ID | Deliverable | Acceptance criteria | Verification |
