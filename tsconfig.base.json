@@ -32,6 +32,9 @@
       ],
       "@daylo/web/shared/api-client": [
         "./libs/web/shared/api-client/src/index.ts"
+      ],
+      "@daylo/api/auth/data-access": [
+        "./libs/api/auth/data-access/src/index.ts"
       ]
     }
   },

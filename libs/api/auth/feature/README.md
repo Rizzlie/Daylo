@@ -1,6 +1,6 @@
 # api-auth-feature
 
-Owns the current-session HTTP contract. `GET /api/auth/session` currently always
+Owns the Google OIDC transaction flow and current-session HTTP contract. `GET /api/auth/session` currently always
 returns the standard 401 `AUTHENTICATION_REQUIRED` envelope, including for requests
 with cookies. Actual session lookup, expiry and revocation are implemented in F06.
 
@@ -10,3 +10,13 @@ are exposed. Pending sessions can read their identity once F06 provides them.
 
 Application-level HTTP serialization and error handling are composed by `apps/api`.
 Contract/HTTP tests live in the API application; this library has no empty test target.
+
+`GET /api/auth/google` creates a ten-minute hashed browser-bound transaction and
+redirects to Google. `GET /api/auth/google/callback` consumes the matching transaction
+before provider exchange and verifies the Google signature, issuer, audience, token
+dates, nonce and verified email. The production module has no test-provider switch;
+tests control only the injected Google client's external transport.
+
+Successful provider verification returns safe HTTP 503 until F06-02/F06-03 provide
+admission/session completion. No identity or provider token is exposed or persisted.
+See [configuration and verification](../../../../docs/google-authentication.md).

@@ -64,6 +64,8 @@ const frontendOriginSchema = requiredString.transform((value, context) => {
   if (
     !['http:', 'https:'].includes(url.protocol) ||
     url.pathname !== '/' ||
+    url.username.length > 0 ||
+    url.password.length > 0 ||
     url.search.length > 0 ||
     url.hash.length > 0
   ) {
@@ -81,6 +83,14 @@ export const environmentSchema = z
   .object({
     DATABASE_URL: databaseUrlSchema,
     FRONTEND_ORIGIN: frontendOriginSchema,
+    GOOGLE_CLIENT_ID: requiredString.regex(
+      /^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/,
+      {
+        error: 'must be a Google web OAuth client ID',
+      },
+    ),
+    GOOGLE_CLIENT_SECRET: requiredString,
+    GOOGLE_CALLBACK_URL: requiredString,
     NODE_ENV: requiredString.pipe(
       z.enum(NODE_ENVIRONMENTS, {
         error: 'must be development, production, or test',
@@ -95,7 +105,48 @@ export const environmentSchema = z
         error: 'must be an integer between 1 and 65535',
       }),
   })
-  .passthrough();
+  .passthrough()
+  .superRefine((environment, context) => {
+    let callback: URL;
+    try {
+      callback = new URL(environment.GOOGLE_CALLBACK_URL);
+    } catch {
+      context.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_CALLBACK_URL'],
+        message: 'must be a valid URL',
+      });
+      return;
+    }
+
+    if (
+      callback.origin !== environment.FRONTEND_ORIGIN ||
+      callback.pathname !== '/api/auth/google/callback' ||
+      callback.search ||
+      callback.hash ||
+      callback.username ||
+      callback.password
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_CALLBACK_URL'],
+        message:
+          'must match FRONTEND_ORIGIN with path /api/auth/google/callback and no credentials, query, or fragment',
+      });
+    }
+
+    const localHttp =
+      environment.NODE_ENV !== 'production' &&
+      ['localhost', '127.0.0.1', '[::1]'].includes(callback.hostname) &&
+      callback.protocol === 'http:';
+    if (callback.protocol !== 'https:' && !localHttp) {
+      context.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_CALLBACK_URL'],
+        message: 'must use HTTPS except for local non-production HTTP',
+      });
+    }
+  });
 
 export function validateEnvironment(
   environment: Record<string, unknown>,
