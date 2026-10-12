@@ -70,3 +70,12 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 - Retrospective and workflow improvements: Existing admission tests counted all sessions in a shared isolated DB; newly concurrent session suites exposed the invalid assumption. Assertions now target only each suite's synthetic users and cleanup runs before assertions. Express routes HEAD through GET handlers, so renewal now checks the actual method and has regression coverage. Document browser-managed Origin in prose rather than a generated service parameter; browser JavaScript cannot set it. Provide header descriptions before generation to avoid empty generated JSDoc/trailing whitespace. Nx's Node loader also preloads code in worker threads, so the temporary verification-only working-directory preload now checks isMainThread. Do not report successful browser DOM/API checks as visual verification when snapshots fail.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.
+
+### Publication — 2026-10-12
+
+The owner-authorized F06-03 scope is published in
+[draft PR #17](https://github.com/Rizzlie/Daylo/pull/17) against `main` from
+`feat/f06-03-sessions-and-csrf` and registered with the current task thread.
+The implementation and acceptance record are in commit `339bf03`.
+The PR preserves the repository template and recorded verification limits.
+Hosted CI is pending; publication does not authorize F06-04 or deployment.

@@ -236,6 +236,9 @@ F06 remains incomplete; F06-04 stays pending. This follow-up records acceptance
 and publishes only the already delivered F06-03 scope; no subsequent implementation
 or deployment is authorized.
 
+Publication: [draft PR #17](https://github.com/Rizzlie/Daylo/pull/17) contains the
+accepted F06-03 scope and is registered with the task thread. Hosted CI is pending.
+
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
 
 | ID | Deliverable | Acceptance criteria | Verification |

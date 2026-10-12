@@ -60,7 +60,7 @@ Task discussions remain **not started** unless their individual records state ot
 | --- | --- | --- |
 | [F06-01](tasks/F06-01-google-oidc-flow.md) | Google OIDC transaction flow | Closed: agreed scope implemented, locally verified and owner-accepted on 2026-10-12; [draft PR #15](https://github.com/Rizzlie/Daylo/pull/15); real Google sign-in remains F06-05 |
 | [F06-02](tasks/F06-02-identity-and-admission.md) | Identity and application admission | Closed: implemented, locally verified and owner-accepted on 2026-10-12; [draft PR #16](https://github.com/Rizzlie/Daylo/pull/16); partial browser inspection |
-| [F06-03](tasks/F06-03-sessions-and-csrf.md) | Database sessions and CSRF | Closed: implemented, locally verified and owner-accepted on 2026-10-12; visual/console inspection incomplete |
+| [F06-03](tasks/F06-03-sessions-and-csrf.md) | Database sessions and CSRF | Closed: implemented, locally verified and owner-accepted on 2026-10-12; [draft PR #17](https://github.com/Rizzlie/Daylo/pull/17); visual/console inspection incomplete |
 | [F06-04](tasks/F06-04-frontend-authentication.md) | Frontend authentication states | Pending |
 | [F06-05](tasks/F06-05-google-smoke-verification.md) | Real Google smoke verification | Pending |
 
