@@ -1,6 +1,6 @@
 # Daylo API conventions
 
-Status: Validation established by F04-01; current-session contract and Swagger added in F04-02. Google OIDC transactions are implemented in F06-01; Daylo admission/session enforcement remains F06-02/F06-03.
+Status: Validation established by F04-01; current-session contract and Swagger added in F04-02. Google OIDC transactions and admission are implemented in F06-01/F06-02; session enforcement remains F06-03.
 
 ## Public schemas
 
@@ -48,9 +48,11 @@ the ten-minute `daylo_oauth_browser` binding cookie and redirects to Google.
 `GET /api/auth/google/callback` (`completeGoogleAuthentication`) consumes a
 browser-bound single-use transaction and validates Google's ID token. Invalid
 authentication returns the standard error envelope with HTTP 401 and code
-`GOOGLE_AUTHENTICATION_FAILED`; malformed query values return 400. Until F06-03
-connects admission/session completion, valid verification returns safe HTTP 503
-`SERVICE_UNAVAILABLE` without creating a user/session or exposing identity.
+`GOOGLE_AUTHENTICATION_FAILED`; malformed query values return 400. Verified identities
+then pass application admission. Denied admission (including an email belonging to
+another Google subject) returns 403 `ACCESS_FORBIDDEN` without identity writes.
+Admitted identities are persisted/refreshed but receive safe HTTP 503
+`SERVICE_UNAVAILABLE` until F06-03 adds sessions; no identity is exposed or session created.
 Provider/database transport failure also returns safe 503. These navigation
 operations are documented in OpenAPI but must not be called through Angular's
 generated HTTP services. See [Google authentication](google-authentication.md)

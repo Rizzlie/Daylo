@@ -14,6 +14,7 @@ import type { Request, Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
 import { googleCallbackQuerySchema } from '@daylo/shared/schemas';
 import { SessionErrorResponseDto } from './current-session.response';
+import { ApplicationAdmissionService } from './application-admission.service';
 import {
   GoogleOidcService,
   OAUTH_BROWSER_COOKIE,
@@ -39,6 +40,8 @@ export class GoogleOidcController {
   constructor(
     @Inject(GoogleOidcService) private readonly oidc: GoogleOidcService,
     @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(ApplicationAdmissionService)
+    private readonly admission: ApplicationAdmissionService,
   ) {}
 
   private cookieOptions() {
@@ -95,7 +98,7 @@ export class GoogleOidcController {
     operationId: 'completeGoogleAuthentication',
     summary: 'Process the Google authorization callback',
     description:
-      'Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Valid verification temporarily returns 503 until Daylo admission/session completion is implemented. Identity and provider tokens are never returned.',
+      'Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Verified identities pass application admission; outsiders are denied with 403. Admitted users are persisted, but temporarily receive 503 until Daylo sessions are implemented. Identity and provider tokens are never returned.',
   })
   @ApiQuery({
     name: 'state',
@@ -129,6 +132,12 @@ export class GoogleOidcController {
     type: SessionErrorResponseDto.Output,
   })
   @ApiResponse({
+    status: 403,
+    description: 'ACCESS_FORBIDDEN: no application admission or identity email collision.',
+    type: SessionErrorResponseDto.Output,
+    example: { statusCode: 403, code: 'ACCESS_FORBIDDEN', message: 'Access forbidden' },
+  })
+  @ApiResponse({
     status: 503,
     description:
       'Verified identity cannot yet create a Daylo session, or authentication infrastructure unavailable.',
@@ -140,7 +149,8 @@ export class GoogleOidcController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<never> {
     response.clearCookie(OAUTH_BROWSER_COOKIE, this.cookieOptions());
-    await this.oidc.callback(query, browserCookie(request));
+    const identity = await this.oidc.callback(query, browserCookie(request));
+    await this.admission.admit(identity);
     throw new ServiceUnavailableException({
       code: 'SERVICE_UNAVAILABLE',
       message: 'Daylo sign-in completion is not yet available',

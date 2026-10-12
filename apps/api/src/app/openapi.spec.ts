@@ -1,7 +1,8 @@
 import { Controller, Get, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import SwaggerParser from '@apidevtools/swagger-parser';
-import { ApiAuthFeatureModule, GOOGLE_OAUTH_CLIENT } from '@daylo/api/auth/feature';
+import { GOOGLE_OAUTH_CLIENT } from '@daylo/api/auth/feature';
+import { AppModule } from './app.module';
 import { DatabaseReadinessService, PrismaService } from '@daylo/api/core/database';
 import { OAuth2Client } from 'google-auth-library';
 import {
@@ -53,7 +54,7 @@ describe('session contract and OpenAPI', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [ApiHttpModule, ApiAuthFeatureModule],
+      imports: [ApiHttpModule, AppModule],
       controllers: [DatabaseReadinessController, SessionFixtureController],
       providers: [
         { provide: DatabaseReadinessService, useValue: { isReady: async () => true } },
@@ -70,7 +71,7 @@ describe('session contract and OpenAPI', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it.each([undefined, 'synthetic-cookie=untrusted'])('returns the safe 401 envelope with cookie %s', async (cookie) => {

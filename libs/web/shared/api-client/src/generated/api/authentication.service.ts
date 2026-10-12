@@ -39,7 +39,7 @@ export class AuthenticationService extends BaseService {
 
     /**
      * Process the Google authorization callback
-     * Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Valid verification temporarily returns 503 until Daylo admission/session completion is implemented. Identity and provider tokens are never returned.
+     * Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Verified identities pass application admission; outsiders are denied with 403. Admitted users are persisted, but temporarily receive 503 until Daylo sessions are implemented. Identity and provider tokens are never returned.
      * @endpoint get /api/auth/google/callback
      * @param state Single-use browser-bound authentication state.
      * @param code Google authorization code; required for a successful provider response.

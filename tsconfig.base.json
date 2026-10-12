@@ -35,6 +35,24 @@
       ],
       "@daylo/api/auth/data-access": [
         "./libs/api/auth/data-access/src/index.ts"
+      ],
+      "@daylo/api/users/contracts": [
+        "./libs/api/users/contracts/src/index.ts"
+      ],
+      "@daylo/api/users/data-access": [
+        "./libs/api/users/data-access/src/index.ts"
+      ],
+      "@daylo/api/users/feature": [
+        "./libs/api/users/feature/src/index.ts"
+      ],
+      "@daylo/api/groups/contracts": [
+        "./libs/api/groups/contracts/src/index.ts"
+      ],
+      "@daylo/api/groups/data-access": [
+        "./libs/api/groups/data-access/src/index.ts"
+      ],
+      "@daylo/api/groups/feature": [
+        "./libs/api/groups/feature/src/index.ts"
       ]
     }
   },

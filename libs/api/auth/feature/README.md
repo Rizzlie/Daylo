@@ -17,6 +17,9 @@ before provider exchange and verifies the Google signature, issuer, audience, to
 dates, nonce and verified email. The production module has no test-provider switch;
 tests control only the injected Google client's external transport.
 
-Successful provider verification returns safe HTTP 503 until F06-02/F06-03 provide
-admission/session completion. No identity or provider token is exposed or persisted.
+Successful provider verification passes application admission through Users and
+Groups contracts wired by `ApiAuthFeatureModule.register` at the application root.
+Denied identities return safe HTTP 403 without profile writes. Admitted identities
+are persisted/refreshed, then receive safe HTTP 503 until F06-03 provides sessions.
+No identity or provider token is exposed; provider tokens are never persisted.
 See [configuration and verification](../../../../docs/google-authentication.md).

@@ -194,7 +194,7 @@
     },
     "/api/auth/google/callback": {
       "get": {
-        "description": "Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Valid verification temporarily returns 503 until Daylo admission/session completion is implemented. Identity and provider tokens are never returned.",
+        "description": "Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Verified identities pass application admission; outsiders are denied with 403. Admitted users are persisted, but temporarily receive 503 until Daylo sessions are implemented. Identity and provider tokens are never returned.",
         "operationId": "completeGoogleAuthentication",
         "parameters": [
           {
@@ -249,6 +249,21 @@
               }
             },
             "description": "GOOGLE_AUTHENTICATION_FAILED: invalid, expired or reused transaction, denied consent, or invalid identity token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "ACCESS_FORBIDDEN",
+                  "message": "Access forbidden",
+                  "statusCode": 403
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SessionErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "ACCESS_FORBIDDEN: no application admission or identity email collision."
           },
           "503": {
             "content": {

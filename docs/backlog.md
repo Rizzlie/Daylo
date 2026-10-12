@@ -169,6 +169,33 @@ Publication: the owner separately authorized a PR on 2026-10-12. The accepted
 F06-01 scope is published in [draft PR #15](https://github.com/Rizzlie/Daylo/pull/15),
 registered with the task thread. Hosted F06-01 CI is pending.
 
+### F06-02 delivery — 2026-10-12
+
+Implemented the owner-authorized identity/admission slice through narrow Users and
+Groups contracts and application-root module wiring. Stable Google subject owns
+identity; configured owner and existing active access are admitted, while everyone
+else needs a matching unexpired pending invitation. Email collisions and outsiders
+receive safe 403 without identity writes. Admitted profiles are persisted/refreshed
+and temporarily end with safe 503 until F06-03 creates sessions. Transaction-scoped
+identity locks and a shared invitation lock protect the admission checks and writes.
+No schema migration, npm dependency, membership or invitation resolution was added.
+
+Local verification passed: 104 API tests (including 24 real PostgreSQL admission/HTTP
+cases), 21 configuration tests, three PostgreSQL OAuth-store cases, affected lint,
+API/web production builds, Angular client compilation, OpenAPI validation, official
+regeneration and deterministic source-preserving drift checks. Browser inspection
+checked Swagger admission documentation at 1280x800 and safe invalid callback
+behavior at 390x844 through the actual Angular/API/PostgreSQL stack. Snapshots failed
+and the browser host later disconnected; visual/console verification is incomplete.
+Full login browser E2E and real Google sign-in remain their later tasks. Hosted CI
+is pending. The owner accepted the delivered scope on 2026-10-12 after reporting
+the expected intermediate callback response from a real Google attempt. This does
+not establish sessions or the full F06-05 smoke exercise. Local startup now requires
+INITIAL_OWNER_EMAIL.
+See [F06-02](tasks/F06-02-identity-and-admission.md) for details and retrospective.
+The same acceptance instruction authorized a draft PR. F06-03 remains pending;
+no subsequent application implementation is authorized.
+
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
 
 | ID | Deliverable | Acceptance criteria | Verification |

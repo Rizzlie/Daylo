@@ -3,7 +3,6 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import {
-  ApiAuthFeatureModule,
   GOOGLE_OAUTH_CLIENT,
 } from '@daylo/api/auth/feature';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Test-only persistence override; production application composition still imports feature modules only.
@@ -12,6 +11,10 @@ import {
   OAuthTransactionStore,
 } from '@daylo/api/auth/data-access';
 import { PrismaService } from '@daylo/api/core/database';
+import { TRANSACTION_RUNNER, TransactionContext } from '@daylo/api/core/transactions/contracts';
+import { USER_IDENTITY, AdmittedProfile } from '@daylo/api/users/contracts';
+import { INVITATION_ADMISSION } from '@daylo/api/groups/contracts';
+import { AppModule } from './app.module';
 import { OAuth2Client } from 'google-auth-library';
 import { ApiHttpModule } from './api-http.module';
 import { createOpenApiDocument } from './openapi';
@@ -140,14 +143,26 @@ describe('Google OIDC HTTP flow', () => {
                 googleCallbackUrl:
                   'http://localhost:4200/api/auth/google/callback',
                 environment: 'development',
+                initialOwnerEmail: 'synthetic@example.test',
               },
             }),
           ],
         }),
         ApiHttpModule,
-        ApiAuthFeatureModule,
+        AppModule,
       ],
     })
+      .overrideProvider(TRANSACTION_RUNNER)
+      .useValue({ run: (operation: (context: TransactionContext) => Promise<unknown>) => operation({} as TransactionContext) })
+      .overrideProvider(USER_IDENTITY)
+      .useValue({
+        lockIdentity: async () => undefined,
+        findBySubject: async () => null,
+        emailAvailable: async () => true,
+        saveProfile: async (profile: AdmittedProfile) => ({ id: 'synthetic-user', ...profile }),
+      })
+      .overrideProvider(INVITATION_ADMISSION)
+      .useValue({ hasEligibleInvitation: async () => false })
       .overrideProvider(PrismaService)
       .useValue({})
       .overrideProvider(OAuthTransactionStore)
@@ -430,8 +445,14 @@ describe('Google OIDC HTTP flow', () => {
     expect(Object.keys(complete.responses).sort()).toEqual([
       '400',
       '401',
+      '403',
       '503',
     ]);
+    expect(complete.responses['403'].content['application/json'].example).toEqual({
+      statusCode: 403,
+      code: 'ACCESS_FORBIDDEN',
+      message: 'Access forbidden',
+    });
     expect(complete.description).toContain(
       'Identity and provider tokens are never returned',
     );
