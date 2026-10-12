@@ -165,6 +165,10 @@ commits or publication. See [F06-01](tasks/F06-01-google-oidc-flow.md) for evide
 and retrospective. This acceptance update changes documentation only; no checks
 were rerun.
 
+Publication: the owner separately authorized a PR on 2026-10-12. The accepted
+F06-01 scope is published in [draft PR #15](https://github.com/Rizzlie/Daylo/pull/15),
+registered with the task thread. Hosted F06-01 CI is pending.
+
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
 
 | ID | Deliverable | Acceptance criteria | Verification |
