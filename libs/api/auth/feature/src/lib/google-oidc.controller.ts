@@ -6,13 +6,15 @@ import {
   Query,
   Req,
   Res,
-  ServiceUnavailableException,
+  SetMetadata,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
 import { googleCallbackQuerySchema } from '@daylo/shared/schemas';
+import { PUBLIC_ENDPOINT } from '@daylo/api/core/identity/contracts';
+import { SessionService } from './session.service';
 import { SessionErrorResponseDto } from './current-session.response';
 import { ApplicationAdmissionService } from './application-admission.service';
 import {
@@ -35,6 +37,7 @@ function browserCookie(request: Request): string | undefined {
 }
 
 @ApiTags('Authentication')
+@SetMetadata(PUBLIC_ENDPOINT, true)
 @Controller('auth/google')
 export class GoogleOidcController {
   constructor(
@@ -42,6 +45,7 @@ export class GoogleOidcController {
     @Inject(ConfigService) private readonly config: ConfigService,
     @Inject(ApplicationAdmissionService)
     private readonly admission: ApplicationAdmissionService,
+    @Inject(SessionService) private readonly sessions: SessionService,
   ) {}
 
   private cookieOptions() {
@@ -98,7 +102,7 @@ export class GoogleOidcController {
     operationId: 'completeGoogleAuthentication',
     summary: 'Process the Google authorization callback',
     description:
-      'Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Verified identities pass application admission; outsiders are denied with 403. Admitted users are persisted, but temporarily receive 503 until Daylo sessions are implemented. Identity and provider tokens are never returned.',
+      'Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Verified identities pass application admission; outsiders are denied with 403. Admitted users receive a Daylo session and a fixed frontend redirect. Identity and provider tokens are never returned.',
   })
   @ApiQuery({
     name: 'state',
@@ -121,6 +125,11 @@ export class GoogleOidcController {
       'Google refusal/error identifier; cannot be combined with a successful response.',
   })
   @ApiResponse({
+    status: 302,
+    description: 'Sets daylo_session; active users redirect to /today, pending users to /invitations.',
+    headers: { Location: { schema: { type: 'string', format: 'uri' } } },
+  })
+  @ApiResponse({
     status: 400,
     description: 'Malformed callback query.',
     type: SessionErrorResponseDto.Output,
@@ -140,20 +149,19 @@ export class GoogleOidcController {
   @ApiResponse({
     status: 503,
     description:
-      'Verified identity cannot yet create a Daylo session, or authentication infrastructure unavailable.',
+      'Authentication infrastructure unavailable.',
     type: SessionErrorResponseDto.Output,
   })
   async callback(
     @Query() query: GoogleCallbackQueryDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<never> {
+  ): Promise<void> {
     response.clearCookie(OAUTH_BROWSER_COOKIE, this.cookieOptions());
     const identity = await this.oidc.callback(query, browserCookie(request));
-    await this.admission.admit(identity);
-    throw new ServiceUnavailableException({
-      code: 'SERVICE_UNAVAILABLE',
-      message: 'Daylo sign-in completion is not yet available',
-    });
+    const user = await this.admission.admit(identity);
+    await this.sessions.issue(user.id, request, response);
+    const path = user.accessStatus === 'active' ? '/today' : '/invitations';
+    response.redirect(302, new URL(path, this.config.getOrThrow<string>('runtime.frontendOrigin')).href);
   }
 }

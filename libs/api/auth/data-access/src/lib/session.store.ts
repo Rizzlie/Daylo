@@ -1,0 +1,83 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { PrismaService } from '@daylo/api/core/database';
+
+export interface StoredSession {
+  id: string;
+  csrfTokenHash: string;
+  expiresAt: Date;
+  user: {
+    id: string;
+    email: string;
+    displayName: string;
+    accessStatus: 'ACTIVE' | 'PENDING';
+  };
+}
+
+export interface NewSession {
+  userId: string;
+  tokenHash: string;
+  csrfTokenHash: string;
+  expiresAt: Date;
+}
+
+@Injectable()
+export class SessionStore {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+
+  async create(data: NewSession, previousTokenHash?: string): Promise<void> {
+    await this.prisma.client.$transaction(async (client) => {
+      if (previousTokenHash) {
+        await client.session.deleteMany({ where: { tokenHash: previousTokenHash } });
+      }
+      await client.session.create({ data });
+    });
+  }
+
+  async findValid(tokenHash: string, now: Date): Promise<StoredSession | null> {
+    return this.prisma.client.session.findFirst({
+      where: { tokenHash, expiresAt: { gt: now } },
+      select: {
+        id: true,
+        csrfTokenHash: true,
+        expiresAt: true,
+        user: { select: { id: true, email: true, displayName: true, accessStatus: true } },
+      },
+    });
+  }
+
+  async renew(tokenHash: string, now: Date, expiresAt: Date): Promise<StoredSession | null> {
+    // The expiry check and update are one statement. Revocation cannot be undone,
+    // and out-of-order renewals cannot shorten an already extended deadline.
+    const rows = await this.prisma.client.$queryRaw<{
+      id: string;
+      csrfTokenHash: string;
+      expiresAt: Date;
+      userId: string;
+      email: string;
+      displayName: string;
+      accessStatus: 'ACTIVE' | 'PENDING';
+    }[]>`
+      WITH renewed AS (
+        UPDATE sessions
+        SET expires_at = GREATEST(expires_at, ${expiresAt})
+        WHERE token_hash = ${tokenHash} AND expires_at > ${now}
+        RETURNING id, user_id, csrf_token_hash, expires_at
+      )
+      SELECT s.id, s.csrf_token_hash AS "csrfTokenHash", s.expires_at AS "expiresAt",
+             u.id AS "userId", u.email, u.display_name AS "displayName",
+             UPPER(u.access_status::text) AS "accessStatus"
+      FROM renewed s JOIN users u ON u.id = s.user_id
+    `;
+    const row = rows[0];
+    return row ? {
+      id: row.id,
+      csrfTokenHash: row.csrfTokenHash,
+      expiresAt: row.expiresAt,
+      user: { id: row.userId, email: row.email, displayName: row.displayName, accessStatus: row.accessStatus },
+    } : null;
+  }
+
+  async revoke(id: string): Promise<void> {
+    await this.prisma.client.session.deleteMany({ where: { id } });
+  }
+}

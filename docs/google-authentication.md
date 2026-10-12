@@ -1,7 +1,7 @@
 # Google authentication
 
 F06-01 implements Google OIDC transactions; F06-02 adds application admission and
-user identity persistence. Daylo sessions and CSRF belong to F06-03; frontend
+user identity persistence. F06-03 adds Daylo sessions and CSRF; frontend
 authentication states and the real Google smoke check belong to F06-04/F06-05.
 
 ## Local Google client
@@ -72,14 +72,18 @@ header is required for the callback; state, binding and nonce protect it.
 
 | Callback outcome | HTTP behavior |
 | --- | --- |
-| Admitted Google identity | Persist/refresh the user, then 503 `SERVICE_UNAVAILABLE`, `Daylo sign-in completion is not yet available`; no session created |
+| Admitted Google identity | Persist/refresh the user, issue a hashed Daylo session and HttpOnly cookie, then 302 to fixed `/today` (active) or `/invitations` (pending) |
 | Verified outsider, ineligible invitation or email identity collision | 403 `ACCESS_FORBIDDEN`, `Access forbidden`; no identity writes or session |
 | Invalid/expired/replayed transaction, provider refusal, rejected token | 401 `GOOGLE_AUTHENTICATION_FAILED`, safe generic message |
 | Malformed query | 400 `VALIDATION_ERROR` |
 | Database/provider transport unavailable | 503 `SERVICE_UNAVAILABLE`, no infrastructure diagnostics |
 
-`GET /api/auth/session` still returns 401. F06-03 will replace the intermediate
-success 503 with session creation and fixed frontend redirects.
+`GET /api/auth/session` returns the admitted identity and renews a still-valid
+session and cookie for seven days from that request. Seven days without renewal
+requires Google sign-in again. Expired/revoked sessions cannot be renewed. No
+absolute lifetime cap, refresh token or session-token rotation is implemented in
+this scope. The frontend entry/foreground calls and destination screens remain
+F06-04. See [API conventions](api-conventions.md#session-cookie-and-csrf).
 
 ## Identity and admission
 
@@ -142,7 +146,12 @@ Remove-Item Env:DATABASE_URL
 
 The opt-in suites verify persisted transactions, browser mismatch, expiry, eight
 concurrent repository/HTTP callbacks, replay, DI wiring, admission/profile behavior,
-exact invitation expiry, denied writes and absence of session creation. Concurrent
+exact invitation expiry and denied writes. Admission-service tests assert that
+admission alone does not issue sessions; successful callback HTTP tests now check
+session creation and fixed active/pending redirects. Session suites cover sliding
+renewal, expiry/revocation, concurrent sign-out/renewal, CSRF/origin rejection and
+pending restrictions with both a policy fixture and the production PostgreSQL
+adapter. Concurrent
 admission covers one subject, conflicting subjects claiming one email, and profile
 changes. Signed-token HTTP cases cover owner, invitee, active user and outsider.
 They delete only their own synthetic records. Remove the isolated database

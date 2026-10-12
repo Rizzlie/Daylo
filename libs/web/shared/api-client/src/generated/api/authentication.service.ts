@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { CsrfTokenResponseOutput } from '../model/csrf-token-response-output';
+// @ts-ignore
 import { CurrentSessionResponseOutput } from '../model/current-session-response-output';
 // @ts-ignore
 import { HttpErrorResponseOutput } from '../model/http-error-response-output';
@@ -39,7 +41,7 @@ export class AuthenticationService extends BaseService {
 
     /**
      * Process the Google authorization callback
-     * Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Verified identities pass application admission; outsiders are denied with 403. Admitted users are persisted, but temporarily receive 503 until Daylo sessions are implemented. Identity and provider tokens are never returned.
+     * Google browser callback, protected by state, nonce and browser binding, not the ordinary mutation CSRF header. Verified identities pass application admission; outsiders are denied with 403. Admitted users receive a Daylo session and a fixed frontend redirect. Identity and provider tokens are never returned.
      * @endpoint get /api/auth/google/callback
      * @param state Single-use browser-bound authentication state.
      * @param code Google authorization code; required for a successful provider response.
@@ -124,8 +126,63 @@ export class AuthenticationService extends BaseService {
     }
 
     /**
-     * Get the current Daylo session
-     * Requires a valid backend-owned session cookie. Pending users may read their identity. Missing, expired or revoked sessions return 401. Until F06 implements session lookup, this endpoint always returns 401, including when a cookie is supplied.
+     * Get the session-bound CSRF token
+     * Returns a stable token for this session. Keep it in memory and send X-CSRF-Token on unsafe requests. Does not renew the session; available to pending users.
+     * @endpoint get /api/auth/csrf
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getCsrfToken(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<CsrfTokenResponseOutput>;
+    public getCsrfToken(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<CsrfTokenResponseOutput>>;
+    public getCsrfToken(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<CsrfTokenResponseOutput>>;
+    public getCsrfToken(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (dayloSession) required
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/auth/csrf`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<CsrfTokenResponseOutput>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Get and renew the current Daylo session
+     * Returns active or pending identity and renews a still-valid session and its cookie for seven days. Missing, expired or revoked sessions return 401 and cannot be renewed. Call on application entry and foreground return; do not poll to keep sessions alive.
      * @endpoint get /api/auth/session
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -137,6 +194,8 @@ export class AuthenticationService extends BaseService {
     public getCurrentSession(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (dayloSession) required
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -164,6 +223,68 @@ export class AuthenticationService extends BaseService {
         let localVarPath = `/api/auth/session`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<CurrentSessionResponseOutput>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Revoke the current Daylo session
+     * Requires the exact configured frontend Origin and a valid session-bound X-CSRF-Token. Deletes the current session and clears its cookie; other device sessions remain valid. Available to pending users.
+     * @endpoint post /api/auth/sign-out
+     * @param xCSRFToken Session-bound CSRF token obtained from GET /api/auth/csrf.
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public signOut(xCSRFToken: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
+    public signOut(xCSRFToken: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
+    public signOut(xCSRFToken: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public signOut(xCSRFToken: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (xCSRFToken === null || xCSRFToken === undefined) {
+            throw new Error('Required parameter xCSRFToken was null or undefined when calling signOut.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xCSRFToken !== undefined && xCSRFToken !== null) {
+            localVarHeaders = localVarHeaders.set('X-CSRF-Token', String(xCSRFToken));
+        }
+
+        // authentication (dayloSession) required
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/auth/sign-out`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<any>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

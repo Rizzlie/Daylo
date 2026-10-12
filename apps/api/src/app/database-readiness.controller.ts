@@ -2,8 +2,10 @@ import {
   Controller,
   Get,
   ServiceUnavailableException,
+  SetMetadata,
 } from '@nestjs/common';
 import { DatabaseReadinessService } from '@daylo/api/core/database';
+import { PUBLIC_ENDPOINT } from '@daylo/api/core/identity/contracts';
 import { DatabaseReadinessResponse } from '@daylo/shared/schemas';
 import { ZodResponse } from 'nestjs-zod';
 import {
@@ -24,6 +26,7 @@ export class DatabaseReadinessController {
   constructor(private readonly database: DatabaseReadinessService) {}
 
   @Get('ready')
+  @SetMetadata(PUBLIC_ENDPOINT, true)
   @ApiOperation({ operationId: 'getReadiness', summary: 'Check database readiness' })
   @ZodResponse({
     status: 200,

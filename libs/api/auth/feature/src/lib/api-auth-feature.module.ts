@@ -1,5 +1,6 @@
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { OAuth2Client } from 'google-auth-library';
 import { ApiAuthDataAccessModule } from '@daylo/api/auth/data-access';
 import { ApiCoreDatabaseModule } from '@daylo/api/core/database';
@@ -11,6 +12,8 @@ import {
   GoogleOidcProvider,
 } from './google-oidc.provider';
 import { GoogleOidcService } from './google-oidc.service';
+import { SessionService } from './session.service';
+import { SessionGuard } from './session.guard';
 
 @Module({
   imports: [ConfigModule, ApiCoreDatabaseModule, ApiAuthDataAccessModule],
@@ -19,6 +22,8 @@ import { GoogleOidcService } from './google-oidc.service';
     GoogleOidcProvider,
     GoogleOidcService,
     ApplicationAdmissionService,
+    SessionService,
+    { provide: APP_GUARD, useClass: SessionGuard },
     {
       provide: GOOGLE_OAUTH_CLIENT,
       inject: [ConfigService],

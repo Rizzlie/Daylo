@@ -10,6 +10,7 @@ Delivery status: Pending. No implementation or verification is claimed by this t
 
 - Google backend-owned OIDC and database-backed cookie sessions are fixed architecture choices. Owner, active user, pending invitee and outsider have different access. Controlled-provider verification does not prove real Google configuration.
 - Dependencies: F06-03. Confirm their delivered and verified behavior before dependent work.
+- F06-03's owner-approved session policy uses seven-day sliding expiry. Call `GET /api/auth/session` on entry and foreground return to renew a still-valid session; do not poll or renew through background streams. CSRF comes from `GET /api/auth/csrf`, stays in memory and is sent as `X-CSRF-Token` on unsafe requests; the browser supplies Origin. Fixed callback destinations are `/today` and `/invitations`. This dependency note does not authorize F06-04 implementation.
 - Read [product requirements](../product-requirements.md), [architecture](../architecture.md) and [backlog](../backlog.md). Apply the relevant [frontend](../frontend-architecture.md), [backend](../backend-architecture.md) and [design-system](../design/design-system.md) rules.
 - This is a proposed bounded task. Inspect discoverable implementation facts; resolve material product decisions with the owner during the discussion.
 

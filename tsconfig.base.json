@@ -53,6 +53,9 @@
       ],
       "@daylo/api/groups/feature": [
         "./libs/api/groups/feature/src/index.ts"
+      ],
+      "@daylo/api/core/identity/contracts": [
+        "./libs/api/core/identity/contracts/src/index.ts"
       ]
     }
   },

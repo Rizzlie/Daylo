@@ -1,9 +1,16 @@
 # api-auth-data-access
 
-Auth-owned persistence for short-lived Google OIDC transactions. Stores state and
+Auth-owned persistence for Google OIDC transactions and database sessions. Stores state and
 browser-binding hashes, nonce and expiry through the existing Prisma database module.
 An atomic PostgreSQL `DELETE ... RETURNING` gives a matching unexpired transaction
 to exactly one callback. Starting another attempt removes expired transaction rows.
+
+`SessionStore` stores only opaque-token and CSRF hashes. Lookup checks expiry and
+projects current user identity/access. Renewal uses atomic PostgreSQL
+`UPDATE ... RETURNING` with an exclusive expiry check and a monotonic deadline;
+revocation deletes the row and cannot be undone by renewal. Session replacement
+revokes the presented previous browser session and creates the new one in a single
+transaction. Session HTTP policy and PostgreSQL acceptance cases run in `api:test`.
 
 ## Running unit tests
 

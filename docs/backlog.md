@@ -199,6 +199,46 @@ no subsequent application implementation is authorized.
 Publication: [draft PR #16](https://github.com/Rizzlie/Daylo/pull/16) contains the
 accepted F06-02 scope and is registered with the task thread. Hosted CI is pending.
 
+### F06-03 delivery — 2026-10-12
+
+Implemented the owner-authorized database session and CSRF slice, including the
+selected seven-day sliding expiry policy. Admitted callbacks issue a fresh hashed
+session cookie and fixed active/pending redirect. Current-session retrieval alone
+renews valid sessions and cookies; expired/revoked sessions cannot be renewed.
+CSRF retrieval does not renew and returns a stable session-bound token. Unsafe
+requests require exact frontend Origin plus X-CSRF-Token. Sign-out revokes only
+the current session; default global guards restrict pending access to explicit
+exceptions. Reused the existing Prisma schema and generated one necessary core
+identity contract library. OpenAPI and the Angular client were officially regenerated.
+No frontend workflow, new dependency or schema migration was added.
+
+All 166 API cases passed with the isolated PostgreSQL suites enabled, including
+31 production-store session HTTP cases, signed-provider session callbacks and
+admission regression cases. OAuth-store/shared-schema tests, affected lint,
+API/web production builds, Angular compilation, OpenAPI validation, deterministic
+source-preserving drift checks and handwritten/documentation whitespace checks passed.
+The full staged check flags upstream whitespace in the new generated CSRF model,
+which is retained unmodified. Browser checks through
+the real Angular/API/PostgreSQL stack covered synthetic session retrieval/reload,
+HttpOnly behavior, CSRF rejection and successful sign-out at desktop/mobile widths.
+T3 snapshots failed; visual and console inspection remain incomplete. Authentication
+UI/full Playwright login fixtures and real Google sign-in remain later tasks.
+Hosted CI remains unverified. The owner accepted the delivered scope on 2026-10-12
+through "Wygląda dobrze, akceptuje. zaktualizuj docsy i wystaw PR", and separately
+authorized publication in the same instruction. Acceptance preserves the recorded
+verification limits and does not establish the later real Google smoke exercise.
+See [F06-03](tasks/F06-03-sessions-and-csrf.md).
+
+Retrospective: scope database assertions to each suite's synthetic users, guard
+against implicit HEAD renewal, and document browser-managed Origin without making
+it a generated client argument. Snapshot failure must remain a verification limit.
+F06 remains incomplete; F06-04 stays pending. This follow-up records acceptance
+and publishes only the already delivered F06-03 scope; no subsequent implementation
+or deployment is authorized.
+
+Publication: [draft PR #17](https://github.com/Rizzlie/Daylo/pull/17) contains the
+accepted F06-03 scope and is registered with the task thread. Hosted CI is pending.
+
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
 
 | ID | Deliverable | Acceptance criteria | Verification |

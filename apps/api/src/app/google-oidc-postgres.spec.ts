@@ -54,6 +54,7 @@ describe.skipIf(!enabled || !databaseUrl)(
                     'http://localhost:4200/api/auth/google/callback',
                   environment: 'development',
                   initialOwnerEmail: 'synthetic@example.test',
+                  frontendOrigin: 'http://localhost:4200',
                 },
               }),
             ],
@@ -162,21 +163,26 @@ describe.skipIf(!enabled || !databaseUrl)(
         headers: { cookie },
       });
 
-    it('resolves admission providers, persists the owner and consumes the transaction without sessions', async () => {
+    it('resolves admission providers, persists the owner and creates a hashed session after consuming the transaction', async () => {
       const usersBefore = await prisma.client.user.count({ where: { googleSubject: providerIdentity.sub } });
-      const sessionsBefore = await prisma.client.session.count();
       const { state, cookie } = await start();
       const row = await prisma.client.oAuthTransaction.findUnique({
         where: { stateHash: hash(state) },
       });
       expect(row?.browserBindingHash).toBe(hash(cookie.split('=')[1]));
       const response = await callback(state, cookie);
-      expect(response.status).toBe(503);
-      expect(await response.json()).toEqual({
-        statusCode: 503,
-        code: 'SERVICE_UNAVAILABLE',
-        message: 'Daylo sign-in completion is not yet available',
-      });
+      expect(response.status).toBe(302);
+      expect(response.headers.get('location')).toBe('http://localhost:4200/today');
+      const sessionCookie = response.headers.getSetCookie().find((cookie) => cookie.startsWith('daylo_session='));
+      expect(sessionCookie).toMatch(/daylo_session=[A-Za-z0-9_-]{43}; Path=\/; Expires=.*; HttpOnly; SameSite=Lax/);
+      const token = sessionCookie!.split(';')[0].split('=')[1];
+      const session = await prisma.client.session.findUniqueOrThrow({ where: { tokenHash: hash(token) } });
+      expect(session.tokenHash).not.toBe(token);
+      expect(session.csrfTokenHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(session.expiresAt.getTime() - Date.now()).toBeGreaterThan(7 * 86400_000 - 10_000);
+      const current = await fetch(`${baseUrl}/api/auth/session`, { headers: { cookie: sessionCookie!.split(';')[0] } });
+      expect(current.status).toBe(200);
+      expect(await current.json()).toMatchObject({ status: 'active', user: { id: session.userId, email: 'synthetic@example.test' } });
       expect(
         await prisma.client.oAuthTransaction.findUnique({
           where: { stateHash: hash(state) },
@@ -186,7 +192,7 @@ describe.skipIf(!enabled || !databaseUrl)(
       expect(exchanges).toBe(1);
       expect(await prisma.client.user.count({ where: { googleSubject: providerIdentity.sub } })).toBe(usersBefore + 1);
       expect(await prisma.client.user.findUnique({ where: { googleSubject: 'synthetic-subject' } })).toMatchObject({ email: 'synthetic@example.test', displayName: 'synthetic', accessStatus: 'ACTIVE' });
-      expect(await prisma.client.session.count()).toBe(sessionsBefore);
+      expect(await prisma.client.session.count({ where: { userId: session.userId } })).toBe(1);
     });
 
     it('allows only one of eight concurrent HTTP callbacks to exchange the provider code', async () => {
@@ -195,7 +201,7 @@ describe.skipIf(!enabled || !databaseUrl)(
         Array.from({ length: 8 }, () => callback(state, cookie)),
       );
       expect(
-        responses.filter((response) => response.status === 503),
+        responses.filter((response) => response.status === 302),
       ).toHaveLength(1);
       expect(
         responses.filter((response) => response.status === 401),
@@ -206,7 +212,6 @@ describe.skipIf(!enabled || !databaseUrl)(
     it('denies a signed verified outsider with a safe 403, consumes the attempt and leaves no identity or session', async () => {
       providerIdentity = { sub: `${prefix}-outsider`, email: `${prefix}-outsider@example.test`, name: 'Private outsider name' };
       const usersBefore = await prisma.client.user.count({ where: { googleSubject: providerIdentity.sub } });
-      const sessionsBefore = await prisma.client.session.count();
       const { state, cookie } = await start();
       const response = await callback(state, cookie);
       expect(response.status).toBe(403);
@@ -217,31 +222,31 @@ describe.skipIf(!enabled || !databaseUrl)(
       expect((await callback(state, cookie)).status).toBe(401);
       expect(exchanges).toBe(1);
       expect(await prisma.client.user.count({ where: { googleSubject: providerIdentity.sub } })).toBe(usersBefore);
-      expect(await prisma.client.session.count()).toBe(sessionsBefore);
+      expect(response.headers.getSetCookie().some((value) => value.startsWith('daylo_session='))).toBe(false);
     });
 
-    it('persists a signed verified invitee as pending without accepting the invitation or creating a session', async () => {
+    it('issues a pending invitee session without accepting the invitation', async () => {
       providerIdentity = { sub: `${prefix}-invitee`, email: `${prefix}-invitee@example.test`, name: 'Invited Person' };
       const owner = await prisma.client.user.create({ data: { googleSubject: `${prefix}-inviter`, email: `${prefix}-inviter@example.test`, displayName: 'Inviter', accessStatus: 'ACTIVE' } });
       const group = await prisma.client.group.create({ data: { name: 'HTTP group', ownerId: owner.id } });
       groupIds.push(group.id);
       const invitation = await prisma.client.invitation.create({ data: { email: providerIdentity.email, groupId: group.id, invitedById: owner.id, expiresAt: new Date(Date.now() + 60_000) } });
-      const sessionsBefore = await prisma.client.session.count();
       const { state, cookie } = await start();
       const response = await callback(state, cookie);
-      expect(response.status).toBe(503);
+      expect(response.status).toBe(302);
+      expect(response.headers.get('location')).toBe('http://localhost:4200/invitations');
       const user = await prisma.client.user.findUniqueOrThrow({ where: { googleSubject: providerIdentity.sub } });
       expect(user).toMatchObject({ email: providerIdentity.email, displayName: 'Invited Person', accessStatus: 'PENDING' });
       expect(await prisma.client.membership.count({ where: { userId: user.id } })).toBe(0);
       expect(await prisma.client.invitation.findUnique({ where: { id: invitation.id } })).toMatchObject({ status: 'PENDING', resolvedAt: null });
-      expect(await prisma.client.session.count()).toBe(sessionsBefore);
+      expect(await prisma.client.session.count({ where: { userId: user.id } })).toBe(1);
     });
 
     it('refreshes a signed active identity by subject even when its verified email no longer matches the owner', async () => {
       const original = await prisma.client.user.create({ data: { googleSubject: `${prefix}-active`, email: `${prefix}-old@example.test`, displayName: 'Old Name', accessStatus: 'ACTIVE' } });
       providerIdentity = { sub: original.googleSubject, email: `${prefix}-new@example.test`, name: 'New Name' };
       const { state, cookie } = await start();
-      expect((await callback(state, cookie)).status).toBe(503);
+      expect((await callback(state, cookie)).status).toBe(302);
       expect(await prisma.client.user.findUnique({ where: { id: original.id } })).toMatchObject({ googleSubject: original.googleSubject, email: providerIdentity.email, displayName: 'New Name', accessStatus: 'ACTIVE' });
     });
 
