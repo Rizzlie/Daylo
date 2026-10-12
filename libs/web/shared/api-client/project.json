@@ -1,0 +1,46 @@
+{
+  "name": "web-shared-api-client",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/web/shared/api-client/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [
+    "platform:web",
+    "scope:shared",
+    "type:api-client"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "generate": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "projects": [
+            "api"
+          ],
+          "target": "openapi-validate"
+        }
+      ],
+      "outputs": [
+        "{projectRoot}/src/generated"
+      ],
+      "options": {
+        "command": "node libs/web/shared/api-client/scripts/generate.mjs"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "^default"
+      ],
+      "options": {
+        "command": "ngc -p libs/web/shared/api-client/tsconfig.lib.json --noEmit"
+      }
+    }
+  }
+}
