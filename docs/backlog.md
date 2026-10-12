@@ -196,6 +196,9 @@ See [F06-02](tasks/F06-02-identity-and-admission.md) for details and retrospecti
 The same acceptance instruction authorized a draft PR. F06-03 remains pending;
 no subsequent application implementation is authorized.
 
+Publication: [draft PR #16](https://github.com/Rizzlie/Daylo/pull/16) contains the
+accepted F06-02 scope and is registered with the task thread. Hosted CI is pending.
+
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
 
 | ID | Deliverable | Acceptance criteria | Verification |

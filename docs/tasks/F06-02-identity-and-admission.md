@@ -6,6 +6,8 @@ Discussion status: **Complete — scope agreed with the owner on 2026-10-12.**
 Implementation authorization: **Granted by the owner on 2026-10-12 for the agreed scope.**
 Delivery status: Closed — implemented, locally verified and owner-accepted on 2026-10-12. Browser inspection remains partial.
 
+Publication: [draft PR #16](https://github.com/Rizzlie/Daylo/pull/16), registered with the task thread on 2026-10-12. Hosted CI is pending.
+
 ## Assumptions and sources
 
 - Google backend-owned OIDC and database-backed cookie sessions are fixed architecture choices. Owner, active user, pending invitee and outsider have different access. Controlled-provider verification does not prove real Google configuration.
