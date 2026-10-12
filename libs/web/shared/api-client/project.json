@@ -31,6 +31,24 @@
         "command": "node libs/web/shared/api-client/scripts/generate.mjs"
       }
     },
+    "check": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        { "projects": ["api"], "target": "openapi-build" }
+      ],
+      "options": {
+        "command": "node libs/web/shared/api-client/scripts/check.mjs"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default"],
+      "options": {
+        "command": "node --test libs/web/shared/api-client/scripts/artifacts.test.mjs"
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "cache": true,

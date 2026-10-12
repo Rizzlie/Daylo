@@ -157,6 +157,7 @@ This script delegates to the existing Nx generation target and its export/valida
 npm exec nx -- run api:openapi-export
 npm exec nx -- run api:openapi-validate
 npm exec nx -- run web-shared-api-client:generate
+npm exec nx -- run web-shared-api-client:check
 npm exec nx -- run web-shared-api-client:typecheck
 npm exec nx -- run web-shared-api-client:lint
 ```
@@ -167,7 +168,11 @@ Client generation requires a running Docker engine with Linux containers and acc
 
 Use the public import `@daylo/web/shared/api-client` from future handwritten data-access libraries. The client includes `AuthenticationService.getCurrentSession()` and `HealthService.getReadiness()`. When wiring the frontend, supply `provideHttpClient()` and `provideApi('')` for same-origin `/api` requests; the generator's standalone default base URL is `http://localhost`. The library is consumed as source and has no publishable package or separate packaging build. Its `typecheck` target compiles all generated services/models with Angular's compiler. Generated templates have narrowly scoped lint style exceptions; Nx boundaries remain enforced.
 
-Keep the specification and generated sources in version control, and never edit generated files manually. Regenerate after changing API contracts. No frontend workflow is connected to the client yet. Automatic drift checks and CI/build dependencies remain F05-02.
+Keep the specification and generated sources in version control, and never edit generated files manually. Regenerate after changing API contracts. No frontend workflow is connected to the client yet.
+
+The `web-shared-api-client:check` target exports, validates and generates twice under ignored `dist`, checks determinism, then compares the specification and the entire generated directory byte for byte with source artifacts. It does not rewrite source. A failure lists added, removed and changed files and recommends `npm run api:generate`. Temporary output is removed on success or failure. Avoid running generation and drift checks concurrently.
+
+Every `web:build` depends on this uncached check and client compilation, including when the build itself is cached. Frontend builds therefore require Docker as well. CI checks drift and compiles the client unconditionally before affected/full quality checks, so a contract change cannot escape verification because the client has no frontend consumer yet. CI uses the Linux Docker engine supplied by the GitHub-hosted Ubuntu runner; hosted execution requires separate confirmation.
 
 In a restricted agent session that blocks Nx sockets or plugin subprocesses, set `NX_DAEMON=false` and `NX_ISOLATE_PLUGINS=false` for that session. Disabling the daemon also disables automatic server restarts on file changes.
 

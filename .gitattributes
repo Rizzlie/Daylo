@@ -1,1 +1,3 @@
 .husky/* text eol=lf
+docs/api/openapi.json text eol=lf
+libs/web/shared/api-client/src/generated/** text eol=lf

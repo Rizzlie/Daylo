@@ -54,7 +54,7 @@ jobs:
         run: npm exec --no -- commitlint --last --strict --verbose
 
   quality:
-    name: Lint, unit tests and production builds
+    name: Contract drift, lint, unit tests and production builds
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -68,6 +68,10 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
+      - name: Verify OpenAPI and Angular client drift
+        run: npm exec nx -- run web-shared-api-client:check
+      - name: Compile generated Angular client
+        run: npm exec nx -- run web-shared-api-client:typecheck
       - name: Run affected PR checks
         if: github.event_name == 'pull_request'
         run: npm exec nx -- affected -t lint test build --base="$NX_BASE" --head="$NX_HEAD"

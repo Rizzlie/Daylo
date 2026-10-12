@@ -2,9 +2,9 @@
 
 Parent backlog item: **F05** · [Task index](../tasks.md) · [Backlog](../backlog.md)
 
-Discussion status: **Not started — required before implementation.**
-Implementation authorization: **Not granted by this document.**
-Delivery status: Pending. No implementation or verification is claimed by this task file.
+Discussion status: **Completed with the owner on 2026-10-12.**
+Implementation authorization: **Granted on 2026-10-12: "Zatwierdzam ten zakres", confirming the proposed scope and implementation request.**
+Delivery status: Closed — implemented, locally verified and owner-accepted on 2026-10-12. Hosted CI execution remains unverified.
 
 ## Assumptions and sources
 
@@ -15,8 +15,8 @@ Delivery status: Pending. No implementation or verification is claimed by this t
 
 ## Work to perform
 
-- [ ] Add temporary-output drift checking and build/CI dependencies.
-- [ ] Keep handwritten orchestration outside generated code.
+- [x] Add temporary-output drift checking and build/CI dependencies.
+- [x] Keep handwritten orchestration outside generated code.
 
 ## Acceptance criteria
 
@@ -28,7 +28,7 @@ The owner must confirm the final criteria during discussion. Applicable checks m
 
 ## Verification plan
 
-- [ ] Two generations are identical; an intentional contract drift is detected without rewriting tracked source; current-session client compiles.
+- [x] Two generations are identical; an intentional contract drift is detected without rewriting tracked source; current-session client compiles.
 
 - Inspect available Nx targets and use project generators/targets where applicable; select exact commands after inspection rather than inventing flags.
 - Run affected lint, meaningful tests and production builds. For API contract changes, export/validate OpenAPI, regenerate the Angular client and check drift.
@@ -48,12 +48,12 @@ Record the discussion outcome below. Agreement on documentation alone is not imp
 
 ### Decision record
 
-- Discussion date: Pending.
-- Agreed assumptions and behavior: Pending.
-- Agreed scope and exclusions: Pending.
-- Agreed approach and verification: Pending.
-- Unresolved questions: The task-specific discussion topic above; further questions may emerge from inspection.
-- Owner implementation authorization: Pending; record the actual instruction and date when provided.
+- Discussion date: 2026-10-12.
+- Agreed assumptions and behavior: Compare `docs/api/openapi.json` and the complete `libs/web/shared/api-client/src/generated` tree with temporary output. Report added, removed and changed paths and recommend `npm run api:generate`. Checks never rewrite source artifacts.
+- Agreed scope and exclusions: Add drift enforcement to frontend builds and CI using the existing pinned Docker generator. No UI, authentication, additional features, commits or publication.
+- Agreed approach and verification: Export and generate into temporary directories, verify identical consecutive generations, detect intentional drift, verify source preservation, compile the current-session client and run relevant lint/tests/builds. Frontend builds require Docker; hosted CI execution cannot be established locally.
+- Unresolved questions: None.
+- Owner implementation authorization: "Zatwierdzam ten zakres", 2026-10-12, in response to the concrete scope and implementation question.
 
 ## Scope boundaries
 
@@ -61,11 +61,14 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 
 ## Delivery and review record
 
-- Delivered behavior: Pending.
-- Checks executed and outcomes: Pending.
-- Browser scenarios and viewport coverage: Pending or N/A with a reason.
-- Known limitations / incomplete verification: Pending.
-- Owner acceptance: Pending.
-- Retrospective and workflow improvements: Pending.
+- Delivered behavior: Added uncached `web-shared-api-client:check`: offline export, Swagger Parser validation and pinned Docker generation run twice into isolated temporary directories. Byte comparisons enforce determinism and report added/removed/changed paths across `docs/api/openapi.json` and the entire generated client directory, including unexpected files. Diagnostics recommend `npm run api:generate`. Source preservation is checked; temporary directories are cleaned on success/failure. Generation and checking share handwritten generator orchestration outside generated code, with a read-only workspace mount and separate writable output mount. Git attributes enforce LF for artifacts on Windows and Linux. No API contract or generated TypeScript content changed.
+- Build and CI integration: `web:build` depends on drift verification and generated-client Angular compilation. The uncached check runs even when other tasks use cache. CI explicitly checks drift and compiles the client before affected/full checks, including contract-only changes before a frontend consumer exists. Existing Docker and npm tooling is reused; no dependency was added.
+- Checks executed and outcomes: Fresh client lint and Node test passed; the test covers changed specification/models, missing files, unexpected files, absent artifact trees and source preservation. Official `npm run api:generate` passed after LF rules were added. Fresh frontend production build passed with two identical generations, source preservation and Angular client compilation. API lint, all 20 API tests and production build passed; web lint/unit test passed. Temporarily changing the backend OpenAPI version to `0.1.0-drift-test` caused the ordinary frontend build to fail at the drift dependency, list the specification difference and suggest regeneration; SHA-256 hashes of all 20 source artifacts were preserved. The backend file was restored byte for byte in `finally`. CI YAML parsed successfully and includes the unconditional drift step. `git diff --check` passed.
+- Browser scenarios and viewport coverage: N/A: no rendered UI or product behavior changed. No E2E/browser inspection is claimed; build/contract enforcement is verified through Nx targets.
+- Cache and cleanup verification: After restoring the contract, the normal build passed. A subsequent build restored `web:build:production`, client typechecking and exporter build from local cache, while `check` ran both real generations again and passed. Temporary check/generator directories were empty after completion. `git diff --exit-code` confirmed no content changes to the specification/generated client or temporary backend contract edit. Logs remain in ignored `dist/f05-02-*.log`.
+- Known limitations / incomplete verification: GitHub-hosted CI execution remains unverified locally. Frontend builds now require a running Docker engine with Linux containers; the pinned image's first pull needs network access. Do not run generation concurrently with checking. No commit, publication or subsequent task is authorized by acceptance.
+- Owner acceptance: Granted on 2026-10-12: "wygląda ok, akceptuje". Closes F05-02 and the parent F05, whose two task scopes are now accepted. Hosted CI execution remains unverified; acceptance does not establish that check as passed.
+- Publication authorization: On 2026-10-12, the owner requested "wystaw PR", authorizing publication of the accepted F05-02 changes through a dedicated task branch and draft pull request.
+- Retrospective and workflow improvements: The first strict byte comparison exposed Git's Windows CRLF checkout conversion for all generated artifacts. Explicit artifact-only LF attributes plus official regeneration resolved it without editing generated content. Keep platform line-ending policy part of deterministic generation. Verify both negative contract drift and cache behavior when introducing build gates.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.
