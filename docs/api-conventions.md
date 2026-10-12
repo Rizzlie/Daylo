@@ -1,6 +1,6 @@
 # Daylo API conventions
 
-Status: Validation established by F04-01; current-session contract and Swagger added in F04-02. Google OIDC transactions and admission are implemented in F06-01/F06-02; session enforcement remains F06-03.
+Status: Validation established by F04-01; current-session contract and Swagger added in F04-02. Google OIDC transactions and admission are implemented in F06-01/F06-02; F06-03 implements database sessions, sliding renewal, sign-out and CSRF enforcement.
 
 ## Public schemas
 
@@ -43,27 +43,28 @@ The foundation codes and status semantics are:
 
 ## Session cookie and CSRF
 
-`GET /api/auth/google` (`startGoogleAuthentication`) is browser navigation: it sets
-the ten-minute `daylo_oauth_browser` binding cookie and redirects to Google.
-`GET /api/auth/google/callback` (`completeGoogleAuthentication`) consumes a
-browser-bound single-use transaction and validates Google's ID token. Invalid
-authentication returns the standard error envelope with HTTP 401 and code
-`GOOGLE_AUTHENTICATION_FAILED`; malformed query values return 400. Verified identities
-then pass application admission. Denied admission (including an email belonging to
-another Google subject) returns 403 `ACCESS_FORBIDDEN` without identity writes.
-Admitted identities are persisted/refreshed but receive safe HTTP 503
-`SERVICE_UNAVAILABLE` until F06-03 adds sessions; no identity is exposed or session created.
-Provider/database transport failure also returns safe 503. These navigation
-operations are documented in OpenAPI but must not be called through Angular's
-generated HTTP services. See [Google authentication](google-authentication.md)
-for configuration, transaction policy and verification.
+`GET /api/auth/google` (`startGoogleAuthentication`) and
+`GET /api/auth/google/callback` (`completeGoogleAuthentication`) are browser
+navigation, not generated Angular HTTP calls. The ten-minute `daylo_oauth_browser`
+cookie and single-use state/nonce transaction protect the callback separately from
+ordinary mutation CSRF headers. Invalid authentication returns 401
+`GOOGLE_AUTHENTICATION_FAILED`; malformed query values return 400. Denied admission
+returns 403 `ACCESS_FORBIDDEN` without identity writes. An admitted callback issues
+a new session, revokes the previous session cookie presented by that browser, and
+redirects to fixed `/today` (active) or `/invitations` (pending). Transport/persistence
+failures return safe 503. These frontend screens remain F06-04. See
+[Google authentication](google-authentication.md).
 
-`GET /api/auth/session` (`getCurrentSession`) returns HTTP 401 with the standard
-`AUTHENTICATION_REQUIRED` envelope when a session is missing, expired or revoked.
-Until F06 implements actual session lookup, every request to this endpoint returns
-401, including requests containing a cookie. It never fabricates authenticated access.
+The opaque session cookie is `daylo_session`: 32 random bytes encoded as base64url,
+HttpOnly, SameSite=Lax, path `/`, no Domain attribute. It has an Expires deadline
+matching the database; Secure is disabled only for loopback HTTP in development.
+PostgreSQL stores only SHA-256 session and CSRF hashes. Authentication tokens are
+never stored in browser storage. Ambiguous duplicate, malformed and unknown cookies
+cannot authenticate. Missing, expired or revoked sessions return 401
+`AUTHENTICATION_REQUIRED` and clear the cookie. Session database failures return
+503 without exposing diagnostics.
 
-The declared HTTP 200 response is:
+`GET /api/auth/session` (`getCurrentSession`) returns HTTP 200:
 
 ```json
 {
@@ -76,17 +77,55 @@ The declared HTTP 200 response is:
 }
 ```
 
-`status` is `pending` or `active`. Both states may read their session identity;
-pending access does not grant access to group tasks or personal task creation.
-There is no anonymous 200 variant. Provider subjects, token hashes and CSRF values
-are excluded. Session responses use `Cache-Control: no-store`.
+`status` is `pending` or `active`; there is no anonymous 200 variant. Public
+responses exclude Google subjects, hashes and CSRF values. Identity/access status
+is read from current persistence, not embedded in the cookie.
 
-Swagger UI is available at `/api/docs`, with OpenAPI 3.0 JSON at
-`/api/openapi.json`. The document uses `nestjs-zod` output schemas and
-`cleanupOpenApiDoc`. Cookie authentication requirements are described in prose;
-the concrete cookie security scheme and CSRF header await their names in F06-03.
-OpenAPI export and Angular client generation belong to F05.
+Session lifetime is sliding: issuance gives seven days, and successful
+`GET /api/auth/session` renews a still-valid session and cookie for seven days from
+the request. Renewal checks expiry atomically and cannot recreate revoked/deleted
+sessions or shorten an already extended deadline. Expiry is exclusive: a session
+at its exact deadline is invalid. There is no absolute lifetime cap, separate
+refresh token or token rotation in this scope. The frontend should call this
+endpoint on entry and foreground return. CSRF retrieval, other authenticated
+requests, HEAD probes and future background streams do not renew sessions. Full
+frontend behavior belongs to F06-04.
 
-Authenticated API requests use the backend-owned opaque session cookie described in the architecture. The cookie is `HttpOnly`, `SameSite=Lax`, scoped to `/`, expires after seven days, and is secure outside local HTTP development. Authentication tokens are never stored in browser storage.
+`GET /api/auth/csrf` (`getCsrfToken`) returns `{ "csrfToken": "..." }` for a valid
+active or pending session. The token is stable for that session and reconstructable
+using HMAC-SHA256 keyed by the random session token with the domain-separated
+`daylo:session-csrf:v1` label. Its SHA-256 hash is stored in PostgreSQL; neither raw
+session nor CSRF tokens are stored there. Stable retrieval avoids invalidating
+other tabs or requiring plaintext persistence. Keep CSRF only in frontend memory.
 
-Every state-changing API request must pass an allowed-origin check and provide the session-bound CSRF value through the documented request header. Missing or invalid CSRF proof is forbidden. The Google OAuth redirect callback uses its browser-bound, single-use state transaction instead of the ordinary mutation header. F06-03 will define the cookie name, CSRF exchange endpoint and header name and will implement these checks.
+Every unsafe API request requires both:
+
+- `X-CSRF-Token` matching that session's stored CSRF hash (constant-time comparison).
+- An exact `Origin` match with configured `FRONTEND_ORIGIN`. Missing, null or
+  mismatched Origin is forbidden; no Referer fallback is used. Browsers supply
+  Origin automatically; it is documented in prose rather than a generated client
+  argument because browser JavaScript cannot set it manually.
+
+Missing/invalid proof returns 403 `ACCESS_FORBIDDEN` without the mutation. Tokens
+from another session are invalid. `GET`, `HEAD` and `OPTIONS` do not require mutation
+proof. OAuth navigation retains its separate transaction protection.
+
+`POST /api/auth/sign-out` (`signOut`) requires the same CSRF/Origin proof, deletes
+only the current session and clears its cookie using matching attributes. It
+returns 204 with no body; other device sessions remain valid. Expired/revoked
+requests return 401. Failed revocation returns 503 and does not claim success or
+clear the still-valid cookie.
+
+A global guard authenticates every Nest business operation by default and requires
+active access unless the endpoint explicitly permits pending sessions. Pending
+users may read their identity/CSRF, sign out and use future invitation
+inspection/resolution operations; they cannot use other business operations.
+Readiness and Google navigation are explicitly public. Swagger/OpenAPI remain
+public documentation middleware. Use the core identity metadata keys and actor
+context; resource authorization remains required in feature use cases.
+
+Authenticated responses and errors use `Cache-Control: no-store`.
+Swagger is at `/api/docs`; OpenAPI 3.0 JSON is at `/api/openapi.json`.
+The `dayloSession` cookie security scheme names `daylo_session`; sign-out declares
+the required CSRF header. Zod output schemas, official client generation and
+source-preserving drift checks remain the contract pipeline.

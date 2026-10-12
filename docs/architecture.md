@@ -90,7 +90,7 @@ The Google client secret remains on the backend. The application does not retain
 - Store sessions in PostgreSQL.
 - Use a cryptographically random opaque token in an `HttpOnly`, `SameSite=Lax`, path `/` cookie.
 - Store only the token hash in the database.
-- Expire sessions after seven days and revoke them on sign-out.
+- Expire sessions after seven days without renewal and revoke the current session on sign-out. A successful `GET /api/auth/session` renews a still-valid session and its cookie for seven days from the request; expired/revoked sessions cannot be renewed. Other requests, including CSRF retrieval and background streams, do not renew sessions. There is no absolute lifetime cap or separate refresh token in the agreed F06-03 scope.
 - Enable secure cookies outside local HTTP development.
 - Do not store authentication tokens in browser storage.
 - Protect state-changing API requests using a session-bound CSRF token and allowed-origin checks.

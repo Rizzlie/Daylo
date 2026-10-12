@@ -19,7 +19,6 @@ describe.skipIf(!enabled || !databaseUrl)('application admission PostgreSQL acce
   let app: INestApplication;
   let prisma: PrismaService;
   let admission: ApplicationAdmissionService;
-  let sessionsBefore: number;
 
   beforeAll(async () => {
     if (!databaseUrl || !/^\/daylo_f06_[a-z0-9_]+$/.test(new URL(databaseUrl).pathname)) {
@@ -34,12 +33,13 @@ describe.skipIf(!enabled || !databaseUrl)('application admission PostgreSQL acce
     admission = app.get(ApplicationAdmissionService);
   });
 
-  beforeEach(async () => { sessionsBefore = await prisma.client.session.count(); });
   afterEach(async () => {
-    expect(await prisma.client.session.count()).toBe(sessionsBefore);
+    // Other suites now issue sessions concurrently in the same isolated DB.
+    const sessionCount = await prisma.client.session.count({ where: { user: { googleSubject: { startsWith: prefix } } } });
     await prisma.client.invitation.deleteMany({ where: { groupId: { in: groupIds } } });
     await prisma.client.group.deleteMany({ where: { id: { in: groupIds.splice(0) } } });
     await prisma.client.user.deleteMany({ where: { googleSubject: { startsWith: prefix } } });
+    expect(sessionCount).toBe(0);
   });
   afterAll(async () => { await app?.close(); });
 

@@ -9,6 +9,7 @@ import {
 import {
   NewOAuthTransaction,
   OAuthTransactionStore,
+  SessionStore,
 } from '@daylo/api/auth/data-access';
 import { PrismaService } from '@daylo/api/core/database';
 import { TRANSACTION_RUNNER, TransactionContext } from '@daylo/api/core/transactions/contracts';
@@ -144,6 +145,7 @@ describe('Google OIDC HTTP flow', () => {
                   'http://localhost:4200/api/auth/google/callback',
                 environment: 'development',
                 initialOwnerEmail: 'synthetic@example.test',
+                frontendOrigin: 'http://localhost:4200',
               },
             }),
           ],
@@ -167,6 +169,8 @@ describe('Google OIDC HTTP flow', () => {
       .useValue({})
       .overrideProvider(OAuthTransactionStore)
       .useValue(store)
+      .overrideProvider(SessionStore)
+      .useValue({ create: async () => undefined })
       .overrideProvider(GOOGLE_OAUTH_CLIENT)
       .useValue(client)
       .compile();
@@ -264,17 +268,13 @@ describe('Google OIDC HTTP flow', () => {
     expect(response.headers.get('referrer-policy')).toBe('no-referrer');
   });
 
-  it('verifies a signed token, consumes the attempt, clears binding and safely defers session completion', async () => {
+  it('verifies a signed token, consumes the attempt, clears binding and issues a session cookie', async () => {
     const { state, cookie } = await start();
     const response = await callback(state, cookie);
-    expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({
-      statusCode: 503,
-      code: 'SERVICE_UNAVAILABLE',
-      message: 'Daylo sign-in completion is not yet available',
-    });
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('http://localhost:4200/today');
     expect(response.headers.get('set-cookie')).toContain(`${cookieName}=;`);
-    expect(response.headers.get('set-cookie')).not.toContain('daylo_session');
+    expect(response.headers.get('set-cookie')).toContain('daylo_session');
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(rows.size).toBe(0);
     expect(tokenRequests).toBe(1);
@@ -326,7 +326,7 @@ describe('Google OIDC HTTP flow', () => {
       callback(state, cookie),
     ]);
     expect(responses.map((response) => response.status).sort()).toEqual([
-      401, 503,
+      302, 401,
     ]);
     expect(tokenRequests).toBe(1);
   });
@@ -378,7 +378,7 @@ describe('Google OIDC HTTP flow', () => {
   it('accepts the documented alternate Google issuer', async () => {
     const { state, cookie } = await start();
     tokenOverrides.iss = 'accounts.google.com';
-    expect((await callback(state, cookie)).status).toBe(503);
+    expect((await callback(state, cookie)).status).toBe(302);
   });
 
   it.each([
@@ -435,7 +435,7 @@ describe('Google OIDC HTTP flow', () => {
     expect(tokenRequests).toBe(0);
   });
 
-  it('documents browser navigation and the intermediate callback contract', () => {
+  it('documents browser navigation and the session callback contract', () => {
     const document = createOpenApiDocument(app);
     const start = required(document.paths['/api/auth/google'].get);
     const complete = required(document.paths['/api/auth/google/callback'].get);
@@ -443,6 +443,7 @@ describe('Google OIDC HTTP flow', () => {
     expect(start.responses['302']).toBeDefined();
     expect(complete.operationId).toBe('completeGoogleAuthentication');
     expect(Object.keys(complete.responses).sort()).toEqual([
+      '302',
       '400',
       '401',
       '403',

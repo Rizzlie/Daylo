@@ -1,0 +1,12 @@
+{
+  "name": "api-core-identity-contracts",
+  "$schema": "../../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/core/identity/contracts/src",
+  "projectType": "library",
+  "tags": [
+    "platform:api",
+    "scope:core",
+    "type:api-contract"
+  ],
+  "targets": {}
+}

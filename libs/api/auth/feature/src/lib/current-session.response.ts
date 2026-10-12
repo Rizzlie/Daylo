@@ -1,6 +1,7 @@
 import {
   currentSessionResponseSchema,
   httpErrorResponseSchema,
+  csrfTokenResponseSchema,
 } from '@daylo/shared/schemas';
 import { createZodDto } from 'nestjs-zod';
 
@@ -8,6 +9,10 @@ import { createZodDto } from 'nestjs-zod';
 // Nested schema IDs remain available for reusable OpenAPI components.
 export class CurrentSessionResponseDto extends createZodDto(
   currentSessionResponseSchema.meta({ id: undefined }),
+) {}
+
+export class CsrfTokenResponseDto extends createZodDto(
+  csrfTokenResponseSchema.meta({ id: undefined }),
 ) {}
 
 export class SessionErrorResponseDto extends createZodDto(

@@ -1,5 +1,7 @@
-import { Controller, Get, INestApplication } from '@nestjs/common';
+import { Controller, Get, INestApplication, SetMetadata } from '@nestjs/common';
+import { PUBLIC_ENDPOINT } from '@daylo/api/core/identity/contracts';
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import SwaggerParser from '@apidevtools/swagger-parser';
 import { GOOGLE_OAUTH_CLIENT } from '@daylo/api/auth/feature';
 import { AppModule } from './app.module';
@@ -24,6 +26,7 @@ const syntheticUser = {
 
 // These routes exist only in the test module, never in the runtime application.
 @Controller('session-fixtures')
+@SetMetadata(PUBLIC_ENDPOINT, true)
 class SessionFixtureController {
   @Get('pending')
   @ZodResponse({ type: SessionFixtureDto })
@@ -61,6 +64,7 @@ describe('session contract and OpenAPI', () => {
       ],
     })
       .overrideProvider(PrismaService).useValue({})
+      .overrideProvider(ConfigService).useValue(new ConfigService({ runtime: { environment: 'development', frontendOrigin: 'http://localhost:4200' } }))
       .overrideProvider(GOOGLE_OAUTH_CLIENT).useValue(new OAuth2Client({ clientId: 'synthetic.apps.googleusercontent.com' }))
       .compile();
     app = moduleRef.createNestApplication();
@@ -112,7 +116,20 @@ describe('session contract and OpenAPI', () => {
     const session = document.paths['/api/auth/session'].get;
     expect(session.operationId).toBe('getCurrentSession');
     expect(session.tags).toEqual(['Authentication']);
-    expect(Object.keys(session.responses).sort()).toEqual(['200', '401', '500']);
+    expect(Object.keys(session.responses).sort()).toEqual(['200', '401', '500', '503']);
+    expect(session.security).toEqual([{ dayloSession: [] }]);
+    expect(document.components.securitySchemes.dayloSession).toMatchObject({ type: 'apiKey', in: 'cookie', name: 'daylo_session' });
+    const csrf = document.paths['/api/auth/csrf'].get;
+    expect(csrf.operationId).toBe('getCsrfToken');
+    expect(csrf.security).toEqual([{ dayloSession: [] }]);
+    const signOut = document.paths['/api/auth/sign-out'].post;
+    expect(signOut.operationId).toBe('signOut');
+    expect(signOut.responses['204'].content).toBeUndefined();
+    expect(signOut.parameters).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'X-CSRF-Token', in: 'header', required: true }),
+    ]));
+    expect(signOut.parameters.some((parameter: { name: string }) => parameter.name === 'Origin')).toBe(false);
+    expect(signOut.description).toContain('exact configured frontend Origin');
     expect(session.responses['200'].content['application/json'].schema.$ref).toBe(
       '#/components/schemas/CurrentSessionResponseDto_Output',
     );
