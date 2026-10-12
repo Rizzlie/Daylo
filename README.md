@@ -139,7 +139,9 @@ npm exec nx -- run api:build
 
 The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, and `FRONTEND_ORIGIN` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error. Routes use the `/api` prefix.
 
-`GET /api/health/ready` checks PostgreSQL with a `SELECT 1` query and a 1000 ms deadline. It returns HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when the database is available. A failed or timed-out check returns HTTP 503 with `{"status":"error","checks":{"database":"down"}}`; the response does not expose connection details or raw database errors. Prisma persistence, authentication, and generated API contracts remain pending. Configuration validation tests live in the `api-core-configuration` project, and readiness tests live in `api-core-database`.
+`GET /api/health/ready` checks PostgreSQL with a `SELECT 1` query and a 1000 ms deadline. It returns HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when the database is available. A failed or timed-out check returns HTTP 503 with the standard `SERVICE_UNAVAILABLE` error envelope established in F04-01; the response does not expose connection details or raw database errors. Configuration validation tests live in `api-core-configuration`; readiness tests live in `api-core-database` and `api`.
+
+Swagger UI is at `http://localhost:3000/api/docs`, and OpenAPI 3.0 JSON is at `/api/openapi.json`. `GET /api/auth/session` currently always returns HTTP 401 with `AUTHENTICATION_REQUIRED`. Its declared 200 contract contains `status: pending | active` and `user: { id, email, displayName }`; actual authenticated session lookup remains F06. See [API conventions](docs/api-conventions.md). Run schema/API tests with `npm exec nx -- run-many -t test -p shared-schemas api`. OpenAPI export and generated Angular clients remain F05.
 
 In a restricted agent session that blocks Nx sockets or plugin subprocesses, set `NX_DAEMON=false` and `NX_ISOLATE_PLUGINS=false` for that session. Disabling the daemon also disables automatic server restarts on file changes.
 

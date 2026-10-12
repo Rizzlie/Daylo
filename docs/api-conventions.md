@@ -1,6 +1,6 @@
 # Daylo API conventions
 
-Status: Foundation established by F04-01. Authentication enforcement is implemented in F06.
+Status: Validation established by F04-01; current-session contract and Swagger added in F04-02. Authentication enforcement is implemented in F06.
 
 ## Public schemas
 
@@ -42,6 +42,35 @@ The foundation codes and status semantics are:
 | 503 | `SERVICE_UNAVAILABLE` | A required service, such as PostgreSQL readiness, is unavailable. |
 
 ## Session cookie and CSRF
+
+`GET /api/auth/session` (`getCurrentSession`) returns HTTP 401 with the standard
+`AUTHENTICATION_REQUIRED` envelope when a session is missing, expired or revoked.
+Until F06 implements actual session lookup, every request to this endpoint returns
+401, including requests containing a cookie. It never fabricates authenticated access.
+
+The declared HTTP 200 response is:
+
+```json
+{
+  "status": "pending",
+  "user": {
+    "id": "3eac11b0-884a-4f50-a593-28bd8663387a",
+    "email": "session@example.test",
+    "displayName": "Synthetic User"
+  }
+}
+```
+
+`status` is `pending` or `active`. Both states may read their session identity;
+pending access does not grant access to group tasks or personal task creation.
+There is no anonymous 200 variant. Provider subjects, token hashes and CSRF values
+are excluded. Session responses use `Cache-Control: no-store`.
+
+Swagger UI is available at `/api/docs`, with OpenAPI 3.0 JSON at
+`/api/openapi.json`. The document uses `nestjs-zod` output schemas and
+`cleanupOpenApiDoc`. Cookie authentication requirements are described in prose;
+the concrete cookie security scheme and CSRF header await their names in F06-03.
+OpenAPI export and Angular client generation belong to F05.
 
 Authenticated API requests use the backend-owned opaque session cookie described in the architecture. The cookie is `HttpOnly`, `SameSite=Lax`, scoped to `/`, expires after seven days, and is secure outside local HTTP development. Authentication tokens are never stored in browser storage.
 

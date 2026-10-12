@@ -26,6 +26,9 @@
       ],
       "@daylo/shared/schemas": [
         "./libs/shared/schemas/src/index.ts"
+      ],
+      "@daylo/api/auth/feature": [
+        "./libs/api/auth/feature/src/index.ts"
       ]
     }
   },
