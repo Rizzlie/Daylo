@@ -9,6 +9,7 @@ export interface RuntimeConfiguration {
   initialOwnerEmail: string;
   googleClientId: string;
   googleClientSecret: string;
+  oauthPkceEncryptionKey: string;
   googleCallbackUrl: string;
   port: number;
 }
@@ -23,6 +24,7 @@ export const runtimeConfiguration = registerAs(
       ?.trim().toLowerCase() as string,
     googleClientId: process.env['GOOGLE_CLIENT_ID']?.trim() as string,
     googleClientSecret: process.env['GOOGLE_CLIENT_SECRET']?.trim() as string,
+    oauthPkceEncryptionKey: process.env['OAUTH_PKCE_ENCRYPTION_KEY']?.trim() as string,
     googleCallbackUrl: process.env['GOOGLE_CALLBACK_URL']?.trim() as string,
     port: Number(process.env['PORT']),
   }),

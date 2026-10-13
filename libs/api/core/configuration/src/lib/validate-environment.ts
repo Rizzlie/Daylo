@@ -93,6 +93,9 @@ export const environmentSchema = z
       },
     ),
     GOOGLE_CLIENT_SECRET: requiredString,
+    OAUTH_PKCE_ENCRYPTION_KEY: requiredString.regex(/^[a-fA-F0-9]{64}$/, {
+      error: 'must be a 32-byte key encoded as 64 hexadecimal characters',
+    }),
     GOOGLE_CALLBACK_URL: requiredString,
     NODE_ENV: requiredString.pipe(
       z.enum(NODE_ENVIRONMENTS, {

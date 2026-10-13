@@ -5,6 +5,7 @@ export interface NewOAuthTransaction {
   stateHash: string;
   browserBindingHash: string;
   nonce: string;
+  encryptedVerifier: string;
   expiresAt: Date;
 }
 
@@ -24,16 +25,16 @@ export class OAuthTransactionStore {
     stateHash: string,
     browserBindingHash: string,
     now: Date,
-  ): Promise<string | null> {
+  ): Promise<{ nonce: string; encryptedVerifier: string | null } | null> {
     // One PostgreSQL statement arbitrates concurrent callbacks. No preceding read
     // can allow two callers to receive the nonce or exchange the same code.
-    const rows = await this.prisma.client.$queryRaw<{ nonce: string }[]>`
+    const rows = await this.prisma.client.$queryRaw<{ nonce: string; encryptedVerifier: string | null }[]>`
       DELETE FROM oauth_transactions
       WHERE state_hash = ${stateHash}
         AND browser_binding_hash = ${browserBindingHash}
         AND expires_at > ${now}
-      RETURNING nonce
+      RETURNING nonce, encrypted_verifier AS "encryptedVerifier"
     `;
-    return rows[0]?.nonce ?? null;
+    return rows[0] ?? null;
   }
 }

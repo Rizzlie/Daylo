@@ -77,8 +77,14 @@ Use OAuth 2.0 Authorization Code Flow with OpenID Connect, handled by the backen
 1. The browser navigates to `GET /api/auth/google`.
 2. The backend creates a short-lived, single-use authentication transaction with random `state` and `nonce`, bound to the initiating browser.
 3. Redirect to Google with `openid`, `email`, and `profile` scopes.
+   F06-08 adds a per-attempt S256 PKCE challenge; its random verifier is stored
+   encrypted with AES-256-GCM in that transaction, bound to state/browser/nonce.
 4. Google redirects to `GET /api/auth/google/callback`.
 5. Validate the authentication transaction, exchange the authorization code on the backend, and verify the ID token's signature, issuer, audience, expiration, nonce, and verified email.
+   Atomically consume nonce and ciphertext before decrypting the verifier and
+   supplying it to Google. Missing, damaged, legacy or old-key records fail closed.
+   The required independent `OAUTH_PKCE_ENCRYPTION_KEY` is 32 bytes encoded as 64
+   hex characters. Rotation requires fresh sign-in attempts, not new Daylo sessions.
 6. Identify the account using Google's stable `sub`; new email-based owner/invitation admission requires Gmail or verified Workspace authority. Existing active subjects retain access independently of external email authority.
 7. Check initial owner access, existing active access, or a valid pending invitation.
 8. Create a Daylo session and redirect to a fixed frontend route appropriate to the user's access status.
@@ -109,7 +115,7 @@ All entities use UUID identifiers. Audit timestamps are UTC instants.
 | User | googleSubject, email, displayName, accessStatus, createdAt |
 | UserPreferences | userId, theme, playfulGreetingsEnabled |
 | Session | userId, tokenHash, csrfTokenHash, expiresAt |
-| OAuthTransaction | stateHash, browserBindingHash, nonce, expiresAt |
+| OAuthTransaction | stateHash, browserBindingHash, nonce, encryptedVerifier, expiresAt |
 | Group | name, ownerId, createdAt |
 | Membership | groupId, userId, joinedAt |
 | Invitation | groupId, email, invitedById, status, expiresAt, resolvedAt |

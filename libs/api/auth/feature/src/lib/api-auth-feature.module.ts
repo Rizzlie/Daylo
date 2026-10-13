@@ -12,6 +12,7 @@ import {
   GoogleOidcProvider,
 } from './google-oidc.provider';
 import { GoogleOidcService } from './google-oidc.service';
+import { OAuthPkceService } from './oauth-pkce.service';
 import { SessionService } from './session.service';
 import { SessionGuard } from './session.guard';
 
@@ -21,6 +22,7 @@ import { SessionGuard } from './session.guard';
   providers: [
     GoogleOidcProvider,
     GoogleOidcService,
+    OAuthPkceService,
     ApplicationAdmissionService,
     SessionService,
     { provide: APP_GUARD, useClass: SessionGuard },

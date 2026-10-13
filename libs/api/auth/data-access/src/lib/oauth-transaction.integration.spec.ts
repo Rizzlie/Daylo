@@ -44,12 +44,13 @@ describe.skipIf(!enabled || !databaseUrl)(
       const stateHash = hash(randomBytes(32).toString('hex'));
       const browserBindingHash = hash(randomBytes(32).toString('hex'));
       const nonce = randomBytes(32).toString('base64url');
+      const encryptedVerifier = 'synthetic-encrypted-verifier';
       stateHashes.push(stateHash);
       await store.create(
-        { stateHash, browserBindingHash, nonce, expiresAt },
+        { stateHash, browserBindingHash, nonce, encryptedVerifier, expiresAt },
         new Date(),
       );
-      return { stateHash, browserBindingHash, nonce };
+      return { stateHash, browserBindingHash, nonce, encryptedVerifier };
     }
 
     it('allows exactly one of concurrent callbacks and rejects all replays', async () => {
@@ -64,7 +65,7 @@ describe.skipIf(!enabled || !databaseUrl)(
         ),
       );
       expect(
-        results.filter((nonce) => nonce === transaction.nonce),
+        results.filter((row) => row?.nonce === transaction.nonce && row.encryptedVerifier === transaction.encryptedVerifier),
       ).toHaveLength(1);
       expect(results.filter((nonce) => nonce === null)).toHaveLength(7);
       expect(
@@ -103,7 +104,7 @@ describe.skipIf(!enabled || !databaseUrl)(
           transaction.browserBindingHash,
           new Date(),
         ),
-      ).toBe(transaction.nonce);
+      ).toEqual({ nonce: transaction.nonce, encryptedVerifier: transaction.encryptedVerifier });
     });
 
     it('rejects expiry at the exact deadline and cleans expired attempts on the next start', async () => {
@@ -121,6 +122,7 @@ describe.skipIf(!enabled || !databaseUrl)(
           stateHash: hash('next-start'),
           browserBindingHash: hash('next-browser'),
           nonce: 'next-nonce',
+          encryptedVerifier: 'next-encrypted-verifier',
           expiresAt: new Date(deadline.getTime() + 600_000),
         },
         deadline,

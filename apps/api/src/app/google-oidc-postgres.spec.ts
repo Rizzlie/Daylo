@@ -23,6 +23,8 @@ describe.skipIf(!enabled || !databaseUrl)(
     let baseUrl: string;
     let prisma: PrismaService;
     let nonce: string;
+    let expectedChallenge: string;
+    let exchangedVerifier: string;
     let exchanges = 0;
     let providerIdentity: { sub: string; email: string; name?: string };
     const prefix = `f06-http-${randomUUID()}`;
@@ -50,6 +52,7 @@ describe.skipIf(!enabled || !databaseUrl)(
                 runtime: {
                   databaseUrl,
                   googleClientId: clientId,
+                oauthPkceEncryptionKey: 'a1'.repeat(32),
                   googleClientSecret: 'synthetic-secret',
                   googleCallbackUrl:
                     'http://localhost:4200/api/auth/google/callback',
@@ -72,6 +75,10 @@ describe.skipIf(!enabled || !databaseUrl)(
         async (options) => {
           if (String(options.url).includes('/token')) {
             exchanges++;
+            const body = options.data as URLSearchParams;
+            exchangedVerifier = body.get('code_verifier') ?? '';
+            if (createHash('sha256').update(exchangedVerifier).digest('base64url') !== expectedChallenge)
+              throw { response: { status: 400 }, message: 'private-pkce-mismatch' };
             const now = Math.floor(Date.now() / 1000);
             const header = Buffer.from(
               JSON.stringify({ alg: 'RS256', kid: 'test-key' }),
@@ -153,6 +160,10 @@ describe.skipIf(!enabled || !databaseUrl)(
       if (!state || !transactionNonce)
         throw new Error('Missing state or nonce');
       nonce = transactionNonce;
+      expectedChallenge = url.searchParams.get('code_challenge') ?? '';
+      expect(url.searchParams.get('code_challenge_method')).toBe('S256');
+      expect(expectedChallenge).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      expect(url.searchParams.has('code_verifier')).toBe(false);
       stateHashes.push(hash(state));
       return { state, cookie: setCookie.split(';')[0] };
     }
@@ -173,8 +184,12 @@ describe.skipIf(!enabled || !databaseUrl)(
         where: { stateHash: hash(state) },
       });
       expect(row?.browserBindingHash).toBe(hash(cookie.split('=')[1]));
+      expect(row?.encryptedVerifier).toMatch(/^v1\./);
       const response = await callback(state, cookie);
       expect(response.status).toBe(302);
+      expect(exchangedVerifier).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      expect(JSON.stringify(row)).not.toContain(exchangedVerifier);
+      expect(JSON.stringify([...response.headers])).not.toContain(exchangedVerifier);
       expect(response.headers.get('location')).toBe('http://localhost:4200/today');
       const sessionCookie = response.headers.getSetCookie().find((cookie) => cookie.startsWith('daylo_session='));
       expect(sessionCookie).toMatch(/daylo_session=[A-Za-z0-9_-]{43}; Path=\/; Expires=.*; HttpOnly; SameSite=Lax/);
@@ -211,6 +226,36 @@ describe.skipIf(!enabled || !databaseUrl)(
       ).toHaveLength(7);
       expect(exchanges).toBe(1);
     });
+
+    it.each(['legacy', 'tampered', 'swapped', 'provider-mismatch'])(
+      'rejects %s PKCE with persisted single-use consumption and no session', async (reason) => {
+        const first = await start();
+        const { state, cookie } = await start();
+        const row = await prisma.client.oAuthTransaction.findUniqueOrThrow({ where: { stateHash: hash(state) } });
+        if (reason === 'legacy') {
+          await prisma.client.oAuthTransaction.update({ where: { id: row.id }, data: { encryptedVerifier: null } });
+        }
+        if (reason === 'tampered') {
+          if (!row.encryptedVerifier) throw new Error('Missing encrypted verifier fixture');
+          const parts = row.encryptedVerifier.split('.');
+          parts[2] = `${parts[2][0] === 'A' ? 'B' : 'A'}${parts[2].slice(1)}`;
+          await prisma.client.oAuthTransaction.update({ where: { id: row.id }, data: { encryptedVerifier: parts.join('.') } });
+        }
+        if (reason === 'swapped') {
+          const other = await prisma.client.oAuthTransaction.findUniqueOrThrow({ where: { stateHash: hash(first.state) } });
+          await prisma.client.oAuthTransaction.update({ where: { id: row.id }, data: { encryptedVerifier: other.encryptedVerifier } });
+        }
+        if (reason === 'provider-mismatch') expectedChallenge = 'different-provider-challenge';
+        const response = await callback(state, cookie);
+        expect(response.status).toBe(401);
+        expect(await response.json()).toEqual({ statusCode: 401, code: 'GOOGLE_AUTHENTICATION_FAILED', message: 'Google authentication failed' });
+        expect(response.headers.getSetCookie().some((value) => value.startsWith('daylo_session='))).toBe(false);
+        expect(await prisma.client.user.count({ where: { googleSubject: providerIdentity.sub } })).toBe(0);
+        expect(await prisma.client.oAuthTransaction.findUnique({ where: { id: row.id } })).toBeNull();
+        expect((await callback(state, cookie)).status).toBe(401);
+        expect(exchanges).toBe(reason === 'provider-mismatch' ? 1 : 0);
+      },
+    );
 
     it('denies a signed verified outsider with a safe 403, consumes the attempt and leaves no identity or session', async () => {
       providerIdentity = { sub: `${prefix}-outsider`, email: `${prefix}-outsider@example.test`, name: 'Private outsider name' };

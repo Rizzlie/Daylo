@@ -5,6 +5,11 @@ sessions, current identity, sliding renewal, CSRF and revoking sign-out.
 
 `GET /api/auth/google` creates a ten-minute hashed browser-bound transaction and
 redirects to Google. The callback consumes the transaction before provider exchange,
+with per-attempt S256 PKCE. The backend stores only an AES-256-GCM encrypted verifier,
+authenticated against state/browser hashes and nonce. The callback recovers it from
+the atomically consumed record and supplies it only to Google's token endpoint.
+Missing, damaged, legacy or old-key ciphertext requires a fresh attempt. Key
+rotation does not revoke established sessions. It then
 verifies the signed identity and passes admission through Users/Groups contracts
 wired at the application root. Denied identities receive safe 403 without profile
 writes. New admission requires Gmail or verified Workspace email authority;

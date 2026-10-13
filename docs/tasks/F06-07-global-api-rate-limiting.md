@@ -198,7 +198,7 @@ Verification:
   normal two-tab navigation. No API response mocks or runtime test-auth endpoint.
   Tests serialize their shared local IP and wait for observed quota recovery
   instead of disabling protection. Reports/traces remain in ignored `dist`.
-- Independent T3 browser inspection passed: rate-limit notice on desktop and
+- Independent browser inspection passed: rate-limit notice on desktop and
   mobile in light/dark themes; no horizontal overflow; real 20-admitted/21st-429
   readiness burst; protected-entry rate-limit recovery; explicit retry after
   recovery. Network/console inspection showed expected synthetic 429 and normal
@@ -220,8 +220,7 @@ updated backend code; its previous process was not replaced during verification.
 ### Publication authorization — 2026-10-13
 
 Published: [draft PR #20](https://github.com/Rizzlie/Daylo/pull/20), branch
-`feat/f06-07-global-api-rate-limiting`, targeting `main`. The PR is registered
-with the current T3 thread. Existing local verification is preserved; hosted CI
+`feat/f06-07-global-api-rate-limiting`, targeting `main`. Existing local verification is preserved; hosted CI
 was not assessed as part of publication.
 
 After accepting F06-07, the owner requested publishing the current work as a PR.

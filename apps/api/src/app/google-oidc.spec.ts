@@ -49,6 +49,8 @@ describe('Google OIDC HTTP flow', () => {
   let certificateFailure: boolean;
   let tokenRequests: number;
   let currentNonce: string;
+  let expectedChallenge: string;
+  let exchangedVerifier: string;
   let databaseFailure: boolean;
   const rows = new Map<string, NewOAuthTransaction>();
   const store = {
@@ -68,7 +70,7 @@ describe('Google OIDC HTTP flow', () => {
       )
         return null;
       rows.delete(stateHash);
-      return row.nonce;
+      return { nonce: row.nonce, encryptedVerifier: row.encryptedVerifier };
     },
   };
 
@@ -82,6 +84,10 @@ describe('Google OIDC HTTP flow', () => {
       async (options) => {
         if (String(options.url).includes('/token')) {
           tokenRequests++;
+          const body = options.data as URLSearchParams;
+          exchangedVerifier = body.get('code_verifier') ?? '';
+          if (createHash('sha256').update(exchangedVerifier).digest('base64url') !== expectedChallenge)
+            throw { response: { status: 400 }, message: 'private-pkce-mismatch' };
           if (providerStatus !== undefined)
             throw {
               response: { status: providerStatus },
@@ -143,6 +149,7 @@ describe('Google OIDC HTTP flow', () => {
             () => ({
               runtime: {
                 googleClientId: clientId,
+                oauthPkceEncryptionKey: 'a1'.repeat(32),
                 googleCallbackUrl:
                   'http://localhost:4200/api/auth/google/callback',
                 environment: 'development',
@@ -193,6 +200,8 @@ describe('Google OIDC HTTP flow', () => {
     providerStatus = undefined;
     certificateFailure = false;
     tokenRequests = 0;
+    exchangedVerifier = '';
+    app.get(ConfigService).set('runtime.oauthPkceEncryptionKey', 'a1'.repeat(32));
     databaseFailure = false;
     app.get(ConfigService).set('runtime.environment', 'development');
     app.get(ConfigService).set('runtime.frontendOrigin', 'http://localhost:4200');
@@ -216,6 +225,10 @@ describe('Google OIDC HTTP flow', () => {
     expect(response.status).toBe(302);
     const location = new URL(required(response.headers.get('location')));
     currentNonce = required(location.searchParams.get('nonce'));
+    expectedChallenge = required(location.searchParams.get('code_challenge'));
+    expect(location.searchParams.get('code_challenge_method')).toBe('S256');
+    expect(expectedChallenge).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(location.searchParams.has('code_verifier')).toBe(false);
     return {
       response,
       location,
@@ -285,6 +298,62 @@ describe('Google OIDC HTTP flow', () => {
     expect(response.headers.get('location')).toBe('http://localhost:4200/today');
     expect(tokenRequests).toBe(1);
     expect(rows.size).toBe(4);
+  });
+
+  it('creates independent challenges and sends only the matching verifier at exchange', async () => {
+    const first = await start();
+    const second = await start();
+    expect(first.location.searchParams.get('code_challenge')).not.toBe(expectedChallenge);
+    const row = required(rows.get(hash(second.state)));
+    const response = await callback(second.state, second.cookie);
+    expect(response.status).toBe(302);
+    expect(exchangedVerifier).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(JSON.stringify(row)).not.toContain(exchangedVerifier);
+    expect(second.location.href).not.toContain(exchangedVerifier);
+    expect(JSON.stringify([...second.response.headers])).not.toContain(exchangedVerifier);
+    expect(JSON.stringify([...response.headers])).not.toContain(exchangedVerifier);
+    expect(await response.text()).not.toContain(exchangedVerifier);
+  });
+
+  it.each(['missing', 'malformed', 'tampered', 'swapped', 'rotated-key'])(
+    'rejects %s encrypted verifier before exchange and consumes the attempt', async (reason) => {
+      const first = await start();
+      const { state, cookie } = await start();
+      const row = required(rows.get(hash(state)));
+      if (reason === 'missing') row.encryptedVerifier = null as unknown as string;
+      if (reason === 'malformed') row.encryptedVerifier = 'private-malformed-record';
+      if (reason === 'tampered') {
+        const parts = row.encryptedVerifier.split('.');
+        parts[2] = `${parts[2][0] === 'A' ? 'B' : 'A'}${parts[2].slice(1)}`;
+        row.encryptedVerifier = parts.join('.');
+      }
+      if (reason === 'swapped') row.encryptedVerifier = required(rows.get(hash(first.state))).encryptedVerifier;
+      if (reason === 'rotated-key') app.get(ConfigService).set('runtime.oauthPkceEncryptionKey', 'b2'.repeat(32));
+      await expectAuthFailure(await callback(state, cookie));
+      expect(rows.has(hash(state))).toBe(false);
+      await expectAuthFailure(await callback(state, cookie));
+      expect(tokenRequests).toBe(0);
+    },
+  );
+
+  it('rejects a provider-side verifier mismatch without a session or retry', async () => {
+    const { state, cookie } = await start();
+    expectedChallenge = 'different-provider-challenge';
+    const response = await callback(state, cookie);
+    expect(response.headers.get('set-cookie')).not.toContain('daylo_session=');
+    await expectAuthFailure(response);
+    await expectAuthFailure(await callback(state, cookie));
+    expect(tokenRequests).toBe(1);
+  });
+
+  it('allows a fresh start after rotating the encryption key', async () => {
+    const previous = await start();
+    app.get(ConfigService).set('runtime.oauthPkceEncryptionKey', 'b2'.repeat(32));
+    await expectAuthFailure(await callback(previous.state, previous.cookie));
+    expect(tokenRequests).toBe(0);
+    const fresh = await start();
+    expect((await callback(fresh.state, fresh.cookie)).status).toBe(302);
+    expect(tokenRequests).toBe(1);
   });
 
   it('verifies a signed token, consumes the attempt, clears binding and issues a session cookie', async () => {

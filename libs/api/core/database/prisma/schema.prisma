@@ -83,6 +83,7 @@ model OAuthTransaction {
   stateHash          String   @unique(map: "oauth_transactions_state_hash_key") @map("state_hash") @db.Char(64)
   browserBindingHash String   @map("browser_binding_hash") @db.Char(64)
   nonce              String   @unique(map: "oauth_transactions_nonce_key") @db.VarChar(255)
+  encryptedVerifier  String?  @map("encrypted_verifier") @db.VarChar(128)
   expiresAt          DateTime @map("expires_at") @db.Timestamptz(3)
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 

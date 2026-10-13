@@ -1,8 +1,39 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-13. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 through F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-13. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-09 through F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### F06-08 PKCE delivery — 2026-10-13
+
+Owner acceptance: "Ok zatwierdzam", 2026-10-13, closes the delivered F06-08
+scope. Recorded real-provider/hosted-CI/deployment and runtime-setup limits remain.
+The owner requested browser-tool-neutral documentation; browser results and
+limitations are retained without naming the host. This documentation-only update
+does not authorize publication or subsequent implementation.
+
+The owner agreed to the discussed F06-08 scope and implementation request with
+"tak, zgadzam sie". Implemented transaction-specific S256 PKCE through the official
+Google client. AES-256-GCM protects the recoverable verifier with a separate required
+configuration key and state/browser/nonce binding. Atomic single-use consumption,
+OIDC defenses and session behavior are preserved. Legacy, damaged, swapped or old-key
+attempts fail safely and require a fresh start; rotation preserves existing sessions.
+
+Local verification passed: 207 API tests with isolated PostgreSQL, 28 configuration
+tests, 3 transaction repository tests, affected lint, both production builds,
+OpenAPI/client compilation and drift checks, and 22 real-stack desktop/mobile E2E
+cases. Independent browser invalid-callback recovery/layout/storage and Daylo diagnostics
+inspection passed. Real Google PKCE success, hosted CI and deployment remain
+unverified. See [F06-08](tasks/F06-08-pkce-for-google-oidc.md).
+
+F06-08 is implemented, locally verified and owner-accepted on 2026-10-13. F06-09 through
+F06-12 remain pending and parent F06 is incomplete. Existing owner runtime/configuration
+was not changed: its updated API needs the independent key, migration and restart.
+No publication or subsequent task is authorized.
+
+Retrospective: assert the verifier after code exchange, preserve encrypted-record
+binding and atomic consumption, and distinguish controlled-provider proof from a
+successful real Google smoke check.
 
 ### F06-07 global API rate limiting delivery — 2026-10-13
 
@@ -20,7 +51,7 @@ Quota rejection precedes persistence and does not revoke sessions or clear cooki
 Fresh Nx verification passed: 195 API tests with enabled isolated PostgreSQL,
 53 frontend/schema tests, affected lint, API/web production builds, OpenAPI/client
 generation and drift checks, and 20 real-stack desktop/mobile Playwright cases.
-Independent T3 inspection passed for layouts, a genuine quota rejection and
+Independent browser inspection passed for layouts, a genuine quota rejection and
 explicit recovery; only expected synthetic 429/anonymous 401 network errors appeared.
 See [F06-07](tasks/F06-07-global-api-rate-limiting.md) for evidence and limits.
 
@@ -123,7 +154,7 @@ Local lint, 19 frontend tests, 115 ordinary API regression tests, both productio
 builds and contract generation/drift checks passed. Ten real-stack Playwright
 desktop/mobile cases passed with isolated PostgreSQL, including CSRF revocation,
 pending restrictions, reload and expiry. Four automated login screenshots were
-visually inspected. T3 DOM/navigation/resource checks passed; independent T3
+visually inspected. Browser DOM/navigation/resource checks passed; independent browser
 visual/screenshot and console inspection remain incomplete because snapshots
 failed. Real Google sign-in remains F06-05, and managed browser/provider fixtures
 remain F07. Full-stack UI cases are opt-in; hosted CI was not run.
@@ -138,7 +169,7 @@ automated screenshots from independent browser verification.
 Owner-requested revision: The frontend is now declarative, using `rxResource`,
 computed session/view models, an explicit sign-out stream and separate routing
 rules. Twenty-five frontend tests, the web production build and ten real-stack
-desktop/mobile E2E cases passed. Independent T3 snapshots, UI interaction and
+desktop/mobile E2E cases passed. Independent Browser snapshots, UI interaction and
 console/resource inspection now passed, resolving the initial F06-04 browser
 limitation. Acceptance remains pending. Prefer resources and derived state over
 manual synchronization of several writable signals; keep mutation/router side
@@ -309,7 +340,7 @@ the agreed safe 503 until admission/session completion in F06-02/F06-03.
 
 Relevant local lint/tests, real isolated PostgreSQL concurrency/replay tests,
 API/web production builds, Angular client compilation, offline OpenAPI validation
-and two-generation source-preserving drift verification passed. T3 browser inspection
+and two-generation source-preserving drift verification passed. Browser inspection
 checked the real proxy/API stack and safe callback rejection on desktop/mobile with
 synthetic credentials. Real Google sign-in, full authentication browser E2E and hosted
 F06-01 CI remain unverified. The owner accepted the delivered scope with "ok akceptuje
@@ -375,7 +406,7 @@ The full staged check flags upstream whitespace in the new generated CSRF model,
 which is retained unmodified. Browser checks through
 the real Angular/API/PostgreSQL stack covered synthetic session retrieval/reload,
 HttpOnly behavior, CSRF rejection and successful sign-out at desktop/mobile widths.
-T3 snapshots failed; visual and console inspection remain incomplete. Authentication
+Browser snapshots failed; visual and console inspection remain incomplete. Authentication
 UI/full Playwright login fixtures and real Google sign-in remain later tasks.
 Hosted CI remains unverified. The owner accepted the delivered scope on 2026-10-12
 through "Wygląda dobrze, akceptuje. zaktualizuj docsy i wystaw PR", and separately
