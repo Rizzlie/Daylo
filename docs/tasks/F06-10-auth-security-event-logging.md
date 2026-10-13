@@ -169,3 +169,8 @@ the accepted implementation, verification/acceptance documentation and the agree
 F06-09 deferral record. Earlier no-publication statements describe prior stages.
 Reuse recorded checks: only documentation changed after final verification.
 No merge, deployment or subsequent implementation is authorized.
+
+Published: [draft PR #22](https://github.com/Rizzlie/Daylo/pull/22), branch
+`feat/f06-10-auth-security-events`, targeting `main`. The PR is linked to this
+task's thread. Accepted local verification is preserved; hosted CI was not
+assessed during publication. Only this publication record changed afterward.
