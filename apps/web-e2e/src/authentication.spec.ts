@@ -125,4 +125,30 @@ test.describe('real-stack authentication screens', () => {
     await expect(page).toHaveURL(/\/login\?error=failed$/);
     await expect(page.getByRole('alert')).toHaveText('Nie udało się zalogować. Spróbuj ponownie.');
   });
+
+  test('real PKCE start hides the verifier and a damaged transaction recovers to login', async ({ page, context }) => {
+    // Observe the real API redirect without following it to the external Google UI.
+    const response = await context.request.get(`${baseUrl}/api/auth/google`, { maxRedirects: 0 });
+    expect(response.status()).toBe(302);
+    const location = new URL(response.headers()['location']);
+    expect(location.searchParams.get('code_challenge_method')).toBe('S256');
+    expect(location.searchParams.get('code_challenge')).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(location.searchParams.has('code_verifier')).toBe(false);
+    const state = location.searchParams.get('state');
+    expect(state).toBeTruthy();
+    try {
+      const rows = await pool.query('SELECT encrypted_verifier FROM oauth_transactions WHERE state_hash=$1', [hash(state)]);
+      expect(rows.rows[0].encrypted_verifier).toMatch(/^v1\./);
+      await pool.query('UPDATE oauth_transactions SET encrypted_verifier=NULL WHERE state_hash=$1', [hash(state)]);
+      await page.goto(`/api/auth/google/callback?state=${state}&code=synthetic-invalid`);
+      await expect(page).toHaveURL(/\/login\?error=failed$/);
+      await expect(page.getByRole('alert')).toHaveText('Nie udało się zalogować. Spróbuj ponownie.');
+      await expect(page.getByRole('link', { name: 'Zaloguj się przez Google' })).toBeVisible();
+      expect((await context.cookies()).some((cookie) => cookie.name === 'daylo_session')).toBe(false);
+      expect((await pool.query('SELECT id FROM oauth_transactions WHERE state_hash=$1', [hash(state)])).rowCount).toBe(0);
+      expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
+    } finally {
+      await pool.query('DELETE FROM oauth_transactions WHERE state_hash=$1', [hash(state)]);
+    }
+  });
 });

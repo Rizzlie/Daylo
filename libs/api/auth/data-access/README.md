@@ -1,7 +1,10 @@
 # api-auth-data-access
 
 Auth-owned persistence for Google OIDC transactions and database sessions. Stores state and
-browser-binding hashes, nonce and expiry through the existing Prisma database module.
+browser-binding hashes, nonce, encrypted PKCE verifier and expiry through the
+existing Prisma database module. Encryption belongs to the auth feature; persistence
+never receives the plaintext verifier. The nullable ciphertext column accommodates
+old records only; production callbacks reject them rather than downgrade to no PKCE.
 An atomic PostgreSQL `DELETE ... RETURNING` gives a matching unexpired transaction
 to exactly one callback. Starting another attempt removes expired transaction rows.
 

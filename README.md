@@ -137,7 +137,7 @@ npm exec nx -- run api:lint
 npm exec nx -- run api:build
 ```
 
-The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, `FRONTEND_ORIGIN`, `INITIAL_OWNER_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error without echoing their values. Set `INITIAL_OWNER_EMAIL` to the owner's verified Google email; it is trimmed and lowercased. Routes use the `/api` prefix.
+The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, `FRONTEND_ORIGIN`, `INITIAL_OWNER_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, and `OAUTH_PKCE_ENCRYPTION_KEY` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error without echoing their values. Set `INITIAL_OWNER_EMAIL` to the owner's verified Google email; it is trimmed and lowercased. Routes use the `/api` prefix.
 
 `GET /api/health/ready` checks PostgreSQL with a `SELECT 1` query and a 1000 ms deadline. It returns HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when the database is available. A failed or timed-out check returns HTTP 503 with the standard `SERVICE_UNAVAILABLE` error envelope established in F04-01; the response does not expose connection details or raw database errors. Configuration validation tests live in `api-core-configuration`; readiness tests live in `api-core-database` and `api`.
 
@@ -190,9 +190,11 @@ the seven-day sliding window. New email-based admission requires Gmail or an
 authoritative Workspace identity; existing active Google subjects remain usable.
 HTTPS uses `__Host-` session/OAuth cookies and ignores old unprefixed credentials,
 so an HTTPS rollout requires one new sign-in. Local development HTTP remains
-compatible. Global API rate limiting, including stricter OAuth policies, is pending
-in [F06-07](docs/tasks/F06-07-global-api-rate-limiting.md). The owner requested
-removing the auth-only throttler; current runtime has no application rate limiter.
+compatible. Global API rate limiting, including stricter OAuth quotas, is implemented
+and accepted in [F06-07](docs/tasks/F06-07-global-api-rate-limiting.md).
+F06-08 adds S256 PKCE with an encrypted transaction-bound verifier. Before starting
+the updated API, apply migrations and configure the independent 64-hex-character
+`OAUTH_PKCE_ENCRYPTION_KEY`; see [key setup and rotation](docs/google-authentication.md).
 
 The public `/login` screen navigates directly to `/api/auth/google`. Entry/reload checks the real session; active users go to `/today`, pending invitees to `/invitations`. Both destinations contain only a heading and sign-out control until their feature tasks arrive. Protected foreground return rechecks the session without background polling. A detected expired/revoked session redirects to `/login?error=expired` with a durable Polish error; normal anonymous entry and successful sign-out show no expiry error. Connection failures offer retry. Session tokens remain in HttpOnly cookies, and CSRF proof stays in memory.
 

@@ -21,6 +21,7 @@ GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_CALLBACK_URL=http://localhost:4200/api/auth/google/callback
 INITIAL_OWNER_EMAIL=owner@example.test
+OAUTH_PKCE_ENCRYPTION_KEY=your-independent-64-hex-character-key
 ```
 
 Never commit real credentials. API startup validates these values alongside the
@@ -31,6 +32,23 @@ export does not load this configuration, connect to PostgreSQL or contact Google
 
 Google references: [Auth Platform setup](https://support.google.com/cloud/answer/15544987?hl=en),
 [OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect).
+
+F06-08 requires an independent 32-byte secret encoded as 64 hexadecimal characters
+in `OAUTH_PKCE_ENCRYPTION_KEY`. Generate it locally and put it only in ignored
+configuration or the deployment secret store; never reuse the Google client secret:
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+npm exec nx -- run api-core-database:prisma-migrate-deploy
+```
+
+Apply the migration using the intended database's `DATABASE_URL`, then restart the
+API with the new configuration. Missing or malformed keys prevent startup without
+echoing the key. Keep the key stable across restarts. To rotate, replace it and
+restart the API; every in-flight OAuth attempt must start again. No old-key ring is
+retained, and established Daylo sessions are unaffected. Attempts started before
+the PKCE migration also require a fresh start. Back up and restrict access to this
+secret separately from database backups.
 
 ## Runtime behavior
 
@@ -55,10 +73,21 @@ HTTPS: Secure, HttpOnly, SameSite=Lax, Path=/, without Domain. Loopback developm
 HTTP retains `daylo_oauth_browser` with path `/api/auth/google` and no Secure.
 HTTPS never reads an unprefixed binding cookie. Each start replaces this cookie; only the
 latest attempt in the same browser can complete. Persist only SHA-256 hashes of
-state/binding, plus nonce and expiry, using the existing `OAuthTransaction` model.
+state/binding, plus nonce, expiry and an encrypted PKCE verifier, using the existing
+`OAuthTransaction` model. Each attempt has an independent 32-byte random base64url
+verifier. The Google authorization URL contains its SHA-256 base64url challenge and
+`code_challenge_method=S256`, never the verifier. AES-256-GCM uses a fresh 12-byte
+IV; associated data binds ciphertext to the state hash, browser-binding hash and
+nonce. The versioned ciphertext includes its authentication tag. Plaintext verifiers
+exist only transiently in backend memory and in the backend-to-Google token request;
+they are never placed in URLs, browser storage, public responses or logs.
 Expired rows are removed on the next start.
 
 Callback consumes a matching unexpired transaction atomically before code exchange.
+The same atomic delete returns nonce and ciphertext; decryption/validation precedes
+the official client's token exchange with `codeVerifier`. Missing, malformed,
+tampered, swapped or old-key records fail safely after consumption, with no session
+or provider exchange. Google rejects a verifier that does not match its challenge.
 Replay and concurrent callbacks cannot exchange the code again. Browser/state
 mismatch does not consume another browser's valid transaction. Provider refusal,
 missing code and failed token validation terminate the matching attempt. Malformed
@@ -94,9 +123,8 @@ sign-in again. Expired/revoked sessions cannot be renewed. No refresh token or
 session-token rotation is implemented. See
 [API conventions](api-conventions.md#session-cookie-and-csrf).
 
-Auth-only throttling was removed at the owner's request. Global API rate limiting
-and stricter OAuth policies are pending in [F06-07](tasks/F06-07-global-api-rate-limiting.md).
-No runtime quotas or 429 contract are currently configured for OAuth.
+Global API rate limiting and stricter OAuth quotas are implemented and accepted
+in [F06-07](tasks/F06-07-global-api-rate-limiting.md).
 
 ## Identity and admission
 

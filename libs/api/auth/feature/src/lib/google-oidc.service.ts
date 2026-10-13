@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { OAuthTransactionStore } from '@daylo/api/auth/data-access';
+import { OAuthPkceService } from './oauth-pkce.service';
 import {
   authenticationFailed,
   GoogleOidcProvider,
@@ -25,6 +26,7 @@ export class GoogleOidcService {
     @Inject(OAuthTransactionStore)
     private readonly transactions: OAuthTransactionStore,
     @Inject(GoogleOidcProvider) private readonly provider: GoogleOidcProvider,
+    @Inject(OAuthPkceService) private readonly pkce: OAuthPkceService,
   ) {}
 
   async start(): Promise<{ browserBinding: string; redirectUrl: string }> {
@@ -32,13 +34,14 @@ export class GoogleOidcService {
     const nonce = randomValue();
     const browserBinding = randomValue();
     const now = new Date();
-    const redirectUrl = this.provider.authorizationUrl(state, nonce);
+    const binding = { stateHash: hash(state), browserBindingHash: hash(browserBinding), nonce };
+    const { challenge, encryptedVerifier } = this.pkce.create(binding);
+    const redirectUrl = this.provider.authorizationUrl(state, nonce, challenge);
     try {
       await this.transactions.create(
         {
-          stateHash: hash(state),
-          browserBindingHash: hash(browserBinding),
-          nonce,
+          ...binding,
+          encryptedVerifier,
           expiresAt: new Date(now.getTime() + OAUTH_TRANSACTION_SECONDS * 1000),
         },
         now,
@@ -55,18 +58,23 @@ export class GoogleOidcService {
   ): Promise<VerifiedGoogleIdentity> {
     if (!validBinding(input.state) || !validBinding(browserBinding))
       throw authenticationFailed();
-    let nonce: string | null;
+    const stateHash = hash(input.state);
+    const browserBindingHash = hash(browserBinding);
+    let transaction: { nonce: string; encryptedVerifier: string | null } | null;
     try {
-      nonce = await this.transactions.consume(
-        hash(input.state),
-        hash(browserBinding),
+      transaction = await this.transactions.consume(
+        stateHash,
+        browserBindingHash,
         new Date(),
       );
     } catch {
       throw new ServiceUnavailableException();
     }
-    if (!nonce || input.error !== undefined || !input.code)
+    if (!transaction || input.error !== undefined || !input.code)
       throw authenticationFailed();
-    return this.provider.verify(input.code, nonce);
+    const verifier = this.pkce.recover(transaction.encryptedVerifier, {
+      stateHash, browserBindingHash, nonce: transaction.nonce,
+    });
+    return this.provider.verify(input.code, transaction.nonce, verifier);
   }
 }

@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { OAuth2Client } from 'google-auth-library';
+import { CodeChallengeMethod, OAuth2Client } from 'google-auth-library';
 import { z } from 'zod';
 
 export const GOOGLE_OAUTH_CLIENT = Symbol('GOOGLE_OAUTH_CLIENT');
@@ -51,20 +51,22 @@ export class GoogleOidcProvider {
     @Inject(ConfigService) private readonly config: ConfigService,
   ) {}
 
-  authorizationUrl(state: string, nonce: string): string {
+  authorizationUrl(state: string, nonce: string, challenge: string): string {
     return this.client.generateAuthUrl({
       response_type: 'code',
       scope: ['openid', 'email', 'profile'],
       access_type: 'online',
       state,
       nonce,
+      code_challenge: challenge,
+      code_challenge_method: CodeChallengeMethod.S256,
     });
   }
 
-  async verify(code: string, nonce: string): Promise<VerifiedGoogleIdentity> {
+  async verify(code: string, nonce: string, codeVerifier: string): Promise<VerifiedGoogleIdentity> {
     let idToken: string;
     try {
-      const { tokens } = await this.client.getToken(code);
+      const { tokens } = await this.client.getToken({ code, codeVerifier });
       if (typeof tokens.id_token !== 'string' || !tokens.id_token)
         throw authenticationFailed();
       idToken = tokens.id_token;

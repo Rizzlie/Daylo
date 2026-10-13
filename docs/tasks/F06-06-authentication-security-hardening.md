@@ -92,7 +92,7 @@ limiter removal supersedes its quota/dependency statements.
   All fourteen real-stack desktop/mobile E2E cases passed, including absolute
   expiry with an otherwise valid sliding deadline. No real Google success is
   inferred from controlled-provider tests.
-- Independent T3 DOM/resource checks showed real foreground rejection after the
+- Independent Browser DOM/resource checks showed real foreground rejection after the
   synthetic session reached 30 days, then durable login error and no mobile overflow.
   Initial snapshots on the previous tab failed; a new tab restored snapshots and
   console inspection. Desktop dark (1280x800) and mobile light (390x844) login

@@ -8,6 +8,7 @@ const validEnvironment = {
   PORT: '3000',
   GOOGLE_CLIENT_ID: 'synthetic.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: 'synthetic-secret',
+  OAUTH_PKCE_ENCRYPTION_KEY: 'a1'.repeat(32),
   GOOGLE_CALLBACK_URL: 'http://localhost:4200/api/auth/google/callback',
 };
 
@@ -36,6 +37,7 @@ describe('validateEnvironment', () => {
     'INITIAL_OWNER_EMAIL',
     'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET',
+    'OAUTH_PKCE_ENCRYPTION_KEY',
     'GOOGLE_CALLBACK_URL',
   ])('rejects a missing %s value', (name) => {
     const environment = { ...validEnvironment };
@@ -110,6 +112,16 @@ describe('validateEnvironment', () => {
     expect(() =>
       validateEnvironment({ ...validEnvironment, GOOGLE_CLIENT_SECRET: ' ' }),
     ).toThrow('GOOGLE_CLIENT_SECRET is required');
+  });
+
+  it.each(['', ' ', 'a'.repeat(63), 'a'.repeat(65), 'z'.repeat(64), 'private-key'])('rejects an invalid PKCE encryption key without exposing it', (key) => {
+    try {
+      validateEnvironment({ ...validEnvironment, OAUTH_PKCE_ENCRYPTION_KEY: key });
+      throw new Error('Expected configuration rejection');
+    } catch (error) {
+      expect(String(error)).toContain('OAUTH_PKCE_ENCRYPTION_KEY');
+      if (key.trim()) expect(String(error)).not.toContain(key);
+    }
   });
 
   it('rejects invalid values with a specific startup error', () => {

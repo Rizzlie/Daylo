@@ -35,7 +35,7 @@ describe('global API rate limiting over real HTTP', () => {
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ ignoreEnvFile: true, isGlobal: true, load: [() => ({
-        runtime: { environment: 'development', frontendOrigin: 'http://localhost:4200',
+        runtime: { oauthPkceEncryptionKey: 'a1'.repeat(32), environment: 'development', frontendOrigin: 'http://localhost:4200',
           googleClientId: 'synthetic.apps.googleusercontent.com', googleCallbackUrl: 'http://localhost:4200/api/auth/google/callback' },
       })] }), AppModule],
       controllers: [NewRouteController],
