@@ -5,12 +5,14 @@ import {
   ZodSerializerInterceptor,
 } from 'nestjs-zod';
 import { ApiHttpExceptionFilter } from './api-http-exception.filter';
+import { ApiCoreSecurityEventsModule } from '@daylo/api/core/security-events';
 
 const DayloZodValidationPipe = createZodValidationPipe({
   strictSchemaDeclaration: true,
 });
 
 @Module({
+  imports: [ApiCoreSecurityEventsModule],
   providers: [
     ApiHttpExceptionFilter,
     {

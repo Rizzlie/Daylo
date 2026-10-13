@@ -9,6 +9,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SecurityEvents } from '@daylo/api/core/security-events';
 import type { Request } from 'express';
 import { HttpAdapterHost } from '@nestjs/core';
 import {
@@ -60,6 +61,7 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
 
   constructor(
     private readonly adapterHost: HttpAdapterHost,
+    @Inject(SecurityEvents) private readonly events: SecurityEvents,
     @Optional() @Inject(ConfigService) private readonly config?: ConfigService,
   ) {}
 
@@ -71,6 +73,7 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse<unknown>();
     const request = host.switchToHttp().getRequest<Request>();
     const path = request.path;
+    this.recordSecurityFailure(status, request);
     if (status === HttpStatus.TOO_MANY_REQUESTS) {
       this.adapterHost.httpAdapter.setHeader(response, 'Cache-Control', 'no-store');
     }
@@ -109,7 +112,6 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof ZodSerializationException) {
       this.logger.error(
         'A controller response did not match its declared public schema',
-        this.errorStack(exception.getZodError()),
       );
 
       return this.internalServerError(statusCode);
@@ -118,7 +120,6 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
     if (!(exception instanceof HttpException)) {
       this.logger.error(
         'Unhandled API exception',
-        this.errorStack(exception),
       );
       return this.internalServerError(statusCode);
     }
@@ -165,7 +166,23 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
     };
   }
 
-  private errorStack(error: unknown): string | undefined {
-    return error instanceof Error ? error.stack : undefined;
+  private recordSecurityFailure(status: number, request: Request): void {
+    if (status === HttpStatus.TOO_MANY_REQUESTS) {
+      this.events.record({ event: 'rate_limit_rejected', reason: 'quota_exceeded' }, request);
+      return;
+    }
+    const path = request.path.replace(/\/+$/, '').toLowerCase();
+    if (!['GET', 'HEAD'].includes(request.method) ||
+        !['/api/auth/google', '/api/auth/google/callback'].includes(path)) return;
+    if (path.endsWith('/callback') && status === HttpStatus.BAD_REQUEST) {
+      this.events.record({ event: 'callback_rejected', reason: 'invalid_query' }, request);
+    }
+    if (status === HttpStatus.FORBIDDEN) {
+      this.events.record({ event: 'admission_denied', reason: 'not_admitted' }, request);
+    }
+    this.events.record({ event: 'login_failed', reason:
+      status === 403 ? 'admission_denied' : status === 503 ? 'infrastructure_unavailable' :
+      status >= 500 ? 'unexpected_failure' : 'invalid_callback',
+    }, request);
   }
 }

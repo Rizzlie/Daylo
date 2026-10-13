@@ -14,6 +14,7 @@ import type { Request, Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
 import { googleCallbackQuerySchema } from '@daylo/shared/schemas';
 import { PUBLIC_ENDPOINT } from '@daylo/api/core/identity/contracts';
+import { SecurityEvents } from '@daylo/api/core/security-events';
 import { authCookieName, authCookieOptions, readAuthCookie, OAUTH_BROWSER_COOKIE } from './auth-cookie';
 import { SessionService } from './session.service';
 import { SessionErrorResponseDto } from './current-session.response';
@@ -35,6 +36,7 @@ export class GoogleOidcController {
     @Inject(ApplicationAdmissionService)
     private readonly admission: ApplicationAdmissionService,
     @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(SecurityEvents) private readonly events: SecurityEvents,
   ) {}
 
   private cookieOptions() {
@@ -143,9 +145,10 @@ export class GoogleOidcController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<void> {
     response.clearCookie(this.cookieName(), this.cookieOptions());
-    const identity = await this.oidc.callback(query, readAuthCookie(request.headers.cookie, this.cookieName()));
+    const identity = await this.oidc.callback(query, readAuthCookie(request.headers.cookie, this.cookieName()), request);
     const user = await this.admission.admit(identity);
     await this.sessions.issue(user.id, request, response);
+    this.events.record({ event: 'login_succeeded', reason: 'authenticated' }, request, user.id);
     const path = user.accessStatus === 'active' ? '/today' : '/invitations';
     response.redirect(302, new URL(path, this.config.getOrThrow<string>('runtime.frontendOrigin')).href);
   }

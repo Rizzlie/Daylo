@@ -145,6 +145,11 @@ Swagger UI is at `http://localhost:3000/api/docs`, and OpenAPI 3.0 JSON is at `/
 
 ## OpenAPI and generated Angular client
 
+Authentication/security outcomes are emitted as bounded JSON lines to the API's
+stdout. They exclude secrets, emails and IPs; there is no permanent local log
+store. Collection, access, retention and alerts are deferred to hosting. See
+[Security logging](docs/security/security-logging.md) for event codes and limits.
+
 Google OIDC transaction setup, verification and admission are documented in [Google authentication](docs/google-authentication.md). F06-01/F06-02 provide backend Google navigation, token verification and identity/admission persistence. F06-03 adds hashed database sessions, seven-day sliding renewal, session-bound CSRF/origin checks and revoking sign-out. Admitted callbacks create a `daylo_session` cookie and redirect to fixed `/today` or `/invitations`. F06-04 connects the authentication UI, entry/foreground checks and sign-out. Google navigation errors requested as HTML redirect to fixed login error destinations; non-HTML API clients retain safe JSON errors, including 403 for denied accounts.
 
 Export and validate the specification, then generate Angular models and services with one command from the workspace root:

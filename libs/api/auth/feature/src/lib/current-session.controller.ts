@@ -79,6 +79,6 @@ export class CurrentSessionController {
     @Req() request: AuthenticatedRequest,
     @Res({ passthrough: true }) response: Response,
   ): Promise<void> {
-    await this.sessions.signOut(request.dayloSession, response);
+    await this.sessions.signOut(request.dayloSession, response, request);
   }
 }

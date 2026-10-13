@@ -8,6 +8,7 @@ import { GOOGLE_OAUTH_CLIENT } from '@daylo/api/auth/feature';
 import { OAuthTransactionStore, SessionStore } from '@daylo/api/auth/data-access';
 import { DatabaseReadinessService, PrismaService } from '@daylo/api/core/database';
 import { PUBLIC_ENDPOINT } from '@daylo/api/core/identity/contracts';
+import { SecurityEventWriter } from '@daylo/api/core/security-events';
 import { OAuth2Client } from 'google-auth-library';
 import type { Response as ExpressResponse } from 'express';
 import { AppModule } from '../app.module';
@@ -28,6 +29,7 @@ describe('global API rate limiting over real HTTP', () => {
   let app: INestApplication;
   let url: string;
   let storage: BoundedThrottlerStorage;
+  const eventLines: string[] = [];
   const readiness = { isReady: vi.fn(async () => true) };
   const oauth = { create: vi.fn(async () => undefined), consume: vi.fn(async () => null) };
   const session = { findValid: vi.fn(async () => null) };
@@ -53,6 +55,8 @@ describe('global API rate limiting over real HTTP', () => {
     storage = app.get(BoundedThrottlerStorage);
   });
   beforeEach(() => {
+    eventLines.length = 0;
+    vi.spyOn(app.get(SecurityEventWriter), 'write').mockImplementation((line) => { eventLines.push(line); return true; });
     storage.clear();
     vi.clearAllMocks();
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -75,6 +79,9 @@ describe('global API rate limiting over real HTTP', () => {
     for (let index = 0; index < 10; index++) expect((await request('new-route')).status).toBe(401);
     await expect429(await request('health/ready'), 10);
     expect(readiness.isReady).not.toHaveBeenCalled();
+    expect(eventLines.map((line) => JSON.parse(line))).toEqual([expect.objectContaining({
+      event: 'rate_limit_rejected', reason: 'quota_exceeded', requestId: expect.stringMatching(/^[a-f0-9-]{36}$/),
+    })]);
   });
 
   it('rejects before readiness and session database work, regardless of cookies and forged IP headers', async () => {
@@ -85,6 +92,7 @@ describe('global API rate limiting over real HTTP', () => {
       'x-real-ip': '203.0.113.6', forwarded: 'for=203.0.113.7',
     } }), 10);
     expect(session.findValid).not.toHaveBeenCalled();
+    expect(eventLines.join('')).not.toMatch(/203\.0\.113|127\.0\.0|daylo_session|forwarded/);
   });
 
   it('isolates real peer IPs while keeping their own quotas intact', async () => {
@@ -134,6 +142,9 @@ describe('global API rate limiting over real HTTP', () => {
     await expect429(await request('openapi.json'), 10);
     await expect429(await request('docs/swagger-ui.css'), 10);
     await expect429(await request('missing'), 10);
+    expect(eventLines.map((line) => JSON.parse(line))).toEqual(Array.from({ length: 3 }, () => expect.objectContaining({
+      event: 'rate_limit_rejected', reason: 'quota_exceeded',
+    })));
   });
 
   it('admits exactly twenty parallel requests and recovers without extending the wait', async () => {
