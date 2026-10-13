@@ -52,7 +52,7 @@ export default [
                         // Platform-qualified types keep frontend and backend rules separate.
                         {
                             allSourceTags: ["platform:web", "type:app"],
-                            onlyDependOnLibsWithTags: ["type:feature", "type:ui", "type:util"]
+                            onlyDependOnLibsWithTags: ["type:feature", "type:ui", "type:util", "capability:auth-bootstrap"]
                         },
                         {
                             allSourceTags: ["platform:web", "type:feature"],
@@ -74,7 +74,7 @@ export default [
                         {
                             sourceTag: "type:util",
                             onlyDependOnLibsWithTags: ["type:util"],
-                            bannedExternalImports: ["@angular/*", "@nestjs/*", "@prisma/client", "@prisma/*"]
+                            bannedExternalImports: ["@nestjs/*", "@prisma/client", "@prisma/*"]
                         },
                         {
                             sourceTag: "type:api-client",
@@ -121,6 +121,10 @@ export default [
                             onlyDependOnLibsWithTags: ["scope:tasks", "scope:core", "scope:shared"]
                         },
                         {
+                            allSourceTags: ["platform:web", "scope:auth"],
+                            onlyDependOnLibsWithTags: ["scope:auth", "scope:core", "scope:shared"]
+                        },
+                        {
                             allSourceTags: ["platform:web", "scope:groups"],
                             onlyDependOnLibsWithTags: ["scope:groups", "scope:core", "scope:shared"]
                         },
@@ -138,7 +142,7 @@ export default [
                         },
                         {
                             allSourceTags: ["platform:web", "scope:app"],
-                            onlyDependOnLibsWithTags: ["scope:core", "scope:tasks", "scope:groups", "scope:settings", "scope:shared"]
+                            onlyDependOnLibsWithTags: ["scope:core", "scope:auth", "scope:tasks", "scope:groups", "scope:settings", "scope:shared"]
                         },
                         {
                             allSourceTags: ["platform:api", "scope:app"],

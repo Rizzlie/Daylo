@@ -36,6 +36,9 @@ Google Calendar integration, system notifications, automatic overdue task rollov
 - Uninvited accounts cannot access application data.
 - Invitations are handled inside the application; no invitation emails are sent.
 - Users can sign out.
+- Sessions expire after seven days without renewal and always require a new Google sign-in after 30 days from creation.
+- New email-based admission accepts Gmail or verified Workspace identities. Other external email addresses cannot gain new access; existing active users remain identified by their stored Google subject.
+- A detected expired session redirects the user to the sign-in screen with a visible Polish error that survives reload. Normal anonymous entry and successful sign-out do not display a session-expiry error.
 
 Personal tasks remain private even when their owner belongs to a group.
 

@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { SessionService, SESSION_SECONDS, GOOGLE_OAUTH_CLIENT } from '@daylo/api/auth/feature';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Test-only persistence fixture; the PostgreSQL variant uses the production adapter.
-import { SessionStore, NewSession, StoredSession } from '@daylo/api/auth/data-access';
+import { SessionStore, NewSession, StoredSession, SESSION_MAX_AGE_SECONDS } from '@daylo/api/auth/data-access';
 import { PrismaService } from '@daylo/api/core/database';
 import { ALLOW_PENDING_SESSION, ActorContext } from '@daylo/api/core/identity/contracts';
 import { currentSessionResponseSchema, csrfTokenResponseSchema } from '@daylo/shared/schemas';
@@ -44,23 +44,27 @@ for (const postgres of [false, true]) {
       let prisma: PrismaService;
       let user: StoredSession['user'];
       const prefix = `f06-session-${randomUUID()}`;
-      const rows = new Map<string, StoredSession & { tokenHash: string }>();
+      const rows = new Map<string, StoredSession & { tokenHash: string; createdAt: Date }>();
       const users = new Map<string, StoredSession['user']>();
       const fixtureStore = {
         async create(data: NewSession, previousTokenHash?: string) {
           if (previousTokenHash) rows.delete(previousTokenHash);
           rows.set(data.tokenHash, {
-            ...data, id: randomUUID(), user: users.get(data.userId)!,
+            ...data, id: randomUUID(), user: users.get(data.userId)!, createdAt: new Date(),
           });
         },
         async findValid(tokenHash: string, now: Date) {
           const row = rows.get(tokenHash);
-          return row && row.expiresAt > now ? { ...row, user: users.get(row.user.id)! } : null;
+          return row && row.expiresAt > now && row.createdAt.getTime() + SESSION_MAX_AGE_SECONDS * 1000 > now.getTime()
+            ? { ...row, user: users.get(row.user.id)! } : null;
         },
         async renew(tokenHash: string, now: Date, expiresAt: Date) {
           const row = rows.get(tokenHash);
-          if (!row || row.expiresAt <= now) return null;
-          row.expiresAt = new Date(Math.max(row.expiresAt.getTime(), expiresAt.getTime()));
+          if (!row || row.expiresAt <= now || row.createdAt.getTime() + SESSION_MAX_AGE_SECONDS * 1000 <= now.getTime()) return null;
+          row.expiresAt = new Date(Math.min(
+            Math.max(row.expiresAt.getTime(), expiresAt.getTime()),
+            row.createdAt.getTime() + SESSION_MAX_AGE_SECONDS * 1000,
+          ));
           return { ...row, user: users.get(row.user.id)! };
         },
         async revoke(id: string) {
@@ -124,17 +128,49 @@ for (const postgres of [false, true]) {
 
       async function login(previous?: string) {
         let token = '';
+        let cookieName = '';
         let options: Record<string, unknown> = {};
-        const response = { cookie: (_name: string, value: string, attributes: Record<string, unknown>) => {
-          token = value; options = attributes;
+        const response = { cookie: (name: string, value: string, attributes: Record<string, unknown>) => {
+          cookieName = name; token = value; options = attributes;
         } } as unknown as Response;
         await service.issue(user.id, { headers: { cookie: previous } } as Request, response);
-        return { token, cookie: `daylo_session=${token}`, options };
+        return { token, cookie: `${cookieName}=${token}`, options };
       }
 
       async function persisted(token: string) {
         return store.findValid(hash(token), new Date());
       }
+
+      async function ageSession(token: string, ageMs: number) {
+        const createdAt = new Date(Date.now() - ageMs);
+        const expiresAt = new Date(Date.now() + SESSION_SECONDS * 1000);
+        if (postgres) {
+          await prisma.client.session.update({ where: { tokenHash: hash(token) }, data: { createdAt, expiresAt } });
+        } else {
+          const row = rows.get(hash(token));
+          if (!row) throw new Error('Missing synthetic session');
+          row.createdAt = createdAt;
+          row.expiresAt = expiresAt;
+        }
+        return new Date(createdAt.getTime() + SESSION_MAX_AGE_SECONDS * 1000);
+      }
+
+      it('caps renewal and cookie expiry at the 30-day absolute deadline', async () => {
+        const issued = await login();
+        const deadline = await ageSession(issued.token, SESSION_MAX_AGE_SECONDS * 1000 - 60 * 60 * 1000);
+        const response = await get('auth/session', issued.cookie);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('set-cookie')).toContain(`Expires=${deadline.toUTCString()}`);
+        expect((await persisted(issued.token))?.expiresAt).toEqual(deadline);
+      });
+
+      it.each([0, 1])('rejects reads and renewal at/after the absolute deadline (%s ms)', async (offset) => {
+        const issued = await login();
+        await ageSession(issued.token, SESSION_MAX_AGE_SECONDS * 1000 + offset);
+        expect((await get('auth/csrf', issued.cookie)).status).toBe(401);
+        expect((await get('auth/session', issued.cookie)).status).toBe(401);
+        expect(await persisted(issued.token)).toBeNull();
+      });
 
       async function csrf(cookie: string): Promise<string> {
         const response = await fetch(`${baseUrl}/api/auth/csrf`, { headers: { cookie } });
@@ -299,6 +335,11 @@ for (const postgres of [false, true]) {
         if (mode === 'https-development') app.get(ConfigService).set('runtime.frontendOrigin', 'https://daylo.example');
         const issued = await login();
         expect(issued.options['secure']).toBe(true);
+        expect(issued.cookie).toMatch(/^__Host-daylo_session=/);
+        expect(issued.options['path']).toBe('/');
+        expect(issued.options['domain']).toBeUndefined();
+        expect((await get('auth/session', issued.cookie.replace('__Host-', ''))).status).toBe(401);
+        expect((await get('auth/session', `${issued.cookie}; ${issued.cookie}`)).status).toBe(401);
         const current = await get('auth/session', issued.cookie);
         expect(current.headers.get('set-cookie')).toContain('Secure');
         const proof = await csrf(issued.cookie);

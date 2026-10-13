@@ -98,7 +98,7 @@ constructor({ accessToken, apiKeys, basePath, credentials, encodeParam, encoder,
                 if (this.apiKeys === null || this.apiKeys === undefined) {
                     return undefined;
                 } else {
-                    return this.apiKeys['dayloSession'] || this.apiKeys['daylo_session'];
+                    return this.apiKeys['dayloSession'] || this.apiKeys['__Host-daylo_session'];
                 }
             };
         }

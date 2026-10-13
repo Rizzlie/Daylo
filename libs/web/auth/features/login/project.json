@@ -1,0 +1,26 @@
+{
+  "name": "web-auth-feature-login",
+  "$schema": "../../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/web/auth/features/login/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [
+    "platform:web",
+    "scope:auth",
+    "type:feature"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "coverage/libs/web/auth/features/login"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

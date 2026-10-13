@@ -56,6 +56,18 @@
       ],
       "@daylo/api/core/identity/contracts": [
         "./libs/api/core/identity/contracts/src/index.ts"
+      ],
+      "@daylo/web/core/auth/data-access": [
+        "./libs/web/core/auth/data-access/src/index.ts"
+      ],
+      "@daylo/web/core/shell": [
+        "./libs/web/core/shell/src/index.ts"
+      ],
+      "@daylo/web/auth/features/login": [
+        "./libs/web/auth/features/login/src/index.ts"
+      ],
+      "@daylo/web/shared/util-router": [
+        "./libs/web/shared/util-router/src/index.ts"
       ]
     }
   },

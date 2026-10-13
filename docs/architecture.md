@@ -79,7 +79,7 @@ Use OAuth 2.0 Authorization Code Flow with OpenID Connect, handled by the backen
 3. Redirect to Google with `openid`, `email`, and `profile` scopes.
 4. Google redirects to `GET /api/auth/google/callback`.
 5. Validate the authentication transaction, exchange the authorization code on the backend, and verify the ID token's signature, issuer, audience, expiration, nonce, and verified email.
-6. Identify the account using Google's stable `sub`; use email for invitation matching.
+6. Identify the account using Google's stable `sub`; new email-based owner/invitation admission requires Gmail or verified Workspace authority. Existing active subjects retain access independently of external email authority.
 7. Check initial owner access, existing active access, or a valid pending invitation.
 8. Create a Daylo session and redirect to a fixed frontend route appropriate to the user's access status.
 
@@ -90,8 +90,8 @@ The Google client secret remains on the backend. The application does not retain
 - Store sessions in PostgreSQL.
 - Use a cryptographically random opaque token in an `HttpOnly`, `SameSite=Lax`, path `/` cookie.
 - Store only the token hash in the database.
-- Expire sessions after seven days without renewal and revoke the current session on sign-out. A successful `GET /api/auth/session` renews a still-valid session and its cookie for seven days from the request; expired/revoked sessions cannot be renewed. Other requests, including CSRF retrieval and background streams, do not renew sessions. There is no absolute lifetime cap or separate refresh token in the agreed F06-03 scope.
-- Enable secure cookies outside local HTTP development.
+- Expire sessions after seven days without renewal, capped at 30 days from creation, and revoke the current session on sign-out. A successful `GET /api/auth/session` renews a still-valid session and its cookie for seven days from the request, without exceeding the absolute cap; expired/revoked sessions cannot be renewed. Other requests, including CSRF retrieval and background streams, do not renew sessions. The owner approved the absolute cap in F06-06; no separate refresh token is used.
+- Use `__Host-` cookie names, Secure, Path=/ and no Domain on HTTPS; keep compatible unprefixed cookies only for local HTTP development. Never accept unprefixed legacy cookies in secure mode.
 - Do not store authentication tokens in browser storage.
 - Protect state-changing API requests using a session-bound CSRF token and allowed-origin checks.
 - OAuth `state` and browser binding protect the sign-in transaction; do not apply ordinary mutation-header requirements to the Google redirect callback.

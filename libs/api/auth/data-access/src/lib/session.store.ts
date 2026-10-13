@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '@daylo/api/core/database';
 
+export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
 export interface StoredSession {
   id: string;
   csrfTokenHash: string;
@@ -35,7 +37,10 @@ export class SessionStore {
 
   async findValid(tokenHash: string, now: Date): Promise<StoredSession | null> {
     return this.prisma.client.session.findFirst({
-      where: { tokenHash, expiresAt: { gt: now } },
+      where: {
+        tokenHash, expiresAt: { gt: now },
+        createdAt: { gt: new Date(now.getTime() - SESSION_MAX_AGE_SECONDS * 1000) },
+      },
       select: {
         id: true,
         csrfTokenHash: true,
@@ -59,8 +64,12 @@ export class SessionStore {
     }[]>`
       WITH renewed AS (
         UPDATE sessions
-        SET expires_at = GREATEST(expires_at, ${expiresAt})
+        SET expires_at = LEAST(
+          GREATEST(expires_at, ${expiresAt}),
+          created_at + ${SESSION_MAX_AGE_SECONDS} * INTERVAL '1 second'
+        )
         WHERE token_hash = ${tokenHash} AND expires_at > ${now}
+          AND created_at > ${new Date(now.getTime() - SESSION_MAX_AGE_SECONDS * 1000)}
         RETURNING id, user_id, csrf_token_hash, expires_at
       )
       SELECT s.id, s.csrf_token_hash AS "csrfTokenHash", s.expires_at AS "expiresAt",

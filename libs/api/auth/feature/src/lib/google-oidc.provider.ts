@@ -13,6 +13,7 @@ export const GOOGLE_OAUTH_CLIENT = Symbol('GOOGLE_OAUTH_CLIENT');
 export interface VerifiedGoogleIdentity {
   googleSubject: string;
   email: string;
+  emailAuthoritative: boolean;
   displayName?: string;
 }
 
@@ -34,6 +35,7 @@ const claimsSchema = z.object({
   sub: z.string().min(1).max(255),
   email: z.email().max(320),
   email_verified: z.literal(true),
+  hd: z.string().trim().min(1).max(255).optional(),
   nonce: z.string().min(1),
   exp: z.number().int().positive(),
   iat: z.number().int().positive(),
@@ -125,6 +127,7 @@ export class GoogleOidcProvider {
       return {
         googleSubject: claims.sub,
         email: claims.email,
+        emailAuthoritative: claims.email.toLowerCase().endsWith('@gmail.com') || claims.hd !== undefined,
         ...(claims.name ? { displayName: claims.name } : {}),
       };
     } catch {

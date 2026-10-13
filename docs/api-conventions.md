@@ -45,8 +45,9 @@ The foundation codes and status semantics are:
 
 `GET /api/auth/google` (`startGoogleAuthentication`) and
 `GET /api/auth/google/callback` (`completeGoogleAuthentication`) are browser
-navigation, not generated Angular HTTP calls. The ten-minute `daylo_oauth_browser`
-cookie and single-use state/nonce transaction protect the callback separately from
+navigation, not generated Angular HTTP calls. The ten-minute `__Host-daylo_oauth_browser`
+cookie on HTTPS (`daylo_oauth_browser` on local development HTTP) and single-use
+state/nonce transaction protect the callback separately from
 ordinary mutation CSRF headers. Invalid authentication returns 401
 `GOOGLE_AUTHENTICATION_FAILED`; malformed query values return 400. Denied admission
 returns 403 `ACCESS_FORBIDDEN` without identity writes. An admitted callback issues
@@ -55,9 +56,16 @@ redirects to fixed `/today` (active) or `/invitations` (pending). Transport/pers
 failures return safe 503. These frontend screens remain F06-04. See
 [Google authentication](google-authentication.md).
 
-The opaque session cookie is `daylo_session`: 32 random bytes encoded as base64url,
+Global API rate limiting is deferred to [F06-07](tasks/F06-07-global-api-rate-limiting.md).
+The owner requested removing the auth-only limiter and its 429 contract; OAuth
+currently has no application request quota.
+
+The opaque session cookie is `__Host-daylo_session` on HTTPS (`daylo_session` on
+local development HTTP): 32 random bytes encoded as base64url,
 HttpOnly, SameSite=Lax, path `/`, no Domain attribute. It has an Expires deadline
 matching the database; Secure is disabled only for loopback HTTP in development.
+HTTPS ignores unprefixed legacy credentials. Production cookie migration therefore
+requires one new Google sign-in. Cookie clear/set use matching attributes.
 PostgreSQL stores only SHA-256 session and CSRF hashes. Authentication tokens are
 never stored in browser storage. Ambiguous duplicate, malformed and unknown cookies
 cannot authenticate. Missing, expired or revoked sessions return 401
@@ -83,13 +91,16 @@ is read from current persistence, not embedded in the cookie.
 
 Session lifetime is sliding: issuance gives seven days, and successful
 `GET /api/auth/session` renews a still-valid session and cookie for seven days from
-the request. Renewal checks expiry atomically and cannot recreate revoked/deleted
-sessions or shorten an already extended deadline. Expiry is exclusive: a session
-at its exact deadline is invalid. There is no absolute lifetime cap, separate
-refresh token or token rotation in this scope. The frontend should call this
+the request, capped at 30 days from creation. Renewal checks both deadlines atomically
+and cannot recreate revoked/deleted sessions. Before the cap it cannot shorten a
+previously extended valid deadline; an overlong legacy deadline is clamped to the
+absolute limit. Expiry is exclusive: a session at either exact deadline is invalid.
+There is no separate refresh token or token rotation. The frontend should call this
 endpoint on entry and foreground return. CSRF retrieval, other authenticated
-requests, HEAD probes and future background streams do not renew sessions. Full
-frontend behavior belongs to F06-04.
+requests, HEAD probes and future background streams do not renew sessions.
+F06-04 checks sessions on frontend entry/reload and protected foreground return.
+Detected session loss redirects to `/login?error=expired`, whose Polish error
+survives reload; normal entry and successful sign-out do not use that error.
 
 `GET /api/auth/csrf` (`getCsrfToken`) returns `{ "csrfToken": "..." }` for a valid
 active or pending session. The token is stable for that session and reconstructable
@@ -126,6 +137,18 @@ context; resource authorization remains required in feature use cases.
 
 Authenticated responses and errors use `Cache-Control: no-store`.
 Swagger is at `/api/docs`; OpenAPI 3.0 JSON is at `/api/openapi.json`.
-The `dayloSession` cookie security scheme names `daylo_session`; sign-out declares
+The `dayloSession` cookie security scheme names the HTTPS `__Host-daylo_session`; sign-out declares
 the required CSRF header. Zod output schemas, official client generation and
 source-preserving drift checks remain the contract pipeline.
+
+### Google browser navigation failures
+
+For GET `/api/auth/google` and `/api/auth/google/callback` requests accepting
+`text/html`, errors redirect with 302 to the configured frontend origin's fixed
+`/login` path. The allowlisted `error` reason is `denied` for 403, `connection`
+for infrastructure/server failure and `failed` for other authentication or query
+failures. Redirects carry no provider details, identity, authorization code or
+caller-supplied destination. They use no-store and no-referrer headers. Requests
+without HTML acceptance retain the documented JSON status/error envelopes.
+The frontend maps only known reasons to fixed Polish copy and never renders
+arbitrary query text.

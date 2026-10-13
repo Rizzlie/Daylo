@@ -7,13 +7,19 @@ sessions, current identity, sliding renewal, CSRF and revoking sign-out.
 redirects to Google. The callback consumes the transaction before provider exchange,
 verifies the signed identity and passes admission through Users/Groups contracts
 wired at the application root. Denied identities receive safe 403 without profile
-writes. Admitted identities receive a new opaque `daylo_session` cookie and a fixed
+writes. New admission requires Gmail or verified Workspace email authority;
+existing active subjects remain eligible even with an external email. Global API
+rate limiting is deferred to F06-07; auth has no independent limiter.
+Admitted identities receive a new opaque `__Host-daylo_session` cookie
+on HTTPS (`daylo_session` on development HTTP) and a fixed
 `/today` or `/invitations` redirect. No Google tokens are retained.
 
 `GET /api/auth/session` returns current `pending`/`active` identity and renews a
-still-valid session/cookie for seven days. Expired/revoked sessions return 401 and
-cannot be renewed. Other requests and HEAD probes do not renew. There is no absolute
-lifetime cap, refresh token or token rotation in this scope.
+still-valid session/cookie for seven days, capped at 30 days from creation.
+Expired/revoked sessions return 401 and cannot be renewed. Other requests and HEAD
+probes do not renew. No refresh token or token rotation is used. HTTPS session and
+OAuth cookies have host-prefixed names, Secure, Path=/ and no Domain; unprefixed
+legacy credentials are ignored. Set and clear attributes match.
 
 `GET /api/auth/csrf` returns the stable session-bound CSRF value without renewal.
 Unsafe operations require `X-CSRF-Token` and exact frontend Origin.

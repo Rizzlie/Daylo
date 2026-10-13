@@ -11,11 +11,11 @@ export default defineConfig({
   ...preset,
   reporter: [['list'], ...preset.reporter],
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL: process.env['F06_UI_BASE_URL'] ?? 'http://localhost:4200',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  webServer: {
+  webServer: process.env['F06_UI_BASE_URL'] ? undefined : {
     command: 'npx nx run web:serve',
     url: 'http://localhost:4200',
     // Nx infers the serve dependency and readiness gate before Playwright runs.

@@ -14,27 +14,16 @@ import type { Request, Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
 import { googleCallbackQuerySchema } from '@daylo/shared/schemas';
 import { PUBLIC_ENDPOINT } from '@daylo/api/core/identity/contracts';
+import { authCookieName, authCookieOptions, readAuthCookie, OAUTH_BROWSER_COOKIE } from './auth-cookie';
 import { SessionService } from './session.service';
 import { SessionErrorResponseDto } from './current-session.response';
 import { ApplicationAdmissionService } from './application-admission.service';
 import {
   GoogleOidcService,
-  OAUTH_BROWSER_COOKIE,
   OAUTH_TRANSACTION_SECONDS,
 } from './google-oidc.service';
 
 class GoogleCallbackQueryDto extends createZodDto(googleCallbackQuerySchema) {}
-
-function browserCookie(request: Request): string | undefined {
-  const matches = (request.headers.cookie ?? '')
-    .split(';')
-    .map((part) => part.trim())
-    .filter((part) => part.startsWith(`${OAUTH_BROWSER_COOKIE}=`));
-  // Ambiguous duplicate cookies cannot establish a trusted browser binding.
-  return matches.length === 1
-    ? matches[0].slice(OAUTH_BROWSER_COOKIE.length + 1)
-    : undefined;
-}
 
 @ApiTags('Authentication')
 @SetMetadata(PUBLIC_ENDPOINT, true)
@@ -49,16 +38,12 @@ export class GoogleOidcController {
   ) {}
 
   private cookieOptions() {
-    const localHttp =
-      this.config.getOrThrow<string>('runtime.environment') === 'development' &&
-      new URL(this.config.getOrThrow<string>('runtime.googleCallbackUrl'))
-        .protocol === 'http:';
-    return {
-      httpOnly: true,
-      sameSite: 'lax' as const,
-      secure: !localHttp,
-      path: '/api/auth/google',
-    };
+    const options = authCookieOptions(this.config);
+    return { ...options, path: options.secure ? '/' : '/api/auth/google' };
+  }
+
+  private cookieName() {
+    return authCookieName(OAUTH_BROWSER_COOKIE, this.config);
   }
 
   @Get()
@@ -73,7 +58,7 @@ export class GoogleOidcController {
   @ApiResponse({
     status: 302,
     description:
-      'Redirect to Google. Sets the HttpOnly, SameSite=Lax daylo_oauth_browser cookie.',
+      'Redirect to Google. Sets the HttpOnly, SameSite=Lax __Host-daylo_oauth_browser cookie on HTTPS (daylo_oauth_browser on local development HTTP). HTML navigation failures redirect to fixed frontend error destinations.',
     headers: {
       Location: {
         description: 'Google authorization URL',
@@ -88,7 +73,7 @@ export class GoogleOidcController {
   })
   async start(@Res({ passthrough: true }) response: Response): Promise<void> {
     const transaction = await this.oidc.start();
-    response.cookie(OAUTH_BROWSER_COOKIE, transaction.browserBinding, {
+    response.cookie(this.cookieName(), transaction.browserBinding, {
       ...this.cookieOptions(),
       maxAge: OAUTH_TRANSACTION_SECONDS * 1000,
     });
@@ -126,7 +111,7 @@ export class GoogleOidcController {
   })
   @ApiResponse({
     status: 302,
-    description: 'Sets daylo_session; active users redirect to /today, pending users to /invitations.',
+    description: 'Sets __Host-daylo_session on HTTPS (daylo_session on local development HTTP); active users redirect to /today, pending users to /invitations. HTML navigation failures redirect to the fixed frontend /login with an allowlisted error reason (denied, failed or connection).',
     headers: { Location: { schema: { type: 'string', format: 'uri' } } },
   })
   @ApiResponse({
@@ -157,8 +142,8 @@ export class GoogleOidcController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<void> {
-    response.clearCookie(OAUTH_BROWSER_COOKIE, this.cookieOptions());
-    const identity = await this.oidc.callback(query, browserCookie(request));
+    response.clearCookie(this.cookieName(), this.cookieOptions());
+    const identity = await this.oidc.callback(query, readAuthCookie(request.headers.cookie, this.cookieName()));
     const user = await this.admission.admit(identity);
     await this.sessions.issue(user.id, request, response);
     const path = user.accessStatus === 'active' ? '/today' : '/invitations';

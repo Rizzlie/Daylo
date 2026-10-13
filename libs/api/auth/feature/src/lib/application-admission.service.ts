@@ -45,10 +45,12 @@ export class ApplicationAdmissionService {
         ) {
           throw new ForbiddenException();
         }
-        const active = email === ownerEmail || existing?.accessStatus === 'active';
+        const active = existing?.accessStatus === 'active'
+          || (identity.emailAuthoritative && email === ownerEmail);
         if (
           !active &&
-          !(await this.invitations.hasEligibleInvitation(email, new Date(), context))
+          (!identity.emailAuthoritative ||
+            !(await this.invitations.hasEligibleInvitation(email, new Date(), context)))
         ) {
           throw new ForbiddenException();
         }

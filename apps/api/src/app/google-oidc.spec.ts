@@ -93,6 +93,7 @@ describe('Google OIDC HTTP flow', () => {
             sub: 'synthetic-google-subject',
             email: 'synthetic@example.test',
             email_verified: true,
+            hd: 'example.test',
             name: 'Synthetic User',
             nonce: currentNonce,
             iat: now,
@@ -192,6 +193,8 @@ describe('Google OIDC HTTP flow', () => {
     tokenRequests = 0;
     databaseFailure = false;
     app.get(ConfigService).set('runtime.environment', 'development');
+    app.get(ConfigService).set('runtime.frontendOrigin', 'http://localhost:4200');
+    app.get(ConfigService).set('runtime.initialOwnerEmail', 'synthetic@example.test');
     app
       .get(ConfigService)
       .set(
@@ -285,6 +288,37 @@ describe('Google OIDC HTTP flow', () => {
     ).toBe(401);
     await expectAuthFailure(await callback(state, cookie));
     expect(tokenRequests).toBe(1);
+  });
+
+  it('denies a valid signed external-email token without Workspace authority', async () => {
+    omittedClaim = 'hd';
+    const { state, cookie } = await start();
+    const response = await callback(state, cookie);
+    expect(response.status).toBe(403);
+    expect(response.headers.get('set-cookie')).not.toContain('daylo_session=');
+  });
+
+  it('admits a Gmail owner without a Workspace domain claim', async () => {
+    omittedClaim = 'hd';
+    tokenOverrides = { email: 'synthetic@gmail.com' };
+    app.get(ConfigService).set('runtime.initialOwnerEmail', 'synthetic@gmail.com');
+    const { state, cookie } = await start();
+    expect((await callback(state, cookie)).status).toBe(302);
+  });
+
+  it('uses host-prefixed OAuth/session cookies and ignores legacy binding on HTTPS', async () => {
+    app.get(ConfigService).set('runtime.environment', 'production');
+    app.get(ConfigService).set('runtime.frontendOrigin', 'https://daylo.example');
+    const attempt = await start();
+    const binding = required(attempt.response.headers.get('set-cookie'));
+    expect(binding).toMatch(/^__Host-daylo_oauth_browser=.*; Path=\/;.*HttpOnly; Secure; SameSite=Lax/);
+    expect(binding).not.toContain('Domain=');
+    const legacyCookie = attempt.cookie.replace('__Host-', '');
+    expect((await callback(attempt.state, legacyCookie)).status).toBe(401);
+    const response = await callback(attempt.state, attempt.cookie);
+    expect(response.status).toBe(302);
+    expect(response.headers.get('set-cookie')).toContain('__Host-daylo_session=');
+    expect(response.headers.get('set-cookie')).toContain('__Host-daylo_oauth_browser=; Path=/;');
   });
 
   it.each([
@@ -459,6 +493,48 @@ describe('Google OIDC HTTP flow', () => {
     );
   });
 
+  it('redirects HTML callback failures to login without exposing query data', async () => {
+    const response = await fetch(`${baseUrl}/api/auth/google/callback?code=private-code&returnTo=https://attacker.example`, {
+      redirect: 'manual', headers: { accept: 'text/html' },
+    });
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('http://localhost:4200/login?error=failed');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(await response.text()).not.toContain('private-code');
+    expect(tokenRequests).toBe(0);
+  });
+
+  it('redirects HTML infrastructure failures to a retryable login error', async () => {
+    databaseFailure = true;
+    const response = await fetch(`${baseUrl}/api/auth/google`, {
+      redirect: 'manual', headers: { accept: 'text/html' },
+    });
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('http://localhost:4200/login?error=connection');
+    expect(await response.text()).not.toContain('private-');
+  });
+
+  it('redirects an outsider HTML callback to the denial screen without issuing a session', async () => {
+    const { state, cookie } = await start();
+    tokenOverrides.email = 'outsider@example.test';
+    const response = await fetch(`${baseUrl}/api/auth/google/callback?state=${encodeURIComponent(state)}&code=synthetic-code`, {
+      redirect: 'manual', headers: { accept: 'text/html', cookie },
+    });
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('http://localhost:4200/login?error=denied');
+    expect(response.headers.get('set-cookie')).not.toContain('daylo_session=');
+    expect(await response.text()).not.toContain('outsider@example.test');
+  });
+
+  it('redirects malformed HTML callbacks to a safe login failure', async () => {
+    const response = await fetch(`${baseUrl}/api/auth/google/callback?code=one&code=two`, {
+      redirect: 'manual', headers: { accept: 'text/html' },
+    });
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('http://localhost:4200/login?error=failed');
+  });
+
   it.each(['production', 'test', 'https-development'])(
     'sets and clears a Secure binding cookie in %s',
     async (mode) => {
@@ -468,6 +544,7 @@ describe('Google OIDC HTTP flow', () => {
           'runtime.environment',
           mode === 'https-development' ? 'development' : mode,
         );
+      app.get(ConfigService).set('runtime.frontendOrigin', mode === 'https-development' ? 'https://daylo.example' : 'http://localhost:4200');
       if (mode === 'https-development')
         app
           .get(ConfigService)

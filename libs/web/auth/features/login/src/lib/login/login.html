@@ -1,0 +1,18 @@
+<main class="shell" aria-labelledby="daylo-heading">
+  <section class="surface">
+    <h1 id="daylo-heading" tabindex="-1">Daylo</h1>
+    @if (isLoading()) {
+      <p role="status">Sprawdzanie sesji…</p>
+    } @else {
+      @if (notice(); as loginNotice) {
+        <p class="error" role="alert">{{ loginNotice.message }}</p>
+      }
+
+      @if (canRetry()) {
+        <button matButton="filled" (click)="retry()">Spróbuj ponownie</button>
+      } @else {
+        <a matButton="filled" href="/api/auth/google">Zaloguj się przez Google</a>
+      }
+    }
+  </section>
+</main>

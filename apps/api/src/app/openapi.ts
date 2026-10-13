@@ -6,12 +6,12 @@ export function createOpenApiDocument(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('Daylo API')
     .setDescription(
-      'Daylo public API. Authenticated operations use the HttpOnly daylo_session cookie. ' +
+      'Daylo public API. HTTPS authenticated operations use the HttpOnly __Host-daylo_session cookie (daylo_session on local development HTTP). ' +
         'Unsafe requests require the session-bound X-CSRF-Token and exact configured frontend Origin. ' +
-        'Only GET /api/auth/session renews valid sessions for seven days; expired/revoked sessions cannot be renewed.',
+        'Only GET /api/auth/session renews valid sessions for seven days, capped at 30 days from creation; expired/revoked sessions cannot be renewed.',
     )
     .setVersion('0.1.0')
-    .addCookieAuth('daylo_session', { type: 'apiKey', in: 'cookie' }, 'dayloSession')
+    .addCookieAuth('__Host-daylo_session', { type: 'apiKey', in: 'cookie' }, 'dayloSession')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

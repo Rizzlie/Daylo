@@ -42,9 +42,10 @@ the browser to `http://localhost:4200/api/auth/google`. Angular proxies the requ
 and callback to NestJS; use the same host throughout the flow.
 
 The backend requests `openid email profile`, online access, random state and nonce.
-The ten-minute browser-binding cookie is named `daylo_oauth_browser`: HttpOnly,
-SameSite=Lax, path `/api/auth/google`, no Domain attribute. Secure is disabled only
-in development with an HTTP callback. Each start replaces this cookie; only the
+The ten-minute browser-binding cookie is named `__Host-daylo_oauth_browser` on
+HTTPS: Secure, HttpOnly, SameSite=Lax, Path=/, without Domain. Loopback development
+HTTP retains `daylo_oauth_browser` with path `/api/auth/google` and no Secure.
+HTTPS never reads an unprefixed binding cookie. Each start replaces this cookie; only the
 latest attempt in the same browser can complete. Persist only SHA-256 hashes of
 state/binding, plus nonce and expiry, using the existing `OAuthTransaction` model.
 Expired rows are removed on the next start.
@@ -79,17 +80,27 @@ header is required for the callback; state, binding and nonce protect it.
 | Database/provider transport unavailable | 503 `SERVICE_UNAVAILABLE`, no infrastructure diagnostics |
 
 `GET /api/auth/session` returns the admitted identity and renews a still-valid
-session and cookie for seven days from that request. Seven days without renewal
-requires Google sign-in again. Expired/revoked sessions cannot be renewed. No
-absolute lifetime cap, refresh token or session-token rotation is implemented in
-this scope. The frontend entry/foreground calls and destination screens remain
-F06-04. See [API conventions](api-conventions.md#session-cookie-and-csrf).
+session and cookie for seven days from that request, capped at 30 days from session
+creation. Seven days without renewal or reaching that absolute cap requires Google
+sign-in again. Expired/revoked sessions cannot be renewed. No refresh token or
+session-token rotation is implemented. See
+[API conventions](api-conventions.md#session-cookie-and-csrf).
+
+Auth-only throttling was removed at the owner's request. Global API rate limiting
+and stricter OAuth policies are pending in [F06-07](tasks/F06-07-global-api-rate-limiting.md).
+No runtime quotas or 429 contract are currently configured for OAuth.
 
 ## Identity and admission
 
 `INITIAL_OWNER_EMAIL` is required at API startup. Owner configuration and verified
 Google emails are trimmed and lowercased; dots and plus suffixes are preserved.
-Google subject is the stable identity key. A matching email belonging to another
+Google subject is the stable identity key. New email-based admission requires
+Google authority: Gmail, or a verified email with a signed Workspace `hd` claim.
+An external email without that authority is denied for first owner admission and
+invitation-based access, even with `email_verified: true`. An already active user
+can continue signing in by its stored Google subject without new email authority.
+This is the owner's F06-06 choice; independent mailbox verification is not added.
+A matching email belonging to another
 subject is denied even for the configured owner; accounts are never linked by email.
 
 The owner receives active access. Existing active users keep access after a verified
