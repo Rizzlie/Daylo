@@ -219,6 +219,11 @@ updated backend code; its previous process was not replaced during verification.
 
 ### Publication authorization — 2026-10-13
 
+Published: [draft PR #20](https://github.com/Rizzlie/Daylo/pull/20), branch
+`feat/f06-07-global-api-rate-limiting`, targeting `main`. The PR is registered
+with the current T3 thread. Existing local verification is preserved; hosted CI
+was not assessed as part of publication.
+
 After accepting F06-07, the owner requested publishing the current work as a PR.
 This authorizes selective staging, Conventional Commits on a dedicated task
 branch, push and draft PR creation for the accepted F06-07 implementation and
