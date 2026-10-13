@@ -162,3 +162,8 @@ implementation, delivery/acceptance records and requested documentation cleanup.
 Earlier no-publication statements describe the preceding delivery/acceptance
 stages. No merge, deployment or subsequent task implementation is authorized.
 Reuse the recorded passing checks; only documentation changed after verification.
+
+Published: [draft PR #21](https://github.com/Rizzlie/Daylo/pull/21), branch
+`feat/f06-08-google-oidc-pkce`, targeting `main`. The PR is attached to the current
+task. Recorded local verification and owner acceptance are preserved; hosted CI
+was not assessed during publication.
