@@ -7,6 +7,15 @@ dependency upgrades, deployment or acceptance of later backlog tasks.
 
 ## Result and priorities
 
+F06-07 follow-up: the owner-discussed local global rate-limit scope was explicitly
+authorized, implemented, locally verified and owner-accepted on 2026-10-13.
+Common per-peer-IP API quotas, separate Google quotas, bounded in-memory storage
+and pre-persistence rejection address AUTH-03's missing application quota in this
+local single-instance scope. This does not establish hosted/distributed abuse
+protection or complete the pending expired-record cleanup. See
+[F06-07](../tasks/F06-07-global-api-rate-limiting.md). Earlier deferred-state
+statements below preserve the audit/delivery history; no new audit is claimed.
+
 Follow-up: The owner authorized and selected the bounded remediation recorded in
 [F06-06](../tasks/F06-06-authentication-security-hardening.md). On 2026-10-13
 email-authority admission, the 30-day absolute cap and HTTPS host-prefixed cookies

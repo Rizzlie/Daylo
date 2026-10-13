@@ -12,6 +12,7 @@ const DayloZodValidationPipe = createZodValidationPipe({
 
 @Module({
   providers: [
+    ApiHttpExceptionFilter,
     {
       provide: APP_PIPE,
       useClass: DayloZodValidationPipe,
@@ -22,8 +23,9 @@ const DayloZodValidationPipe = createZodValidationPipe({
     },
     {
       provide: APP_FILTER,
-      useClass: ApiHttpExceptionFilter,
+      useExisting: ApiHttpExceptionFilter,
     },
   ],
+  exports: [ApiHttpExceptionFilter],
 })
 export class ApiHttpModule {}

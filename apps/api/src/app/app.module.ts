@@ -5,11 +5,13 @@ import { ApiUsersFeatureModule } from '@daylo/api/users/feature';
 import { ApiGroupsFeatureModule } from '@daylo/api/groups/feature';
 import { ApiHttpModule } from './api-http.module';
 import { DatabaseReadinessController } from './database-readiness.controller';
+import { ApiRateLimitModule } from './rate-limiting/api-rate-limit.module';
 
 @Module({
   imports: [
     ApiCoreDatabaseModule,
     ApiHttpModule,
+    ApiRateLimitModule,
     ApiAuthFeatureModule.register({
       imports: [ApiUsersFeatureModule, ApiGroupsFeatureModule],
     }),

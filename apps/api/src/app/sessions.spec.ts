@@ -11,6 +11,7 @@ import { currentSessionResponseSchema, csrfTokenResponseSchema } from '@daylo/sh
 import { OAuth2Client } from 'google-auth-library';
 import type { Request, Response } from 'express';
 import { AppModule } from './app.module';
+import { BoundedThrottlerStorage } from './rate-limiting/bounded-throttler-storage';
 
 const databaseUrl = process.env['F06_TEST_DATABASE_URL'];
 const databaseEnabled = process.env['RUN_F06_DATABASE_INTEGRATION'] === 'true' && !!databaseUrl;
@@ -106,6 +107,7 @@ for (const postgres of [false, true]) {
       });
 
       beforeEach(async () => {
+        app.get(BoundedThrottlerStorage).clear();
         vi.useFakeTimers({ toFake: ['Date'] });
         app.get(ConfigService).set('runtime.environment', 'development');
         app.get(ConfigService).set('runtime.frontendOrigin', frontendOrigin);

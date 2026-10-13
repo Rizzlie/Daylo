@@ -1,8 +1,36 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-13. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 through F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-13. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 through F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### F06-07 global API rate limiting delivery — 2026-10-13
+
+Owner acceptance: "zatwierdzam", 2026-10-13, closes the delivered local F06-07
+scope. Recorded deployment/provider/hosted-CI limits remain unchanged. This
+documentation update does not authorize Git publication or the next task.
+
+Implemented the owner-discussed and explicitly authorized local single-instance
+scope using `@nestjs/throttler`: common per-IP API budgets (120/minute and
+20/10 seconds), separate Google-start/callback budgets (5 and 10/minute), bounded
+expiring in-memory counters and safe 429/Retry-After/HTML recovery. Readiness,
+documentation middleware, OPTIONS and newly added routes are protected by default.
+Quota rejection precedes persistence and does not revoke sessions or clear cookies.
+
+Fresh Nx verification passed: 195 API tests with enabled isolated PostgreSQL,
+53 frontend/schema tests, affected lint, API/web production builds, OpenAPI/client
+generation and drift checks, and 20 real-stack desktop/mobile Playwright cases.
+Independent T3 inspection passed for layouts, a genuine quota rejection and
+explicit recovery; only expected synthetic 429/anonymous 401 network errors appeared.
+See [F06-07](tasks/F06-07-global-api-rate-limiting.md) for evidence and limits.
+
+F06-07 is implemented, locally verified and owner-accepted on 2026-10-13. F06-08
+through F06-12 remain pending and parent F06 remains incomplete. No hosting,
+fresh real Google sign-in, hosted CI, commit or publication is claimed.
+
+Retrospective: preserve Swagger registration before Nest's final 404 handler;
+attach shared admission before documentation middleware and pace real-stack tests
+against actual quotas rather than disabling protection.
 
 ### F06-05 owner-assisted real Google smoke — 2026-10-13
 

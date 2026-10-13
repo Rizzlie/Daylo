@@ -116,7 +116,7 @@ describe('session contract and OpenAPI', () => {
     const session = document.paths['/api/auth/session'].get;
     expect(session.operationId).toBe('getCurrentSession');
     expect(session.tags).toEqual(['Authentication']);
-    expect(Object.keys(session.responses).sort()).toEqual(['200', '401', '500', '503']);
+    expect(Object.keys(session.responses).sort()).toEqual(['200', '401', '429', '500', '503']);
     expect(session.security).toEqual([{ dayloSession: [] }]);
     expect(document.components.securitySchemes.dayloSession).toMatchObject({ type: 'apiKey', in: 'cookie', name: '__Host-daylo_session' });
     const csrf = document.paths['/api/auth/csrf'].get;

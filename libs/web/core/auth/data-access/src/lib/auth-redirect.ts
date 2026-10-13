@@ -12,7 +12,7 @@ export function getAuthRedirectUrl(
     case 'pending':
       return access === 'public' || access === 'active' ? '/invitations' : null;
     case 'error':
-      return '/login?error=connection';
+      return session.reason === 'rate-limit' ? '/login?error=rate-limit' : '/login?error=connection';
     case 'anonymous':
       if (session.reason === 'signed-out') return '/login';
       return access !== 'public' || session.reason === 'expired'

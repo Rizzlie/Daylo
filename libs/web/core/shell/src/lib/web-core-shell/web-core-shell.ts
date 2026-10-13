@@ -16,6 +16,7 @@ export class WebCoreShell {
   protected readonly heading = computed(() => this.routeData()['heading']);
   protected readonly signingOut = this.auth.signingOut;
   protected readonly signOutFailed = this.auth.signOutFailed;
+  protected readonly signOutRateLimited = this.auth.signOutRateLimited;
   protected readonly signOutLabel = computed(() =>
     this.signingOut() ? 'Wylogowywanie…' : 'Wyloguj się',
   );

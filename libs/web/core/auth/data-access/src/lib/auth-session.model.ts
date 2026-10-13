@@ -10,7 +10,7 @@ export type SessionResult =
       readonly status: 'anonymous';
       readonly reason: 'expired' | 'signed-out' | null;
     }
-  | { readonly status: 'error' };
+  | { readonly status: 'error'; readonly reason?: 'rate-limit' };
 
 export type SessionState =
   | SessionResult

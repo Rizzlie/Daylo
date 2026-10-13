@@ -4,6 +4,10 @@ export interface LoginNotice {
 }
 
 export const LOGIN_NOTICES: ReadonlyMap<string, LoginNotice> = new Map([
+  ['rate-limit', {
+    message: 'Zbyt wiele żądań. Spróbuj ponownie za chwilę.',
+    retry: true,
+  }],
   ['expired', {
     message: 'Sesja wygasła. Zaloguj się ponownie.',
     retry: false,
