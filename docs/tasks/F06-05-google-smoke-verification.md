@@ -2,9 +2,9 @@
 
 Parent backlog item: **F06** · [Task index](../tasks.md) · [Backlog](../backlog.md)
 
-Discussion status: **Not started — required before implementation.**
-Implementation authorization: **Not granted by this document.**
-Delivery status: Pending. No implementation or verification is claimed by this task file.
+Discussion status: Owner-assisted manual smoke scope discussed on 2026-10-13.
+Implementation authorization: No application changes requested or performed.
+Delivery status: Owner-reported real Google smoke scope accepted on 2026-10-13; independent technical inspection remains incomplete.
 
 ## Assumptions and sources
 
@@ -15,7 +15,7 @@ Delivery status: Pending. No implementation or verification is claimed by this t
 
 ## Work to perform
 
-- [ ] Perform the separate real Google sign-in smoke check with owner-configured credentials.
+- [x] Perform the separate real Google sign-in smoke check with owner-configured credentials (owner-reported manual results; limitations below).
 
 ## Acceptance criteria
 
@@ -27,7 +27,7 @@ The owner must confirm the final criteria during discussion. Applicable checks m
 
 ## Verification plan
 
-- [ ] Record actual redirect/callback/session/sign-out outcome; controlled-provider tests cannot satisfy this task.
+- [x] Record owner-reported real sign-in/session/sign-out outcomes; redirect/callback internals were not independently inspected.
 
 - Inspect available Nx targets and use project generators/targets where applicable; select exact commands after inspection rather than inventing flags.
 - Run affected lint, meaningful tests and production builds. For API contract changes, export/validate OpenAPI, regenerate the Angular client and check drift.
@@ -47,12 +47,12 @@ Record the discussion outcome below. Agreement on documentation alone is not imp
 
 ### Decision record
 
-- Discussion date: Pending.
-- Agreed assumptions and behavior: Pending.
-- Agreed scope and exclusions: Pending.
-- Agreed approach and verification: Pending.
-- Unresolved questions: The task-specific discussion topic above; further questions may emerge from inspection.
-- Owner implementation authorization: Pending; record the actual instruction and date when provided.
+- Discussion date: 2026-10-13.
+- Agreed assumptions and behavior: The owner confirmed Google configuration was available. Discussed real sign-in, session retention after reload, sign-out and protected-route recovery.
+- Agreed scope and exclusions: Local owner-assisted real Google smoke; no application changes, commits or deployment.
+- Agreed approach and verification: The owner performed sign-in and the requested reload/sign-out/back-navigation checks and reported visible outcomes in the conversation.
+- Unresolved questions: Independent redirect/callback, cookie, network/console and viewport inspection remain incomplete; acceptance does not establish those checks as passed.
+- Owner implementation authorization: None requested or needed for recording the manual exercise; no application implementation was performed.
 
 ## Scope boundaries
 
@@ -60,11 +60,11 @@ Only the work listed above belongs to this task. Follow the parent backlog bound
 
 ## Delivery and review record
 
-- Delivered behavior: Pending.
-- Checks executed and outcomes: Pending.
-- Browser scenarios and viewport coverage: Pending or N/A with a reason.
-- Known limitations / incomplete verification: Pending.
-- Owner acceptance: Pending.
-- Retrospective and workflow improvements: Pending.
+- Delivered behavior: Recorded the owner's real Google manual smoke results on 2026-10-13; no application behavior changed.
+- Checks executed and outcomes: The owner reported successful sign-in with a personalized greeting, the same greeting after reload, the Google sign-in button after sign-out, and a session-expiry notice after the requested back-navigation/reload check. These visible results match the discussed scenarios. No automated checks were rerun for this documentation-only record.
+- Browser scenarios and viewport coverage: Owner-operated browser; viewport and device not recorded. The agent did not independently inspect the browser.
+- Known limitations / incomplete verification: Redirect/callback HTTP details, session cookies/database revocation, console/network errors and desktop/mobile coverage were not independently inspected. User-visible denial of the protected screen does not independently prove server-side revocation. Other account admission cases were outside this exercise.
+- Owner acceptance: On 2026-10-13, the owner stated "tak, akceptuje, wystaw PR", accepting the recorded manual smoke scope and authorizing commit, push and PR publication. Independent technical verification limitations remain recorded.
+- Retrospective and workflow improvements: Attribute manual evidence to the owner, distinguish visible behavior from internal security checks, and keep explicit acceptance separate from reported successful results.
 
 Update this record and the parent backlog after delivery/review. Do not mark the parent item accepted until all of its criteria are met and the owner accepts it.
