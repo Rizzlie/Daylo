@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SessionStore, StoredSession } from '@daylo/api/auth/data-access';
+import { SecurityEvents } from '@daylo/api/core/security-events';
 import type { Request, Response } from 'express';
 import { authCookieName, authCookieOptions, readAuthCookie, SESSION_COOKIE } from './auth-cookie';
 
@@ -28,6 +29,7 @@ export class SessionService {
   constructor(
     @Inject(SessionStore) private readonly store: SessionStore,
     @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(SecurityEvents) private readonly events: SecurityEvents,
   ) {}
 
   private cookieOptions() {
@@ -86,7 +88,10 @@ export class SessionService {
     const token = sessionCookie(request, this.cookieName());
     if (!token) throw new UnauthorizedException();
     const value = csrfValue(token);
-    if (!this.matchesCsrf(value, session.csrfTokenHash)) throw new ForbiddenException();
+    if (!this.matchesCsrf(value, session.csrfTokenHash)) {
+      this.events.record({ event: 'csrf_rejected', reason: 'invalid_binding' }, request, session.user.id);
+      throw new ForbiddenException();
+    }
     return value;
   }
 
@@ -98,12 +103,16 @@ export class SessionService {
   verifyMutation(request: Request, session: StoredSession): void {
     if (request.headers.origin !== this.config.getOrThrow<string>('runtime.frontendOrigin')
       || !this.matchesCsrf(request.headers['x-csrf-token'], session.csrfTokenHash)) {
+      this.events.record({ event: 'csrf_rejected', reason:
+        request.headers.origin !== this.config.getOrThrow<string>('runtime.frontendOrigin') ? 'invalid_origin' : 'invalid_proof',
+      }, request, session.user.id);
       throw new ForbiddenException();
     }
   }
 
-  async signOut(session: StoredSession, response: Response): Promise<void> {
+  async signOut(session: StoredSession, response: Response, request?: Request): Promise<void> {
     await this.database(() => this.store.revoke(session.id));
+    this.events.record({ event: 'session_revoked', reason: 'sign_out' }, request, session.user.id);
     response.clearCookie(this.cookieName(), this.cookieOptions());
   }
 }

@@ -6,6 +6,7 @@ import { SessionService, SESSION_SECONDS, GOOGLE_OAUTH_CLIENT } from '@daylo/api
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Test-only persistence fixture; the PostgreSQL variant uses the production adapter.
 import { SessionStore, NewSession, StoredSession, SESSION_MAX_AGE_SECONDS } from '@daylo/api/auth/data-access';
 import { PrismaService } from '@daylo/api/core/database';
+import { SecurityEventWriter } from '@daylo/api/core/security-events';
 import { ALLOW_PENDING_SESSION, ActorContext } from '@daylo/api/core/identity/contracts';
 import { currentSessionResponseSchema, csrfTokenResponseSchema } from '@daylo/shared/schemas';
 import { OAuth2Client } from 'google-auth-library';
@@ -44,6 +45,7 @@ for (const postgres of [false, true]) {
       let store: SessionStore;
       let prisma: PrismaService;
       let user: StoredSession['user'];
+      const eventLines: string[] = [];
       const prefix = `f06-session-${randomUUID()}`;
       const rows = new Map<string, StoredSession & { tokenHash: string; createdAt: Date }>();
       const users = new Map<string, StoredSession['user']>();
@@ -107,6 +109,8 @@ for (const postgres of [false, true]) {
       });
 
       beforeEach(async () => {
+        eventLines.length = 0;
+        vi.spyOn(app.get(SecurityEventWriter), 'write').mockImplementation((line) => { eventLines.push(line); return true; });
         app.get(BoundedThrottlerStorage).clear();
         vi.useFakeTimers({ toFake: ['Date'] });
         app.get(ConfigService).set('runtime.environment', 'development');
@@ -156,6 +160,44 @@ for (const postgres of [false, true]) {
         }
         return new Date(createdAt.getTime() + SESSION_MAX_AGE_SECONDS * 1000);
       }
+
+      it('logs CSRF refusal and committed sign-out with verified user ID and no session proof', async () => {
+        const issued = await login();
+        const proof = await csrf(issued.cookie);
+        expect((await mutate('auth/sign-out', issued.cookie, 'private-csrf-sentinel')).status).toBe(403);
+        expect(await persisted(issued.token)).not.toBeNull();
+        const rejected = JSON.parse(eventLines[0]);
+        expect(rejected).toMatchObject({ event: 'csrf_rejected', reason: 'invalid_proof', actorUserId: user.id });
+        expect(eventLines).toHaveLength(1);
+        let committed = false;
+        const revoke = store.revoke.bind(store);
+        vi.spyOn(store, 'revoke').mockImplementation(async (id) => { await revoke(id); committed = true; });
+        vi.spyOn(app.get(SecurityEventWriter), 'write').mockImplementation((line) => {
+          if (JSON.parse(line).event === 'session_revoked') expect(committed).toBe(true);
+          eventLines.push(line); return true;
+        });
+        expect((await mutate('auth/sign-out', issued.cookie, proof)).status).toBe(204);
+        expect(await persisted(issued.token)).toBeNull();
+        expect(JSON.parse(eventLines[1])).toMatchObject({ event: 'session_revoked', reason: 'sign_out', actorUserId: user.id });
+        expect(JSON.parse(eventLines[1]).requestId).not.toBe(rejected.requestId);
+        for (const secret of [issued.token, hash(issued.token), proof, user.email, user.displayName, 'private-csrf-sentinel']) {
+          expect(eventLines.join('')).not.toContain(secret);
+        }
+      });
+
+      it('does not claim revocation on rollback and still revokes when stdout fails', async () => {
+        const issued = await login();
+        const proof = await csrf(issued.cookie);
+        const failure = vi.spyOn(store, 'revoke').mockRejectedValue(new Error('private-database-secret'));
+        expect((await mutate('auth/sign-out', issued.cookie, proof)).status).toBe(503);
+        expect(await persisted(issued.token)).not.toBeNull();
+        expect(eventLines).toHaveLength(0);
+        failure.mockRestore();
+        vi.spyOn(app.get(SecurityEventWriter), 'write').mockImplementation(() => { throw new Error('private-sink-secret'); });
+        expect((await mutate('auth/sign-out', issued.cookie, proof)).status).toBe(204);
+        expect(await persisted(issued.token)).toBeNull();
+        expect((await get('auth/session', issued.cookie)).status).toBe(401);
+      });
 
       it('caps renewal and cookie expiry at the 30-day absolute deadline', async () => {
         const issued = await login();
@@ -318,6 +360,10 @@ for (const postgres of [false, true]) {
         const proof = await csrf(issued.cookie);
         expect((await get('session-test/protected', issued.cookie)).status).toBe(403);
         expect((await mutate('session-test/protected', issued.cookie, proof)).status).toBe(403);
+        expect(eventLines.map((line) => JSON.parse(line))).toEqual([
+          expect.objectContaining({ event: 'admission_denied', reason: 'pending_access', actorUserId: user.id }),
+          expect.objectContaining({ event: 'admission_denied', reason: 'pending_access', actorUserId: user.id }),
+        ]);
         expect((await mutate('session-test/invitation', issued.cookie)).status).toBe(403);
         expect((await mutate('session-test/invitation', issued.cookie, proof)).status).toBe(201);
         expect((await mutate('auth/sign-out', issued.cookie, proof)).status).toBe(204);

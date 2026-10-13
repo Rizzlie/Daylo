@@ -12,6 +12,7 @@ import {
   SessionStore,
 } from '@daylo/api/auth/data-access';
 import { PrismaService } from '@daylo/api/core/database';
+import { SecurityEventWriter } from '@daylo/api/core/security-events';
 import { TRANSACTION_RUNNER, TransactionContext } from '@daylo/api/core/transactions/contracts';
 import { USER_IDENTITY, AdmittedProfile } from '@daylo/api/users/contracts';
 import { INVITATION_ADMISSION } from '@daylo/api/groups/contracts';
@@ -52,6 +53,8 @@ describe('Google OIDC HTTP flow', () => {
   let expectedChallenge: string;
   let exchangedVerifier: string;
   let databaseFailure: boolean;
+  const eventLines: string[] = [];
+  const eventOutput = () => eventLines.map((line) => JSON.parse(line));
   const rows = new Map<string, NewOAuthTransaction>();
   const store = {
     async create(row: NewOAuthTransaction, now: Date) {
@@ -190,6 +193,8 @@ describe('Google OIDC HTTP flow', () => {
   });
 
   beforeEach(() => {
+    eventLines.length = 0;
+    vi.spyOn(app.get(SecurityEventWriter), 'write').mockImplementation((line) => { eventLines.push(line); return true; });
     app.get(BoundedThrottlerStorage).clear();
     rows.clear();
     tokenOverrides = {};
@@ -284,6 +289,64 @@ describe('Google OIDC HTTP flow', () => {
     expect(response.headers.get('set-cookie')).not.toContain('Secure');
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+  });
+
+  it('logs success only after session persistence and correlates a safe replay failure without secrets', async () => {
+    const { state, cookie } = await start();
+    let persisted = false;
+    const create = vi.spyOn(app.get(SessionStore), 'create').mockImplementation(async () => { persisted = true; });
+    const writer = vi.spyOn(app.get(SecurityEventWriter), 'write').mockImplementation((line) => {
+      if (JSON.parse(line).event === 'login_succeeded') expect(persisted).toBe(true);
+      eventLines.push(line); return true;
+    });
+    expect((await callback(state, cookie)).status).toBe(302);
+    expect(eventOutput()).toEqual([expect.objectContaining({ event: 'login_succeeded', reason: 'authenticated' })]);
+    await expectAuthFailure(await callback(state, cookie));
+    const [success, rejected, failed] = eventOutput();
+    expect(rejected).toMatchObject({ event: 'callback_rejected', reason: 'invalid_expired_or_replayed_transaction' });
+    expect(failed).toMatchObject({ event: 'login_failed', reason: 'invalid_callback', requestId: rejected.requestId });
+    expect(success.requestId).not.toBe(failed.requestId);
+    for (const secret of [state, cookie, exchangedVerifier, currentNonce, 'synthetic-code', 'synthetic@example.test',
+      'synthetic-google-subject', 'private-access-token', 'private-refresh-token']) {
+      expect(eventLines.join('')).not.toContain(secret);
+    }
+    create.mockRestore();
+    writer.mockRestore();
+  });
+
+  it('logs admission and malformed callback denials without accepting incoming correlation data', async () => {
+    const first = await start();
+    tokenOverrides = { email: 'outsider@example.test' };
+    expect((await callback(first.state, first.cookie)).status).toBe(403);
+    expect(eventOutput()).toEqual([
+      expect.objectContaining({ event: 'admission_denied', reason: 'not_admitted' }),
+      expect.objectContaining({ event: 'login_failed', reason: 'admission_denied' }),
+    ]);
+    const malformed = await fetch(`${baseUrl}/api/auth/google/callback?code=private-code&code=private-code&state=private-state`, {
+      redirect: 'manual', headers: { 'x-request-id': 'private-incoming-id', cookie: 'private-cookie' },
+    });
+    expect(malformed.status).toBe(400);
+    expect(eventOutput().slice(2)).toEqual([
+      expect.objectContaining({ event: 'callback_rejected', reason: 'invalid_query' }),
+      expect.objectContaining({ event: 'login_failed', reason: 'invalid_callback' }),
+    ]);
+    expect(eventOutput().every((event) => !('actorUserId' in event))).toBe(true);
+    expect(eventLines.join('')).not.toMatch(/private-|outsider@example/);
+  });
+
+  it('does not log success on persistence failure and preserves auth when writing logs throws', async () => {
+    const first = await start();
+    const create = vi.spyOn(app.get(SessionStore), 'create').mockRejectedValue(new Error('private-persistence-secret'));
+    expect((await callback(first.state, first.cookie)).status).toBe(503);
+    expect(eventOutput()).toEqual([expect.objectContaining({ event: 'login_failed', reason: 'infrastructure_unavailable' })]);
+    expect(eventLines.join('')).not.toContain('private-persistence-secret');
+    create.mockRestore();
+    vi.spyOn(app.get(SecurityEventWriter), 'write').mockImplementation(() => { throw new Error('private-sink-secret'); });
+    const second = await start();
+    const success = await callback(second.state, second.cookie);
+    expect(success.status).toBe(302);
+    expect(success.headers.get('set-cookie')).toContain('daylo_session=');
+    await expectAuthFailure(await callback(second.state, second.cookie));
   });
 
   it('completes a verified callback after the separate Google-start budget is exhausted', async () => {
@@ -530,6 +593,7 @@ describe('Google OIDC HTTP flow', () => {
       expect(await response.text()).not.toContain('private-');
       await expectAuthFailure(await callback(state, cookie));
       expect(tokenRequests).toBe(1);
+      expect(eventLines.join('')).not.toContain('private-provider-response');
     },
   );
 
@@ -539,6 +603,7 @@ describe('Google OIDC HTTP flow', () => {
     const response = await callback(state, cookie);
     expect(response.status).toBe(503);
     expect(await response.text()).not.toContain('private-');
+    expect(eventLines.join('')).not.toContain('private-cert-network-error');
   });
 
   it('maps database failures to safe 503 responses on start and callback', async () => {

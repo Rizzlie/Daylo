@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { OAuth2Client } from 'google-auth-library';
 import { ApiAuthDataAccessModule } from '@daylo/api/auth/data-access';
 import { ApiCoreDatabaseModule } from '@daylo/api/core/database';
+import { ApiCoreSecurityEventsModule } from '@daylo/api/core/security-events';
 import { ApplicationAdmissionService } from './application-admission.service';
 import { CurrentSessionController } from './current-session.controller';
 import { GoogleOidcController } from './google-oidc.controller';
@@ -17,7 +18,7 @@ import { SessionService } from './session.service';
 import { SessionGuard } from './session.guard';
 
 @Module({
-  imports: [ConfigModule, ApiCoreDatabaseModule, ApiAuthDataAccessModule],
+  imports: [ConfigModule, ApiCoreDatabaseModule, ApiAuthDataAccessModule, ApiCoreSecurityEventsModule],
   controllers: [CurrentSessionController, GoogleOidcController],
   providers: [
     GoogleOidcProvider,

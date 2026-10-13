@@ -49,5 +49,12 @@ requested backlog registration on 2026-10-13; no deployment or implementation is
 
 ## Delivery and retrospective
 
+### Discussion order — 2026-10-13
+
+The owner requested deferral with "hmm, to może na końcu" after F06-08.
+Defer this task until hosting/HTTPS topology is decided, before public exposure.
+The owner then selected F06-10. This does not authorize F06-09 implementation
+or deployment and does not change its pending status.
+
 Documentation registered; implementation, verification and acceptance pending.
 Validate headers where HTML is actually served and enforce CSP after compatibility checks.

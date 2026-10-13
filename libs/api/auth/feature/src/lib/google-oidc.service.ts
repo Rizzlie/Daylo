@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { OAuthTransactionStore } from '@daylo/api/auth/data-access';
+import { SecurityEvents, SecurityEventInput } from '@daylo/api/core/security-events';
 import { OAuthPkceService } from './oauth-pkce.service';
 import {
   authenticationFailed,
@@ -27,6 +28,7 @@ export class GoogleOidcService {
     private readonly transactions: OAuthTransactionStore,
     @Inject(GoogleOidcProvider) private readonly provider: GoogleOidcProvider,
     @Inject(OAuthPkceService) private readonly pkce: OAuthPkceService,
+    @Inject(SecurityEvents) private readonly events: SecurityEvents,
   ) {}
 
   async start(): Promise<{ browserBinding: string; redirectUrl: string }> {
@@ -55,9 +57,14 @@ export class GoogleOidcService {
   async callback(
     input: { state?: string; code?: string; error?: string },
     browserBinding?: string,
+    request?: object,
   ): Promise<VerifiedGoogleIdentity> {
-    if (!validBinding(input.state) || !validBinding(browserBinding))
+    const reject = (reason: Extract<SecurityEventInput, { event: 'callback_rejected' }>['reason']): never => {
+      this.events.record({ event: 'callback_rejected', reason }, request);
       throw authenticationFailed();
+    };
+    if (!validBinding(input.state) || !validBinding(browserBinding))
+      return reject('invalid_binding');
     const stateHash = hash(input.state);
     const browserBindingHash = hash(browserBinding);
     let transaction: { nonce: string; encryptedVerifier: string | null } | null;
@@ -70,11 +77,17 @@ export class GoogleOidcService {
     } catch {
       throw new ServiceUnavailableException();
     }
-    if (!transaction || input.error !== undefined || !input.code)
-      throw authenticationFailed();
-    const verifier = this.pkce.recover(transaction.encryptedVerifier, {
-      stateHash, browserBindingHash, nonce: transaction.nonce,
-    });
+    if (!transaction) return reject('invalid_expired_or_replayed_transaction');
+    if (input.error !== undefined) return reject('provider_declined');
+    if (!input.code) return reject('missing_code');
+    let verifier: string;
+    try {
+      verifier = this.pkce.recover(transaction.encryptedVerifier, {
+        stateHash, browserBindingHash, nonce: transaction.nonce,
+      });
+    } catch {
+      return reject('invalid_pkce');
+    }
     return this.provider.verify(input.code, transaction.nonce, verifier);
   }
 }

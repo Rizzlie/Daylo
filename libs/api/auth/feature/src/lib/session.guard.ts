@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { ALLOW_PENDING_SESSION, ActorContext, PUBLIC_ENDPOINT } from '@daylo/api/core/identity/contracts';
 import type { StoredSession } from '@daylo/api/auth/data-access';
 import type { Request, Response } from 'express';
+import { SecurityEvents } from '@daylo/api/core/security-events';
 import { SessionService } from './session.service';
 
 export interface AuthenticatedRequest extends Request {
@@ -15,6 +16,7 @@ export class SessionGuard implements CanActivate {
   constructor(
     @Inject(Reflector) private readonly reflector: Reflector,
     @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(SecurityEvents) private readonly events: SecurityEvents,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -27,6 +29,7 @@ export class SessionGuard implements CanActivate {
     const accessStatus = session.user.accessStatus === 'ACTIVE' ? 'active' : 'pending';
     if (accessStatus === 'pending'
       && !this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING_SESSION, targets)) {
+      this.events.record({ event: 'admission_denied', reason: 'pending_access' }, request, session.user.id);
       throw new ForbiddenException();
     }
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {

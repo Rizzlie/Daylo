@@ -1,8 +1,35 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-13. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-09 through F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-13. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-09, F06-11 and F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### F06-10 security event logging delivery — 2026-10-13
+
+The owner agreed JSON stdout logging and authorized implementation with "okej,
+do it". Implemented bounded allowlisted events for login, callback/admission,
+CSRF, explicit sign-out and API quotas, with backend request correlation and
+resolved internal user UUIDs. No emails, IPs, secrets, request dumps or arbitrary
+exception diagnostics are logged. Backpressure/sink failures do not change auth.
+No new dependency, log database/file, collector or alert infrastructure was added.
+Hosting collection, retention/access and proxy redaction remain deferred, as agreed.
+
+Fresh local Nx verification passed: 215 API tests with isolated PostgreSQL enabled,
+10 recorder tests, relevant lint (ten existing API warnings), API production build,
+OpenAPI/client drift checks and generated Angular client compilation. Both existing
+migrations applied to the disposable verification database. No UI/HTTP response
+change; browser/frontend E2E inspection is inapplicable to this diagnostic scope.
+See [F06-10](tasks/F06-10-auth-security-event-logging.md) and
+[Security logging](security/security-logging.md) for evidence and delivery limits.
+
+F06-10 is implemented, locally verified and owner-accepted with "lgtm" on
+2026-10-13. Recorded hosting/verification limits remain unchanged. F06-09 is
+deferred by the owner until hosting decisions, before public exposure; F06-11/12
+remain pending. Parent F06 is incomplete. No commit/publication, hosted verification
+or subsequent implementation is authorized by this delivery.
+
+Retrospective: remove unrelated generator config churn; bound diagnostics independently
+of actor/request cardinality and emit success/revocation only after persistence.
 
 ### F06-08 PKCE delivery — 2026-10-13
 

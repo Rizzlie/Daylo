@@ -186,6 +186,12 @@ trusted proxies and multiple instances require revisiting this local policy.
 
 Start with OpenAPI 3.0 for client compatibility. Document cookie authentication and the CSRF header. OAuth navigation uses browser redirects, not generated HTTP service calls.
 
+F06-10 shares `api-core-security-events` infrastructure between auth and the HTTP
+filter. It emits allowlisted JSON security outcomes to stdout with backend request
+correlation and verified internal user IDs, without secrets, emails or IPs.
+Output is bounded and best-effort; hosting owns collection/access/retention and
+alerts. See [Security logging](security/security-logging.md).
+
 ### Authorization and errors
 
 - Only the configured application owner creates groups and manages invitations.

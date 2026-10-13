@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Get,
   INestApplication,
+  Logger,
   Post,
   ServiceUnavailableException,
   UnauthorizedException,
@@ -68,6 +69,11 @@ class ContractTestController {
   unavailable(): never {
     throw new ServiceUnavailableException();
   }
+
+  @Get('unexpected-error')
+  unexpectedError(): never {
+    throw new Error('private-code-token-cookie-secret');
+  }
 }
 
 describe('API HTTP contract boundary', () => {
@@ -125,6 +131,19 @@ describe('API HTTP contract boundary', () => {
       code: HTTP_ERROR_CODES.internalServerError,
       message: 'Internal server error',
     });
+  });
+
+  it('does not send exception diagnostics or stack secrets to the generic logger', async () => {
+    const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    try {
+      const response = await fetch(`${baseUrl}/api/contracts/unexpected-error?code=private-query-secret`);
+      expect(response.status).toBe(500);
+      expect(await response.text()).not.toContain('private-');
+      expect(error).toHaveBeenCalledWith('Unhandled API exception');
+      expect(JSON.stringify(error.mock.calls)).not.toContain('private-');
+      await fetch(`${baseUrl}/api/contracts/invalid-response`);
+      expect(error).toHaveBeenLastCalledWith('A controller response did not match its declared public schema');
+    } finally { error.mockRestore(); }
   });
 
   it.each([

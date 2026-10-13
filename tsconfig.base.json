@@ -68,6 +68,9 @@
       ],
       "@daylo/web/shared/util-router": [
         "./libs/web/shared/util-router/src/index.ts"
+      ],
+      "@daylo/api/core/security-events": [
+        "./libs/api/core/security-events/src/index.ts"
       ]
     }
   },
