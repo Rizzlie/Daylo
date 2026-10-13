@@ -140,3 +140,10 @@ tests because the opt-in environment is not part of their cache key. Distinguish
 per-process abuse protection from deployment-wide rate limiting, and browser
 snapshots from automated screenshots. Record the owner's product-policy choices
 before changing account eligibility or session lifetime.
+
+## Pull request publication — 2026-10-13
+
+The owner requested publication after accepting the delivered scope. Draft
+[PR #18](https://github.com/Rizzlie/Daylo/pull/18) includes the final AUTH-01,
+AUTH-02 and AUTH-04 fixes alongside F06-04. AUTH-03 and additional hardening
+remain pending backlog work. Hosted CI and PR review are not claimed as passed.

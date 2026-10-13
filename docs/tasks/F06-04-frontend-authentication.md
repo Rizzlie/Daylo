@@ -134,3 +134,9 @@ Update this record and the parent backlog after delivery/review. Do not mark the
 - Verification: Fresh Nx API/auth/config/frontend-auth tests passed all 223 cases with isolated PostgreSQL integration enabled. Production dependency audit reported nine affected package entries; no dependency or application source was changed. The disposable audit database was removed; owner development services/data were preserved. Real provider attacks, deployment posture and destructive load testing were not performed.
 - Remaining state: Security findings require a separately agreed remediation scope. Passing tests and the user's local functional smoke do not close these findings or imply owner acceptance of later work.
 - Retrospective: Distinguish a verified email claim from current authority over a mailbox, and test server security independently of frontend behavior. Make attack prerequisites and dependency reachability explicit in reports.
+
+### Pull request publication — 2026-10-13
+
+- The owner requested publication after accepting the delivered scope.
+- Draft [PR #18](https://github.com/Rizzlie/Daylo/pull/18) contains F06-04 and the final F06-06 security hardening, with verification evidence and remaining limitations recorded in its description.
+- Publication does not authorize implementation of subsequent backlog items. Hosted CI and PR review remain separate from local verification and owner acceptance.
