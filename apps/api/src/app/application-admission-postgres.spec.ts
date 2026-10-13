@@ -44,11 +44,21 @@ describe.skipIf(!enabled || !databaseUrl)('application admission PostgreSQL acce
   afterAll(async () => { await app?.close(); });
 
   function identity(suffix = 'person', email = `${prefix}-${suffix}@example.test`) {
-    return { googleSubject: `${prefix}-${suffix}`, email, displayName: 'Synthetic Person' };
+    return { googleSubject: `${prefix}-${suffix}`, email, emailAuthoritative: true, displayName: 'Synthetic Person' };
   }
   async function seedUser(suffix: string, accessStatus: 'ACTIVE' | 'PENDING', email = identity(suffix).email) {
-    return prisma.client.user.create({ data: { ...identity(suffix, email), accessStatus } });
+    const profile = identity(suffix, email);
+    return prisma.client.user.create({ data: { googleSubject: profile.googleSubject, email, displayName: profile.displayName, accessStatus } });
   }
+
+  it('denies non-authoritative owner and invitation admission without database writes', async () => {
+    const invited = identity('external');
+    await invite(invited.email);
+    for (const person of [identity('owner', ownerEmail), invited]) {
+      await expect(admission.admit({ ...person, emailAuthoritative: false })).rejects.toBeInstanceOf(ForbiddenException);
+      expect(await prisma.client.user.findUnique({ where: { googleSubject: person.googleSubject } })).toBeNull();
+    }
+  });
   async function invite(email: string, status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' = 'PENDING', expiresAt = new Date(Date.now() + 60_000)) {
     const inviter = await seedUser(`inviter-${randomUUID()}`, 'ACTIVE');
     const group = await prisma.client.group.create({ data: { name: 'Synthetic group', ownerId: inviter.id } });
@@ -69,7 +79,7 @@ describe.skipIf(!enabled || !databaseUrl)('application admission PostgreSQL acce
     const renamed = { ...identity('active', `${prefix}-new@example.test`), displayName: 'Updated Name' };
     const updated = await admission.admit(renamed);
     expect(updated).toMatchObject({ id: original.id, email: renamed.email, displayName: 'Updated Name', accessStatus: 'active' });
-    const withoutName = { googleSubject: renamed.googleSubject, email: renamed.email };
+    const withoutName = { googleSubject: renamed.googleSubject, email: renamed.email, emailAuthoritative: false };
     expect(await admission.admit(withoutName)).toMatchObject({ id: original.id, displayName: 'Updated Name' });
     expect(await prisma.client.user.findUnique({ where: { email: original.email } })).toBeNull();
   });
@@ -83,7 +93,7 @@ describe.skipIf(!enabled || !databaseUrl)('application admission PostgreSQL acce
   it('creates only pending access for a valid invitation without resolving it or adding membership', async () => {
     const person = identity();
     const invitation = await invite(person.email);
-    const admitted = await admission.admit({ googleSubject: person.googleSubject, email: person.email.toUpperCase() });
+    const admitted = await admission.admit({ googleSubject: person.googleSubject, email: person.email.toUpperCase(), emailAuthoritative: true });
     expect(admitted).toMatchObject({ accessStatus: 'pending', email: person.email, displayName: person.email.split('@')[0] });
     expect(await prisma.client.membership.count({ where: { userId: admitted.id } })).toBe(0);
     expect(await prisma.client.invitation.findUnique({ where: { id: invitation.id } })).toMatchObject({ status: 'PENDING', resolvedAt: null });

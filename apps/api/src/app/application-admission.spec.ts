@@ -7,7 +7,7 @@ import { InvitationAdmission } from '@daylo/api/groups/contracts';
 
 describe('application admission policy', () => {
   const context = {} as TransactionContext;
-  const identity = { googleSubject: 'verified-subject', email: 'person@example.test', displayName: 'Person' };
+  const identity = { googleSubject: 'verified-subject', email: 'person@example.test', emailAuthoritative: true, displayName: 'Person' };
   let users: UserIdentity;
   let invitations: InvitationAdmission;
   let transactions: TransactionRunner;
@@ -29,6 +29,19 @@ describe('application admission policy', () => {
     expect(await service.admit({ ...identity, email: ' Owner@Example.test ' })).toMatchObject({ email: 'owner@example.test', accessStatus: 'active' });
     expect(invitations.hasEligibleInvitation).not.toHaveBeenCalled();
     expect(users.lockIdentity).toHaveBeenCalledWith(identity.googleSubject, 'owner@example.test', context);
+  });
+
+  it.each(['owner@example.test', identity.email])('denies non-authoritative new admission for %s even with an invitation', async (email) => {
+    vi.mocked(invitations.hasEligibleInvitation).mockResolvedValue(true);
+    await expect(service.admit({ ...identity, email, emailAuthoritative: false })).rejects.toBeInstanceOf(ForbiddenException);
+    expect(users.saveProfile).not.toHaveBeenCalled();
+    expect(invitations.hasEligibleInvitation).not.toHaveBeenCalled();
+  });
+
+  it('preserves an active subject without requiring external email authority again', async () => {
+    vi.mocked(users.findBySubject).mockResolvedValue({ id: 'existing-id', email: identity.email, displayName: 'Person', accessStatus: 'active' });
+    expect(await service.admit({ ...identity, emailAuthoritative: false })).toMatchObject({ accessStatus: 'active' });
+    expect(invitations.hasEligibleInvitation).not.toHaveBeenCalled();
   });
 
   it('keeps a subject-identified active account active when its verified email changes', async () => {

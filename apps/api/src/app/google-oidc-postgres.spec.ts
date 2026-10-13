@@ -81,6 +81,7 @@ describe.skipIf(!enabled || !databaseUrl)(
                 aud: clientId,
                 ...providerIdentity,
                 email_verified: true,
+                hd: 'example.test',
                 nonce,
                 iat: now,
                 exp: now + 3600,

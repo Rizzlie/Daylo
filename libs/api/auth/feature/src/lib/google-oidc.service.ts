@@ -12,7 +12,7 @@ import {
 } from './google-oidc.provider';
 
 export const OAUTH_TRANSACTION_SECONDS = 600;
-export const OAUTH_BROWSER_COOKIE = 'daylo_oauth_browser';
+export { OAUTH_BROWSER_COOKIE } from './auth-cookie';
 const randomValue = () => randomBytes(32).toString('base64url');
 const hash = (value: string) =>
   createHash('sha256').update(value).digest('hex');

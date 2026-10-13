@@ -5,7 +5,11 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  Inject,
+  Optional,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { Request } from 'express';
 import { HttpAdapterHost } from '@nestjs/core';
 import {
   HTTP_ERROR_CODES,
@@ -50,7 +54,10 @@ const statusDefaults: Record<number, Pick<HttpErrorResponse, 'code' | 'message'>
 export class ApiHttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiHttpExceptionFilter.name);
 
-  constructor(private readonly adapterHost: HttpAdapterHost) {}
+  constructor(
+    private readonly adapterHost: HttpAdapterHost,
+    @Optional() @Inject(ConfigService) private readonly config?: ConfigService,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const status =
@@ -58,6 +65,19 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
     const response = host.switchToHttp().getResponse<unknown>();
+    const request = host.switchToHttp().getRequest<Request>();
+    const path = request.path;
+    const origin = this.config?.get<string>('runtime.frontendOrigin');
+    if (origin && request.method === 'GET' &&
+        ['/api/auth/google', '/api/auth/google/callback'].includes(path) &&
+        request.get('accept')?.includes('text/html')) {
+      // Fixed destinations and allowlisted reasons never expose provider data.
+      const reason = status === 403 ? 'denied' : status >= 500 ? 'connection' : 'failed';
+      this.adapterHost.httpAdapter.setHeader(response, 'Cache-Control', 'no-store');
+      this.adapterHost.httpAdapter.setHeader(response, 'Referrer-Policy', 'no-referrer');
+      this.adapterHost.httpAdapter.redirect(response, 302, new URL(`/login?error=${reason}`, origin).href);
+      return;
+    }
 
     this.adapterHost.httpAdapter.reply(
       response,

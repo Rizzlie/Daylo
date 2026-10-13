@@ -167,14 +167,14 @@
     "securitySchemes": {
       "dayloSession": {
         "in": "cookie",
-        "name": "daylo_session",
+        "name": "__Host-daylo_session",
         "type": "apiKey"
       }
     }
   },
   "info": {
     "contact": {},
-    "description": "Daylo public API. Authenticated operations use the HttpOnly daylo_session cookie. Unsafe requests require the session-bound X-CSRF-Token and exact configured frontend Origin. Only GET /api/auth/session renews valid sessions for seven days; expired/revoked sessions cannot be renewed.",
+    "description": "Daylo public API. HTTPS authenticated operations use the HttpOnly __Host-daylo_session cookie (daylo_session on local development HTTP). Unsafe requests require the session-bound X-CSRF-Token and exact configured frontend Origin. Only GET /api/auth/session renews valid sessions for seven days, capped at 30 days from creation; expired/revoked sessions cannot be renewed.",
     "title": "Daylo API",
     "version": "0.1.0"
   },
@@ -265,7 +265,7 @@
         "parameters": [],
         "responses": {
           "302": {
-            "description": "Redirect to Google. Sets the HttpOnly, SameSite=Lax daylo_oauth_browser cookie.",
+            "description": "Redirect to Google. Sets the HttpOnly, SameSite=Lax __Host-daylo_oauth_browser cookie on HTTPS (daylo_oauth_browser on local development HTTP). HTML navigation failures redirect to fixed frontend error destinations.",
             "headers": {
               "Location": {
                 "description": "Google authorization URL",
@@ -332,7 +332,7 @@
         ],
         "responses": {
           "302": {
-            "description": "Sets daylo_session; active users redirect to /today, pending users to /invitations.",
+            "description": "Sets __Host-daylo_session on HTTPS (daylo_session on local development HTTP); active users redirect to /today, pending users to /invitations. HTML navigation failures redirect to the fixed frontend /login with an allowlisted error reason (denied, failed or connection).",
             "headers": {
               "Location": {
                 "schema": {
@@ -396,7 +396,7 @@
     },
     "/api/auth/session": {
       "get": {
-        "description": "Returns active or pending identity and renews a still-valid session and its cookie for seven days. Missing, expired or revoked sessions return 401 and cannot be renewed. Call on application entry and foreground return; do not poll to keep sessions alive.",
+        "description": "Returns active or pending identity and renews a still-valid session and its cookie for seven days, capped at 30 days from session creation. Missing, expired or revoked sessions return 401 and cannot be renewed. Call on application entry and foreground return; do not poll to keep sessions alive.",
         "operationId": "getCurrentSession",
         "parameters": [],
         "responses": {

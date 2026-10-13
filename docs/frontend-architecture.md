@@ -13,6 +13,8 @@ libs/web/
     auth/data-access/
     shell/
     preferences/data-access/
+  auth/
+    features/login/
   tasks/
     features/today/
     features/task-editor/
@@ -29,6 +31,7 @@ libs/web/
   shared/
     ui/
     api-client/
+    util-router/
 libs/shared/
   util-date/
   schemas/
@@ -48,18 +51,70 @@ Example: `libs/web/tasks/features/today` has project name `web-tasks-feature-tod
 | domain | Frontend models and pure business rules | domain, util |
 | util | Technical helpers without area-specific business rules | util |
 | api-client | Generated Angular transport models/services | No Daylo library dependencies |
-| app | Bootstrap and route composition | feature, ui, util |
+| app | Bootstrap and route composition | feature, ui, util; the explicit auth-bootstrap capability described below |
 
 Features do not import other features. Compose routes in the application or publish reusable logic/UI in lower layers. App routing wires feature screens; shell is `type:feature` and does not import routed features. Grouping Today tasks is domain logic; timezone conversion is a technical utility. API transport types stay behind handwritten data-access mapping, so UI does not import the generated client.
 
 `core` and `shared` are scopes, not types. Shell is `scope:core, type:feature`; auth state is `scope:core, type:data-access`. Specific state-management and form-library choices remain separate decisions.
+
+The login page is `scope:auth, type:feature` at `libs/web/auth/features/login`.
+Application routing composes and lazily loads login and the protected placeholder
+shell; shell does not import the login feature. Prefer separate named signals in
+templates over a combined `vm` or view model, as requested by the owner.
+
+`libs/web/shared/util-router` provides `injectQueryParamMap()` for reactive route
+query parameters and `injectRouteData()` for static/resolved route data, both
+with a snapshot initial value. Web-specific technical utilities
+may use Angular. Platform-neutral utilities and all domain libraries remain
+framework-independent; utilities do not orchestrate HTTP or business state.
+
+## Authentication composition and route loading
+
+Reusable session guards, authentication providers and authentication redirect rules
+belong to `libs/web/core/auth/data-access`, not the shell. Its public entrypoint
+exports `authGuard`, `loginGuard`, `provideAuthentication` and
+`getAuthRedirectUrl`. Application bootstrap imports the provider directly from
+auth; shell must not proxy or rename that provider.
+
+`authGuard` defaults to active application access and allows an active user to
+stay on any requested permitted route, including nested/parameterized routes.
+Route data `authAccess: 'pending'` restricts the invitation entry to pending
+sessions; `'authenticated'` permits either session status for an explicitly
+eligible route. Backend resource authorization remains authoritative.
+`getAuthRedirectUrl` returns an authentication-related redirect or `null` when
+the requested route may remain. Guards and screen event handling share those
+rules; the function does not perform navigation or session retrieval.
+
+The application also registers `provideAuthSessionLifecycle()` once beside the
+authentication and router providers. Its root auth service owns foreground
+revalidation and loss/sign-out redirects independently of UI components. Shell
+only renders session data and invokes sign-out. Protected routes/groups explicitly
+declare `data.authAccess`; the nearest active primary-route policy applies.
+Public/unmarked routes do not renew on foreground return or replace login notices.
+Navigation in progress and sign-out suppress foreground checks, and a response
+for a route that has changed cannot redirect the new screen.
+
+The auth data-access project alone carries `capability:auth-bootstrap`.
+The web app type rule allows that capability alongside ordinary feature/UI/util
+dependencies, so bootstrap and route composition can import auth directly.
+Other data-access libraries are not generally allowed for app imports. Existing
+platform and scope constraints still apply, with no global `allow` exception.
+This is a library-level exception, not symbol-level enforcement; application
+code should use it for authentication configuration and guards rather than API
+orchestration.
+
+All routed components use `loadComponent`; feature route groups use
+`loadChildren` where appropriate. Do not statically import a routed component
+through a route table or library entrypoint. The bootstrapped application root
+is not a routed component. This owner-approved rule also applies to login and
+empty route screens.
 
 ## Required tags
 
 Every Nx project must have exactly one tag from each required dimension:
 
 - `platform`: `web`, `api`, or `shared` (framework-neutral code).
-- `scope`: `app`, `core`, `shared`, or an explicitly registered business area, initially `tasks`, `groups`, `settings`; backend also registers `auth` and `users` as documented in `backend-architecture.md`.
+- `scope`: `app`, `core`, `shared`, or an explicitly registered business area, initially `auth`, `tasks`, `groups`, `settings`; backend also registers `users` as documented in `backend-architecture.md`.
 - `type`: one of the frontend types above or a documented backend/test type. Backend schemas use a separate `type:contract`; E2E uses `type:e2e`.
 
 `libs/web/shared/ui` is `platform:web, scope:shared, type:ui`. The word shared in its path does not make it platform-neutral. `libs/shared/util-date` is `platform:shared, scope:shared, type:util`. Apps use `scope:app`; feature libraries never use that scope to bypass area boundaries.
@@ -71,7 +126,7 @@ Do not apply multiple scope or type tags to make a forbidden import pass. Valida
 - Web may depend on web or platform-neutral libraries; never backend code or Prisma.
 - API may depend on API or platform-neutral libraries; never web code.
 - Platform-neutral libraries may depend only on platform-neutral libraries.
-- Tasks depends on tasks, core, shared; groups on groups, core, shared; settings on settings, core, shared.
+- Auth depends on auth, core, shared; tasks on tasks, core, shared; groups on groups, core, shared; settings on settings, core, shared.
 - Core depends on core and shared. Shared depends only on shared.
 - Application composition can see registered frontend scopes, while type and platform constraints still apply.
 - Initially there are no direct cross-business-area dependencies.
@@ -93,19 +148,20 @@ Configure `@nx/enforce-module-boundaries` at error severity in the root flat ESL
     { "sourceTag": "platform:web", "onlyDependOnLibsWithTags": ["platform:web", "platform:shared"], "bannedExternalImports": ["@prisma/client", "@prisma/*", "@nestjs/*"] },
     { "sourceTag": "platform:api", "onlyDependOnLibsWithTags": ["platform:api", "platform:shared"] },
     { "sourceTag": "platform:shared", "onlyDependOnLibsWithTags": ["platform:shared"], "bannedExternalImports": ["@angular/*", "@nestjs/*", "@prisma/client", "@prisma/*"] },
-    { "allSourceTags": ["platform:web", "type:app"], "onlyDependOnLibsWithTags": ["type:feature", "type:ui", "type:util"] },
+    { "allSourceTags": ["platform:web", "type:app"], "onlyDependOnLibsWithTags": ["type:feature", "type:ui", "type:util", "capability:auth-bootstrap"] },
     { "allSourceTags": ["platform:web", "type:feature"], "onlyDependOnLibsWithTags": ["type:data-access", "type:ui", "type:domain", "type:util"] },
     { "allSourceTags": ["platform:web", "type:data-access"], "onlyDependOnLibsWithTags": ["type:api-client", "type:domain", "type:util"] },
     { "allSourceTags": ["platform:web", "type:ui"], "onlyDependOnLibsWithTags": ["type:ui", "type:domain", "type:util"] },
     { "sourceTag": "type:domain", "onlyDependOnLibsWithTags": ["type:domain", "type:util"], "bannedExternalImports": ["@angular/*", "@nestjs/*", "@prisma/client", "@prisma/*"] },
-    { "sourceTag": "type:util", "onlyDependOnLibsWithTags": ["type:util"] },
+    { "sourceTag": "type:util", "onlyDependOnLibsWithTags": ["type:util"], "bannedExternalImports": ["@nestjs/*", "@prisma/client", "@prisma/*"] },
     { "sourceTag": "type:api-client", "onlyDependOnLibsWithTags": [] },
     { "allSourceTags": ["platform:web", "scope:tasks"], "onlyDependOnLibsWithTags": ["scope:tasks", "scope:core", "scope:shared"] },
+    { "allSourceTags": ["platform:web", "scope:auth"], "onlyDependOnLibsWithTags": ["scope:auth", "scope:core", "scope:shared"] },
     { "allSourceTags": ["platform:web", "scope:groups"], "onlyDependOnLibsWithTags": ["scope:groups", "scope:core", "scope:shared"] },
     { "allSourceTags": ["platform:web", "scope:settings"], "onlyDependOnLibsWithTags": ["scope:settings", "scope:core", "scope:shared"] },
     { "sourceTag": "scope:core", "onlyDependOnLibsWithTags": ["scope:core", "scope:shared"] },
     { "sourceTag": "scope:shared", "onlyDependOnLibsWithTags": ["scope:shared"] },
-    { "allSourceTags": ["platform:web", "scope:app"], "onlyDependOnLibsWithTags": ["scope:core", "scope:tasks", "scope:groups", "scope:settings", "scope:shared"] }
+    { "allSourceTags": ["platform:web", "scope:app"], "onlyDependOnLibsWithTags": ["scope:core", "scope:auth", "scope:tasks", "scope:groups", "scope:settings", "scope:shared"] }
   ]
 }
 ```

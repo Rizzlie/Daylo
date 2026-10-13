@@ -145,7 +145,7 @@ Swagger UI is at `http://localhost:3000/api/docs`, and OpenAPI 3.0 JSON is at `/
 
 ## OpenAPI and generated Angular client
 
-Google OIDC transaction setup, verification and admission are documented in [Google authentication](docs/google-authentication.md). F06-01/F06-02 provide backend Google navigation, token verification and identity/admission persistence. F06-03 adds hashed database sessions, seven-day sliding renewal, session-bound CSRF/origin checks and revoking sign-out. Denied accounts receive safe HTTP 403; admitted callbacks create a `daylo_session` cookie and redirect to fixed `/today` or `/invitations`. The authentication UI and its entry/foreground session calls remain F06-04.
+Google OIDC transaction setup, verification and admission are documented in [Google authentication](docs/google-authentication.md). F06-01/F06-02 provide backend Google navigation, token verification and identity/admission persistence. F06-03 adds hashed database sessions, seven-day sliding renewal, session-bound CSRF/origin checks and revoking sign-out. Admitted callbacks create a `daylo_session` cookie and redirect to fixed `/today` or `/invitations`. F06-04 connects the authentication UI, entry/foreground checks and sign-out. Google navigation errors requested as HTML redirect to fixed login error destinations; non-HTML API clients retain safe JSON errors, including 403 for denied accounts.
 
 Export and validate the specification, then generate Angular models and services with one command from the workspace root:
 
@@ -168,9 +168,52 @@ Generation first builds the offline exporter, exports and validates `docs/api/op
 
 Client generation requires a running Docker engine with Linux containers and access to the workspace bind mount. It uses the official `openapitools/openapi-generator-cli` image pinned to version 7.26.0 and its SHA-256 digest; the first run needs network access to download that image. Java is not required on the host. Generator options pin Angular 22.1.8, RxJS 7.8.2 and TypeScript 6.0.3. Generation stages output under ignored `dist`, publishing only unmodified TypeScript sources, without timestamps, machine paths or generator bookkeeping.
 
-Use the public import `@daylo/web/shared/api-client` from future handwritten data-access libraries. The client includes `AuthenticationService.getCurrentSession()` and `HealthService.getReadiness()`. When wiring the frontend, supply `provideHttpClient()` and `provideApi('')` for same-origin `/api` requests; the generator's standalone default base URL is `http://localhost`. The library is consumed as source and has no publishable package or separate packaging build. Its `typecheck` target compiles all generated services/models with Angular's compiler. Generated templates have narrowly scoped lint style exceptions; Nx boundaries remain enforced.
+Use the public import `@daylo/web/shared/api-client` from handwritten data-access libraries. The client includes `AuthenticationService.getCurrentSession()` and `HealthService.getReadiness()`. Application bootstrap imports `provideAuthentication` directly from `@daylo/web/core/auth/data-access`; that provider configures HttpClient and `provideApi('')` for same-origin `/api` requests. The generator's standalone default base URL is `http://localhost`. The library is consumed as source and has no publishable package or separate packaging build. Its `typecheck` target compiles all generated services/models with Angular's compiler. Generated templates have narrowly scoped lint style exceptions; Nx boundaries remain enforced.
 
-Keep the specification and generated sources in version control, and never edit generated files manually. Regenerate after changing API contracts. No frontend workflow is connected to the client yet.
+Keep the specification and generated sources in version control, and never edit generated files manually. Regenerate after changing API contracts. The auth data-access library now consumes the generated session, CSRF and sign-out services.
+
+## Frontend authentication
+
+The login page lives in `libs/web/auth/features/login`. Application routes lazily
+load it and the protected placeholder shell. Templates read separate named signals;
+`@daylo/web/shared/util-router` exports `injectQueryParamMap()` for shared reactive
+query-parameter access. Reusable session state, guards and providers belong to core
+auth data-access.
+
+Application bootstrap registers `provideAuthSessionLifecycle()` once for protected
+foreground revalidation and session-loss navigation, independently of the shell.
+Protected routes/groups declare `data.authAccess`; public login events preserve
+recovery notices and do not renew sessions.
+
+F06-06 security hardening limits sessions to 30 days from creation while retaining
+the seven-day sliding window. New email-based admission requires Gmail or an
+authoritative Workspace identity; existing active Google subjects remain usable.
+HTTPS uses `__Host-` session/OAuth cookies and ignores old unprefixed credentials,
+so an HTTPS rollout requires one new sign-in. Local development HTTP remains
+compatible. Global API rate limiting, including stricter OAuth policies, is pending
+in [F06-07](docs/tasks/F06-07-global-api-rate-limiting.md). The owner requested
+removing the auth-only throttler; current runtime has no application rate limiter.
+
+The public `/login` screen navigates directly to `/api/auth/google`. Entry/reload checks the real session; active users go to `/today`, pending invitees to `/invitations`. Both destinations contain only a heading and sign-out control until their feature tasks arrive. Protected foreground return rechecks the session without background polling. A detected expired/revoked session redirects to `/login?error=expired` with a durable Polish error; normal anonymous entry and successful sign-out show no expiry error. Connection failures offer retry. Session tokens remain in HttpOnly cookies, and CSRF proof stays in memory.
+
+Run the API and PostgreSQL using the existing instructions. In a separate frontend terminal, explicitly set the frontend port because Angular also honors the `PORT` variable loaded by Nx:
+
+```powershell
+$env:PORT = '4200'
+npm exec nx -- run web:serve --port=4200
+```
+
+Keep `FRONTEND_ORIGIN` and `GOOGLE_CALLBACK_URL` consistent with that frontend origin. Real Google sign-in verification remains F06-05.
+
+Focused auth checks use `npm exec nx -- run-many -t lint,test -p web-core-auth-data-access,web-core-shell,web-auth-feature-login,web-shared-util-router,web`. The ordinary `web-e2e:e2e` target checks the public login error screen without a backend. Its opt-in F06-04 suite uses the actual running frontend/API and PostgreSQL, seeding isolated synthetic sessions rather than adding runtime test authentication. With a migrated disposable database named `daylo_f06_04_*` and a separately running API/frontend configured for it:
+
+```powershell
+$env:F06_UI_BASE_URL = 'http://localhost:4208'
+$env:F06_UI_DATABASE_URL = 'postgresql://daylo_verify:synthetic-f06-04@127.0.0.1:5447/daylo_f06_04_verify'
+npm exec nx -- run web-e2e:e2e
+```
+
+The example database is synthetic; do not point this suite at development or production data. The suite owns only its UUID-scoped user/session fixtures and removes them after each scenario. It covers active/pending routing, reload, real CSRF sign-out, expiry and invalid Google callbacks at desktop/mobile widths. Reusable stack startup and successful controlled-provider browser login fixtures remain F07. Reports, screenshots and traces stay under ignored `dist` paths.
 
 The `web-shared-api-client:check` target exports, validates and generates twice under ignored `dist`, checks determinism, then compares the specification and the entire generated directory byte for byte with source artifacts. It does not rewrite source. A failure lists added, removed and changed files and recommends `npm run api:generate`. Temporary output is removed on success or failure. Avoid running generation and drift checks concurrently.
 

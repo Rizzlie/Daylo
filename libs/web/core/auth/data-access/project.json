@@ -1,0 +1,27 @@
+{
+  "name": "web-core-auth-data-access",
+  "$schema": "../../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/web/core/auth/data-access/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [
+    "platform:web",
+    "scope:core",
+    "type:data-access",
+    "capability:auth-bootstrap"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "coverage/libs/web/core/auth/data-access"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

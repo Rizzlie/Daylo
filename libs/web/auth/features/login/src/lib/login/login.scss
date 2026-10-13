@@ -1,0 +1,62 @@
+
+:host {
+  display: block;
+}
+
+.shell {
+  display: grid;
+  min-height: 100svh;
+  box-sizing: border-box;
+  place-items: center;
+  padding: var(--daylo-space-lg);
+}
+
+.surface {
+  width: 100%;
+  max-width: 32rem;
+  box-sizing: border-box;
+  padding: var(--daylo-space-xl);
+  border-radius: var(--daylo-radius-card);
+  background: var(--daylo-surface);
+  box-shadow: var(--daylo-shadow-card);
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  margin: 0 0 var(--daylo-space-lg);
+  font: var(--mat-sys-display-small);
+}
+
+h2 {
+  margin: 0 0 var(--daylo-space-lg);
+  font: var(--mat-sys-title-large);
+}
+
+p {
+  margin: 0 0 var(--daylo-space-lg);
+  font: var(--mat-sys-body-large);
+}
+
+.error {
+  color: var(--mat-sys-error);
+}
+
+a,
+button {
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 4px;
+}
+
+@media (width < 768px) {
+  .shell {
+    padding: var(--daylo-space-md);
+  }
+
+  .surface {
+    padding: var(--daylo-space-lg);
+  }
+}

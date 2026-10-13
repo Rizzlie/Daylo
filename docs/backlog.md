@@ -1,10 +1,25 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-12. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-13. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 and F06-07 through F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
 
-### Acceptance reconciliation — 2026-10-12
+### Authentication delivery acceptance — 2026-10-13
+
+The owner stated "a okej, akceptuje zakres prac" after reviewing the current auth
+implementation and security corrections. This closes the delivered F06-04 frontend
+authentication scope and final F06-06 email-authority, 30-day session-cap and HTTPS
+cookie scope. The auth-only limiter remains removed by owner decision; AUTH-03 is
+open and F06-07 global rate limiting remains pending. F06-05 real Google smoke and
+F06-08 through F06-12 remain pending, as do recorded deployment/verification gaps.
+Parent F06 is not complete. Earlier dated pending-acceptance statements for these
+two delivered tasks are superseded. No application change, commit, publication or
+later task implementation was authorized by acceptance.
+
+Retrospective: record acceptance of the final bounded scope without converting
+deferred security work or unavailable verification into completed work.
+
+### Historical acceptance reconciliation — 2026-10-12
 
 The owner explicitly accepted previously implemented tasks: "zrobiliśmy je, ale nie zaakceptowałem po implementacji, akceptuje je oczywiscie". This records delivery acceptance for F01-02, F01-03, F01-05, F02-01, F02-02, F03-01 and F03-02, plus the already delivered global theme slice. Prior acceptance of F01-01, the simplified F01-04, F04-01 and F04-02 is preserved. Task files and the index now agree; F02/F03 acceptance dates in the index are reconciled to this explicit confirmation rather than their implementation dates.
 
@@ -13,6 +28,100 @@ F02, F03 and F04 are closed and owner-accepted. All delivered F01 scopes are acc
 The dated delivery records below preserve historical verification and acceptance state at delivery time; their pending-acceptance statements are superseded by this reconciliation and the F04-01/F04-02 acceptance records. No application files were changed or checks rerun for this documentation update. No commit or subsequent implementation is authorized.
 
 Retrospective: reconcile task files, index and parent backlog when recording acceptance. Keep delivery dates, explicit acceptance dates and verification limitations separate; do not infer completed checks from owner approval.
+
+### Additional security backlog — 2026-10-13
+
+The owner requested backlog registration for the remaining audit recommendations.
+All items below are pending, with assumptions, scope, acceptance criteria,
+verification and unresolved policy decisions in their own task files:
+
+| Task | Planned outcome |
+| --- | --- |
+| [F06-08](tasks/F06-08-pkce-for-google-oidc.md) | Add transaction-bound S256 PKCE while preserving existing OIDC defenses |
+| [F06-09](tasks/F06-09-production-security-headers.md) | Apply and validate security headers/CSP on the actual frontend and API serving paths |
+| [F06-10](tasks/F06-10-auth-security-event-logging.md) | Add structured redacted security events with agreed retention and operational handling |
+| [F06-11](tasks/F06-11-expired-auth-record-cleanup.md) | Periodically remove eligible expired auth records safely and in bounded batches |
+| [F06-12](tasks/F06-12-security-dependency-review.md) | Review current advisories/reachability and perform separately approved compatible remediation |
+
+Global API rate limiting remains the existing F06-07 task. Before public exposure,
+prioritize it, production headers and reachable dependency findings; discuss the
+remaining work's order and dependencies rather than inferring implementation
+authorization. This update changes documentation only and does not accept F06.
+
+Retrospective: give each security concern a bounded task and explicit verification;
+keep deployment decisions, implementation status and scanner evidence separate.
+
+### F06-04 delivery — 2026-10-13
+
+F06-06 follow-up: Owner-authorized authentication security hardening is implemented
+and locally verified, pending acceptance. New admission checks Google email authority;
+sessions have a 30-day absolute cap; HTTPS
+cookies use host-prefixed names. All 277 relevant tests, fourteen real-stack E2E
+cases, lint, builds and contract checks passed. Browser review passed after a fresh
+preview tab resolved snapshot failures. Deployment-wide quotas and other recorded
+audit recommendations remain open. See [F06-06](tasks/F06-06-authentication-security-hardening.md).
+
+Owner scope correction: Auth-only throttling was removed and its dependency and
+contract entries withdrawn. AUTH-03 remains open. Global protection for public and
+authenticated API routes, with stricter expensive-route overrides, is now the
+separate pending [F06-07 task](tasks/F06-07-global-api-rate-limiting.md). Its budgets,
+proxy/storage policy and implementation require discussion and authorization.
+
+Implemented the owner-confirmed frontend authentication scope: login, real
+entry/reload and protected foreground session checks, empty active/pending route
+screens, safe errors/retry and in-memory CSRF sign-out. Detected expiry redirects
+to login with a visible error that survives reload, as explicitly requested.
+HTML Google-navigation failures now redirect to fixed login error destinations;
+non-HTML API errors remain unchanged. No feature content or dependencies were added.
+
+Local lint, 19 frontend tests, 115 ordinary API regression tests, both production
+builds and contract generation/drift checks passed. Ten real-stack Playwright
+desktop/mobile cases passed with isolated PostgreSQL, including CSRF revocation,
+pending restrictions, reload and expiry. Four automated login screenshots were
+visually inspected. T3 DOM/navigation/resource checks passed; independent T3
+visual/screenshot and console inspection remain incomplete because snapshots
+failed. Real Google sign-in remains F06-05, and managed browser/provider fixtures
+remain F07. Full-stack UI cases are opt-in; hosted CI was not run.
+
+Owner acceptance is pending. F06 remains incomplete, and subsequent work is not
+authorized. See [F06-04](tasks/F06-04-frontend-authentication.md).
+
+Retrospective: use production-consistent CSRF fixtures, set Angular's PORT
+explicitly, verify observed browser state after tool actions and distinguish
+automated screenshots from independent browser verification.
+
+Owner-requested revision: The frontend is now declarative, using `rxResource`,
+computed session/view models, an explicit sign-out stream and separate routing
+rules. Twenty-five frontend tests, the web production build and ten real-stack
+desktop/mobile E2E cases passed. Independent T3 snapshots, UI interaction and
+console/resource inspection now passed, resolving the initial F06-04 browser
+limitation. Acceptance remains pending. Prefer resources and derived state over
+manual synchronization of several writable signals; keep mutation/router side
+effects at explicit boundaries. See the task's revision record for details.
+
+Auth ownership review: Reusable guards and redirect rules now belong to auth;
+bootstrap imports its provider directly, without a shell proxy. A narrow Nx
+auth-bootstrap capability permits that composition import. All routed components
+are lazy; guards retain permitted unrelated/parameterized destinations. Thirty-three
+frontend tests, production build, ten real-stack E2E cases and independent browser
+checks passed. The frontend architecture records the owner-approved conventions.
+Owner acceptance remains pending.
+
+Login ownership/readability follow-up: Login is now a separate lazy auth feature;
+the app composes its route and the protected shell destinations. Templates use
+named signals, and shared `injectQueryParamMap()` removes repeated route-signal
+setup. Forty-four frontend tests, affected lint, production build and ten real-stack
+E2E cases passed. Independent desktop/mobile visual, console and lazy-resource
+checks passed after initial snapshot failures. Owner acceptance remains pending.
+Keep screen ownership, app composition and reusable router/auth logic explicit.
+
+Auth lifecycle follow-up: Application-level auth now owns foreground checks and
+session-loss/sign-out navigation, independent of mounted feature components.
+Public recovery notices remain unchanged on foreground return; protected route
+metadata selects access policy. Shell preserves the owner's greeting and displays
+session state only. Fifty-five frontend tests, lint, production build and twelve
+real-stack E2E cases passed; independent mobile/desktop inspection confirmed expiry
+navigation and public-page request suppression. Owner acceptance remains pending.
 
 ### Authorized F01-01 Angular shell completion — 2026-10-05
 

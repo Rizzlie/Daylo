@@ -34,7 +34,7 @@ export class CurrentSessionController {
   @Header('Cache-Control', 'no-store')
   @ApiOperation({
     operationId: 'getCurrentSession', summary: 'Get and renew the current Daylo session',
-    description: 'Returns active or pending identity and renews a still-valid session and its cookie for seven days. Missing, expired or revoked sessions return 401 and cannot be renewed. Call on application entry and foreground return; do not poll to keep sessions alive.',
+    description: 'Returns active or pending identity and renews a still-valid session and its cookie for seven days, capped at 30 days from session creation. Missing, expired or revoked sessions return 401 and cannot be renewed. Call on application entry and foreground return; do not poll to keep sessions alive.',
   })
   @ZodResponse({
     status: 200, description: 'Current identity; session expiry and cookie renewed.', type: CurrentSessionResponseDto,

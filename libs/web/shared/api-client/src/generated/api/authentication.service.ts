@@ -182,7 +182,7 @@ export class AuthenticationService extends BaseService {
 
     /**
      * Get and renew the current Daylo session
-     * Returns active or pending identity and renews a still-valid session and its cookie for seven days. Missing, expired or revoked sessions return 401 and cannot be renewed. Call on application entry and foreground return; do not poll to keep sessions alive.
+     * Returns active or pending identity and renews a still-valid session and its cookie for seven days, capped at 30 days from session creation. Missing, expired or revoked sessions return 401 and cannot be renewed. Call on application entry and foreground return; do not poll to keep sessions alive.
      * @endpoint get /api/auth/session
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.

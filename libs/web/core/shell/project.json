@@ -1,0 +1,26 @@
+{
+  "name": "web-core-shell",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/web/core/shell/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [
+    "platform:web",
+    "scope:core",
+    "type:feature"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "coverage/libs/web/core/shell"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

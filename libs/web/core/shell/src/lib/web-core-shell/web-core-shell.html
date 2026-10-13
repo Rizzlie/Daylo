@@ -1,0 +1,19 @@
+<main class="shell" aria-labelledby="daylo-heading">
+  <section class="surface">
+    <h1 id="daylo-heading" tabindex="-1">Daylo</h1>
+    @if (isLoading()) {
+      <p role="status">Sprawdzanie sesji…</p>
+    } @else {
+      <h2>{{ heading() }}</h2>
+      <p>Cześć, {{ user()?.displayName }}</p>
+
+      @if (signOutFailed()) {
+        <p class="error" role="alert">Nie udało się wylogować. Spróbuj ponownie.</p>
+      }
+
+      <button matButton="outlined" [disabled]="signingOut()" (click)="signOut()">
+        {{ signOutLabel() }}
+      </button>
+    }
+  </section>
+</main>

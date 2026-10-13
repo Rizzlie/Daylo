@@ -5,8 +5,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { SessionStore, StoredSession } from '@daylo/api/auth/data-access';
 import type { Request, Response } from 'express';
+import { authCookieName, authCookieOptions, readAuthCookie, SESSION_COOKIE } from './auth-cookie';
 
-export const SESSION_COOKIE = 'daylo_session';
+export { SESSION_COOKIE } from './auth-cookie';
 export const SESSION_SECONDS = 7 * 24 * 60 * 60;
 export const CSRF_HEADER = 'X-CSRF-Token';
 const validToken = (value: unknown): value is string =>
@@ -17,10 +18,8 @@ const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 const csrfValue = (token: string) => createHmac('sha256', token)
   .update('daylo:session-csrf:v1').digest('base64url');
 
-export function sessionCookie(request: Request): string | undefined {
-  const matches = (request.headers.cookie ?? '').split(';')
-    .map((part) => part.trim()).filter((part) => part.startsWith(`${SESSION_COOKIE}=`));
-  const value = matches.length === 1 ? matches[0].slice(SESSION_COOKIE.length + 1) : undefined;
+function sessionCookie(request: Request, name: string): string | undefined {
+  const value = readAuthCookie(request.headers.cookie, name);
   return validToken(value) ? value : undefined;
 }
 
@@ -32,14 +31,15 @@ export class SessionService {
   ) {}
 
   private cookieOptions() {
-    const origin = new URL(this.config.getOrThrow<string>('runtime.frontendOrigin'));
-    const localHttp = this.config.getOrThrow<string>('runtime.environment') === 'development'
-      && origin.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname);
-    return { httpOnly: true, sameSite: 'lax' as const, secure: !localHttp, path: '/' };
+    return authCookieOptions(this.config);
+  }
+
+  private cookieName() {
+    return authCookieName(SESSION_COOKIE, this.config);
   }
 
   private setCookie(response: Response, token: string, expiresAt: Date): void {
-    response.cookie(SESSION_COOKIE, token, { ...this.cookieOptions(), expires: expiresAt });
+    response.cookie(this.cookieName(), token, { ...this.cookieOptions(), expires: expiresAt });
   }
 
   private async database<T>(operation: () => Promise<T>): Promise<T> {
@@ -50,7 +50,7 @@ export class SessionService {
   async issue(userId: string, request: Request, response: Response): Promise<void> {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + SESSION_SECONDS * 1000);
-    const previous = sessionCookie(request);
+    const previous = sessionCookie(request, this.cookieName());
     await this.database(() => this.store.create({
       userId, tokenHash: hash(token), csrfTokenHash: hash(csrfValue(token)), expiresAt,
     }, previous ? hash(previous) : undefined));
@@ -58,24 +58,24 @@ export class SessionService {
   }
 
   async authenticate(request: Request, response: Response): Promise<StoredSession> {
-    const token = sessionCookie(request);
+    const token = sessionCookie(request, this.cookieName());
     const session = token
       ? await this.database(() => this.store.findValid(hash(token), new Date())) : null;
     if (!session) {
-      response.clearCookie(SESSION_COOKIE, this.cookieOptions());
+      response.clearCookie(this.cookieName(), this.cookieOptions());
       throw new UnauthorizedException();
     }
     return session;
   }
 
   async renew(request: Request, response: Response): Promise<StoredSession> {
-    const token = sessionCookie(request);
+    const token = sessionCookie(request, this.cookieName());
     const now = new Date();
     const session = token ? await this.database(() => this.store.renew(
       hash(token), now, new Date(now.getTime() + SESSION_SECONDS * 1000),
     )) : null;
     if (!session || !token) {
-      response.clearCookie(SESSION_COOKIE, this.cookieOptions());
+      response.clearCookie(this.cookieName(), this.cookieOptions());
       throw new UnauthorizedException();
     }
     this.setCookie(response, token, session.expiresAt);
@@ -83,7 +83,7 @@ export class SessionService {
   }
 
   csrf(request: Request, session: StoredSession): string {
-    const token = sessionCookie(request);
+    const token = sessionCookie(request, this.cookieName());
     if (!token) throw new UnauthorizedException();
     const value = csrfValue(token);
     if (!this.matchesCsrf(value, session.csrfTokenHash)) throw new ForbiddenException();
@@ -104,6 +104,6 @@ export class SessionService {
 
   async signOut(session: StoredSession, response: Response): Promise<void> {
     await this.database(() => this.store.revoke(session.id));
-    response.clearCookie(SESSION_COOKIE, this.cookieOptions());
+    response.clearCookie(this.cookieName(), this.cookieOptions());
   }
 }
