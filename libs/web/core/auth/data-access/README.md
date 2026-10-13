@@ -13,6 +13,11 @@ redirect decisions. `AuthSessionLifecycle` owns foreground checks and navigation
 on session loss/sign-out independently of any mounted shell or feature.
 Business mutation workflows remain in their own tasks.
 
+HTTP 429 is separate from session expiry. Session checks select the fixed
+`rate-limit` login notice; rate-limited CSRF/sign-out leaves the active session
+and protected screen available. Recovery follows a user action, without an
+automatic retry loop.
+
 Application bootstrap imports `provideAuthentication` directly from
 `@daylo/web/core/auth/data-access` and registers `provideAuthSessionLifecycle()`
 once alongside `provideRouter`. Keeping lifecycle registration explicit allows

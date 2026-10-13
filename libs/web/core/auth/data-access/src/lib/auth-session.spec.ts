@@ -164,4 +164,25 @@ describe('authentication session', () => {
     });
     expect(auth.status()).toBe('unknown');
   });
+
+  it('keeps a rate-limited sign-out session active and allows an explicit retry', async () => {
+    await loadActiveSession();
+    auth.signOut();
+    http.expectOne('/api/auth/csrf').flush({}, { status: 429, statusText: 'Too Many Requests' });
+    expect(auth.state()).toEqual({ status: 'active', user });
+    expect(auth.signOutRateLimited()).toBe(true);
+    expect(auth.signOutFailed()).toBe(false);
+    http.expectNone('/api/auth/sign-out');
+    auth.signOut();
+    http.expectOne('/api/auth/csrf').flush({ csrfToken: 'transient-proof' });
+    http.expectOne('/api/auth/sign-out').flush(null);
+    expect(auth.state()).toEqual({ status: 'anonymous', reason: 'signed-out' });
+  });
+
+  it('reports a rate-limited session check without expiry or an automatic retry', async () => {
+    const checked = firstValueFrom(auth.refresh());
+    await vi.waitFor(() => http.expectOne('/api/auth/session').flush({}, { status: 429, statusText: 'Too Many Requests' }));
+    expect(await checked).toEqual({ status: 'error', reason: 'rate-limit' });
+    http.expectNone('/api/auth/session');
+  });
 });

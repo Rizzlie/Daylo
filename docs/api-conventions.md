@@ -38,6 +38,7 @@ The foundation codes and status semantics are:
 | 403 | `ACCESS_FORBIDDEN` | The authenticated account lacks application access or a mutation fails origin/CSRF checks. |
 | 404 | `RESOURCE_NOT_FOUND` | The resource does not exist or is intentionally hidden from this actor. |
 | 409 | `VERSION_CONFLICT` | The supplied resource version conflicts with the current version. |
+| 429 | `RATE_LIMIT_EXCEEDED` | A per-IP API request budget is exhausted; retry after the indicated delay. |
 | 500 | `INTERNAL_SERVER_ERROR` | An unexpected failure occurred, including an invalid declared response. |
 | 503 | `SERVICE_UNAVAILABLE` | A required service, such as PostgreSQL readiness, is unavailable. |
 
@@ -56,9 +57,25 @@ redirects to fixed `/today` (active) or `/invitations` (pending). Transport/pers
 failures return safe 503. These frontend screens remain F06-04. See
 [Google authentication](google-authentication.md).
 
-Global API rate limiting is deferred to [F06-07](tasks/F06-07-global-api-rate-limiting.md).
-The owner requested removing the auth-only limiter and its 429 contract; OAuth
-currently has no application request quota.
+Global API rate limiting is implemented by [F06-07](tasks/F06-07-global-api-rate-limiting.md)
+using `@nestjs/throttler`. Every API request shares the direct-peer IP's common
+budgets of 20 requests per 10 seconds and 120 per 60 seconds across routes.
+This includes readiness, Swagger/OpenAPI middleware, OPTIONS and unknown routes.
+Google start and callback have separate additional budgets of 5 and 10 per
+60 seconds respectively. GET and HEAD navigation share their route budget.
+Admission precedes session/database work; public status does not exempt a route.
+
+Rejected API calls return the existing error envelope with HTTP 429,
+`RATE_LIMIT_EXCEEDED`, `Retry-After` in integer seconds and `Cache-Control: no-store`.
+They do not clear session/OAuth cookies or revoke sessions. Counters use fixed
+windows starting with a key's first request; rejected traffic does not extend
+the deadline. The single-instance local store holds at most 10,000 hashed
+counter keys, expires unused entries periodically and fails closed at capacity.
+At capacity, a new key receives 429 with a one-second retry hint for cleanup;
+live counters are not evicted. A restart resets counters. Forwarding headers,
+cookies and caller-supplied identities cannot select a counter; the local proxy
+therefore shares a peer-IP budget. Hosting and shared counters require a separate
+deployment decision before running multiple instances.
 
 The opaque session cookie is `__Host-daylo_session` on HTTPS (`daylo_session` on
 local development HTTP): 32 random bytes encoded as base64url,
@@ -146,9 +163,13 @@ source-preserving drift checks remain the contract pipeline.
 For GET `/api/auth/google` and `/api/auth/google/callback` requests accepting
 `text/html`, errors redirect with 302 to the configured frontend origin's fixed
 `/login` path. The allowlisted `error` reason is `denied` for 403, `connection`
-for infrastructure/server failure and `failed` for other authentication or query
+for infrastructure/server failure, `rate-limit` for quota exhaustion and `failed` for other authentication or query
 failures. Redirects carry no provider details, identity, authorization code or
 caller-supplied destination. They use no-store and no-referrer headers. Requests
 without HTML acceptance retain the documented JSON status/error envelopes.
 The frontend maps only known reasons to fixed Polish copy and never renders
 arbitrary query text.
+HTML quota failures retain `Retry-After` on their 302 redirect. The login screen
+provides a fixed Polish rate-limit notice and an explicit retry action without
+automatic retries. A rate-limited session check uses this notice, not expiry;
+a rate-limited sign-out keeps the protected screen/session available for retry.

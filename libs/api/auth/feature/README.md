@@ -9,7 +9,8 @@ verifies the signed identity and passes admission through Users/Groups contracts
 wired at the application root. Denied identities receive safe 403 without profile
 writes. New admission requires Gmail or verified Workspace email authority;
 existing active subjects remain eligible even with an external email. Global API
-rate limiting is deferred to F06-07; auth has no independent limiter.
+rate limiting is owned by application composition (F06-07): common API budgets
+and separate Google-start/callback budgets are enforced before costly work.
 Admitted identities receive a new opaque `__Host-daylo_session` cookie
 on HTTPS (`daylo_session` on development HTTP) and a fixed
 `/today` or `/invitations` redirect. No Google tokens are retained.

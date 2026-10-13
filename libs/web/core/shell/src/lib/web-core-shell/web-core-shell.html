@@ -7,7 +7,9 @@
       <h2>{{ heading() }}</h2>
       <p>Cześć, {{ user()?.displayName }}</p>
 
-      @if (signOutFailed()) {
+      @if (signOutRateLimited()) {
+        <p class="error" role="alert">Zbyt wiele żądań. Spróbuj ponownie za chwilę.</p>
+      } @else if (signOutFailed()) {
         <p class="error" role="alert">Nie udało się wylogować. Spróbuj ponownie.</p>
       }
 

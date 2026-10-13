@@ -31,6 +31,7 @@ describe('login page', () => {
   afterEach(() => http.verify());
 
   it.each([
+    ['rate-limit', 'Zbyt wiele żądań. Spróbuj ponownie za chwilę.', 'Spróbuj ponownie'],
     ['expired', 'Sesja wygasła. Zaloguj się ponownie.', 'Zaloguj się przez Google'],
     ['denied', 'Nie masz dostępu do Daylo.', 'Zaloguj się przez Google'],
     ['failed', 'Nie udało się zalogować. Spróbuj ponownie.', 'Zaloguj się przez Google'],

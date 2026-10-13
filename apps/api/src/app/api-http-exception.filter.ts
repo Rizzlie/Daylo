@@ -44,6 +44,10 @@ const statusDefaults: Record<number, Pick<HttpErrorResponse, 'code' | 'message'>
     code: HTTP_ERROR_CODES.versionConflict,
     message: 'Resource version conflict',
   },
+  [HttpStatus.TOO_MANY_REQUESTS]: {
+    code: HTTP_ERROR_CODES.rateLimitExceeded,
+    message: 'Too many requests',
+  },
   [HttpStatus.SERVICE_UNAVAILABLE]: {
     code: HTTP_ERROR_CODES.serviceUnavailable,
     message: 'Service unavailable',
@@ -67,12 +71,15 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse<unknown>();
     const request = host.switchToHttp().getRequest<Request>();
     const path = request.path;
+    if (status === HttpStatus.TOO_MANY_REQUESTS) {
+      this.adapterHost.httpAdapter.setHeader(response, 'Cache-Control', 'no-store');
+    }
     const origin = this.config?.get<string>('runtime.frontendOrigin');
     if (origin && request.method === 'GET' &&
-        ['/api/auth/google', '/api/auth/google/callback'].includes(path) &&
+        ['/api/auth/google', '/api/auth/google/callback'].includes(path.replace(/\/+$/, '').toLowerCase()) &&
         request.get('accept')?.includes('text/html')) {
       // Fixed destinations and allowlisted reasons never expose provider data.
-      const reason = status === 403 ? 'denied' : status >= 500 ? 'connection' : 'failed';
+      const reason = status === 429 ? 'rate-limit' : status === 403 ? 'denied' : status >= 500 ? 'connection' : 'failed';
       this.adapterHost.httpAdapter.setHeader(response, 'Cache-Control', 'no-store');
       this.adapterHost.httpAdapter.setHeader(response, 'Referrer-Policy', 'no-referrer');
       this.adapterHost.httpAdapter.redirect(response, 302, new URL(`/login?error=${reason}`, origin).href);

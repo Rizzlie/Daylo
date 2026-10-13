@@ -9,6 +9,7 @@ import { PrismaService } from '@daylo/api/core/database';
 import { OAuth2Client } from 'google-auth-library';
 import { ApiHttpModule } from './api-http.module';
 import { AppModule } from './app.module';
+import { BoundedThrottlerStorage } from './rate-limiting/bounded-throttler-storage';
 
 const databaseUrl = process.env['F06_TEST_DATABASE_URL'];
 const enabled = process.env['RUN_F06_DATABASE_INTEGRATION'] === 'true';
@@ -120,6 +121,7 @@ describe.skipIf(!enabled || !databaseUrl)(
     });
 
     beforeEach(() => {
+      app.get(BoundedThrottlerStorage).clear();
       exchanges = 0;
       providerIdentity = { sub: 'synthetic-subject', email: 'synthetic@example.test' };
     });

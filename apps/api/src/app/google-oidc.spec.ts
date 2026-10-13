@@ -18,6 +18,7 @@ import { INVITATION_ADMISSION } from '@daylo/api/groups/contracts';
 import { AppModule } from './app.module';
 import { OAuth2Client } from 'google-auth-library';
 import { ApiHttpModule } from './api-http.module';
+import { BoundedThrottlerStorage } from './rate-limiting/bounded-throttler-storage';
 import { createOpenApiDocument } from './openapi';
 
 const clientId = 'synthetic.apps.googleusercontent.com';
@@ -182,6 +183,7 @@ describe('Google OIDC HTTP flow', () => {
   });
 
   beforeEach(() => {
+    app.get(BoundedThrottlerStorage).clear();
     rows.clear();
     tokenOverrides = {};
     omittedClaim = undefined;
@@ -269,6 +271,20 @@ describe('Google OIDC HTTP flow', () => {
     expect(response.headers.get('set-cookie')).not.toContain('Secure');
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+  });
+
+  it('completes a verified callback after the separate Google-start budget is exhausted', async () => {
+    for (let index = 0; index < 4; index++) await start();
+    const { state, cookie } = await start();
+    const blocked = await fetch(`${baseUrl}/api/auth/google`, { redirect: 'manual' });
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get('set-cookie')).toBeNull();
+    expect(rows.size).toBe(5);
+    const response = await callback(state, cookie);
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('http://localhost:4200/today');
+    expect(tokenRequests).toBe(1);
+    expect(rows.size).toBe(4);
   });
 
   it('verifies a signed token, consumes the attempt, clears binding and issues a session cookie', async () => {
@@ -481,6 +497,7 @@ describe('Google OIDC HTTP flow', () => {
       '400',
       '401',
       '403',
+      '429',
       '503',
     ]);
     expect(complete.responses['403'].content['application/json'].example).toEqual({

@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import { test, expect, type Page } from '@playwright/test';
+import { waitForApiBudget } from './support/rate-limit-budget';
 
 const databaseUrl = process.env['F06_UI_DATABASE_URL'];
 const baseUrl = process.env['F06_UI_BASE_URL'] ?? '';
@@ -14,6 +15,10 @@ test.describe('real-stack authentication screens', () => {
   // eslint-disable-next-line playwright/no-skipped-test -- Explicit opt-in keeps real database fixtures out of shell-only CI until F07 owns stack startup.
   test.skip(!enabled, 'Requires an explicitly running real stack and isolated F06 UI database');
   let pool: Pool;
+  test.beforeEach(async ({ request }) => {
+    test.setTimeout(90_000);
+    await waitForApiBudget(request);
+  });
   test.beforeAll(() => {
     if (!databaseUrl || !/^\/daylo_f06_04_[a-z0-9_]+$/.test(new URL(databaseUrl).pathname)) throw new Error('An isolated daylo_f06_04_* database is required');
     pool = new Pool({ connectionString: databaseUrl });

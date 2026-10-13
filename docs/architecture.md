@@ -169,6 +169,15 @@ Expose REST endpoints under `/api`. Provide Swagger UI at `/api/docs` and OpenAP
 
 Each operation declares a stable English `operationId`, tag, request/response schemas, status codes, and authentication requirements.
 
+F06-07 adds application-owned common per-IP admission using `@nestjs/throttler`
+before session/database work. Local single-instance counters are bounded and
+expire in memory; forwarding headers are not trusted. API routes, readiness,
+documentation middleware and preflight share 120-per-minute and 20-per-10-second
+budgets, with separate additional Google-start (5/minute) and callback (10/minute)
+budgets. HTTP 429/Retry-After and fixed browser recovery are recorded in
+[API conventions](api-conventions.md). Restart resets quotas; future hosting,
+trusted proxies and multiple instances require revisiting this local policy.
+
 Start with OpenAPI 3.0 for client compatibility. Document cookie authentication and the CSRF header. OAuth navigation uses browser redirects, not generated HTTP service calls.
 
 ### Authorization and errors

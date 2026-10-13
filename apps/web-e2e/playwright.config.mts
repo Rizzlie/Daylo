@@ -10,6 +10,8 @@ const preset = nxE2EPreset(import.meta.dirname, {
 export default defineConfig({
   ...preset,
   reporter: [['list'], ...preset.reporter],
+  // The local proxy deliberately shares one per-IP budget across browser contexts.
+  workers: process.env['F06_UI_DATABASE_URL'] ? 1 : undefined,
   use: {
     baseURL: process.env['F06_UI_BASE_URL'] ?? 'http://localhost:4200',
     trace: 'retain-on-failure',

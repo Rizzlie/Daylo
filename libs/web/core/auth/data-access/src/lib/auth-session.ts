@@ -24,7 +24,7 @@ import {
   isSessionResult,
 } from './auth-session.model';
 
-type SignOutState = 'idle' | 'loading' | 'signed-out' | 'expired' | 'failed';
+type SignOutState = 'idle' | 'loading' | 'signed-out' | 'expired' | 'failed' | 'rate-limited';
 const REQUEST_TIMEOUT_MS = 15_000;
 
 function isUnauthorized(error: unknown): boolean {
@@ -57,7 +57,10 @@ export class AuthSession {
 
   readonly state = computed<SessionState>(() => {
     if (this.sessionResource.isLoading()) return { status: 'loading' };
-    if (this.sessionResource.error()) return { status: 'error' };
+    const error = this.sessionResource.error();
+    if (error) return error instanceof HttpErrorResponse && error.status === 429
+      ? { status: 'error', reason: 'rate-limit' }
+      : { status: 'error' };
     return this.sessionResource.hasValue()
       ? this.sessionResource.value()
       : { status: 'unknown' };
@@ -82,6 +85,7 @@ export class AuthSession {
 
   readonly signingOut = computed(() => this.signOutState() === 'loading');
   readonly signOutFailed = computed(() => this.signOutState() === 'failed');
+  readonly signOutRateLimited = computed(() => this.signOutState() === 'rate-limited');
 
   refresh(): Observable<SessionResult> {
     return defer(() => {
@@ -116,7 +120,8 @@ export class AuthSession {
       )),
       map((): SignOutState => 'signed-out'),
       catchError((error: unknown) => of<SignOutState>(
-        isUnauthorized(error) ? 'expired' : 'failed',
+        isUnauthorized(error) ? 'expired'
+          : error instanceof HttpErrorResponse && error.status === 429 ? 'rate-limited' : 'failed',
       )),
     );
   }

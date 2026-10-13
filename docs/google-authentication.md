@@ -41,6 +41,14 @@ Navigate
 the browser to `http://localhost:4200/api/auth/google`. Angular proxies the request
 and callback to NestJS; use the same host throughout the flow.
 
+F06-07 protects all API requests with common per-peer-IP budgets of 120/minute
+and 20/10 seconds. Google start additionally allows 5/minute; callback has its
+own 10/minute budget. The local proxy shares an IP counter. A rejected HTML
+navigation returns to `/login?error=rate-limit` with the fixed recovery notice;
+JSON callers receive 429 and `Retry-After`. Rejection neither creates an OAuth
+transaction nor clears an existing binding/session cookie. Wait for recovery
+and retry explicitly. See [API conventions](api-conventions.md).
+
 The backend requests `openid email profile`, online access, random state and nonce.
 The ten-minute browser-binding cookie is named `__Host-daylo_oauth_browser` on
 HTTPS: Secure, HttpOnly, SameSite=Lax, Path=/, without Domain. Loopback development

@@ -5,6 +5,7 @@ export const HTTP_ERROR_CODES = {
   accessForbidden: 'ACCESS_FORBIDDEN',
   internalServerError: 'INTERNAL_SERVER_ERROR',
   resourceNotFound: 'RESOURCE_NOT_FOUND',
+  rateLimitExceeded: 'RATE_LIMIT_EXCEEDED',
   serviceUnavailable: 'SERVICE_UNAVAILABLE',
   validationError: 'VALIDATION_ERROR',
   versionConflict: 'VERSION_CONFLICT',
