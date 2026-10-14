@@ -1,8 +1,40 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-14. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. F07-01 is implemented, locally verified and owner-accepted on 2026-10-14; F07-02 remains pending, so parent F07 is incomplete. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-14. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. F07-01 and F07-02 are implemented, locally verified and owner-accepted on 2026-10-14; parent F07 is closed with recorded verification limits. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### F07-02 authentication E2E delivery and acceptance — 2026-10-14
+
+Implemented reusable OAuth actor/context and browser-clock fixtures, eight new
+authentication scenarios per desktop/mobile project and reuse in the provider
+environment smoke. Acceptance cases cover owner/member/invited access, outsider
+denial, reload, pending-route restrictions, real-CSRF sign-out, independent sessions
+of the same account and deterministic sliding/absolute expiry with independent
+session preservation. Exact session hashes constrain database operations and cleanup.
+
+All 40 real-stack desktop/mobile cases passed in 8.3 minutes, along with E2E lint
+and typecheck without warnings. Existing build and OpenAPI/client checks passed;
+unchanged build outputs were reused where applicable. Independent browser inspection
+covered access/recovery, keyboard navigation, desktop dark/mobile light layouts,
+storage and diagnostics. Every run recorded successful cleanup; no run-owned
+container remained. See [F07-02](tasks/F07-02-authentication-e2e-fixtures.md).
+
+No active-only business API endpoint exists yet; its direct resource-denial E2E
+remains for the corresponding features. Existing session-guard tests retain that
+policy coverage. Hosted CI/Linux, real Google, deployed HTTPS and pinned Node patch
+verification remain unverified. Complete focus-state review remains outside this
+fixture delivery. No product runtime, dependency, migration or contract changed.
+
+The owner accepted completion and explicitly authorized ready-for-review PR
+publication with "jak skończysz masz moją akceptacje, wystaw i opublikuj PR (nie
+jako draft, ale jako ready for review)". Final verification and cleanup passed;
+F07-02 and parent F07 are closed with the recorded limits. No merge, deployment or
+subsequent task is authorized.
+
+Retrospective: send session probes through Chromium for Secure loopback cookies,
+recognize HTML quota redirects, keep time/database controls scoped and compile
+fixture support before stack startup.
 
 ### F07-01 isolated E2E environment acceptance - 2026-10-14
 

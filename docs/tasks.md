@@ -82,7 +82,7 @@ Task discussions remain **not started** unless their individual records state ot
 | Task | Title | Delivery status |
 | --- | --- | --- |
 | [F07-01](tasks/F07-01-isolated-e2e-environment.md) | Isolated real-stack E2E environment | Closed: implemented, locally verified and owner-accepted on 2026-10-14; six infrastructure tests, 24 real-stack desktop/mobile E2E cases and independent browser inspection passed; [draft PR #26](https://github.com/Rizzlie/Daylo/pull/26); recorded verification limits remain |
-| [F07-02](tasks/F07-02-authentication-e2e-fixtures.md) | Authentication E2E and browser fixtures | Pending |
+| [F07-02](tasks/F07-02-authentication-e2e-fixtures.md) | Authentication E2E and browser fixtures | Closed: implemented, locally verified and owner-accepted on 2026-10-14; 40 real-stack desktop/mobile cases, E2E lint/typecheck and independent browser inspection passed; recorded limits remain |
 
 ### M01
 
