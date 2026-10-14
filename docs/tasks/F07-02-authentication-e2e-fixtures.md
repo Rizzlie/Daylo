@@ -170,4 +170,10 @@ moją akceptacje, wystaw i opublikuj PR (nie jako draft, ale jako ready for revi
 The final full-stack run and cleanup passed, fulfilling that condition. F07-02 and
 parent F07 are closed with the recorded limits. Publication is explicitly
 authorized as ready for review, overriding the default draft preference. No merge,
-deployment or later task is authorized. The resulting PR will be recorded here.
+deployment or later task is authorized.
+
+Publication: [PR #27](https://github.com/Rizzlie/Daylo/pull/27) is open and ready
+for review, as explicitly requested (`isDraft: false`). It targets `main` from
+`test/f07-02-authentication-e2e-fixtures` and is registered with the current task
+thread. Hosted CI results are not claimed. This publication record changes
+documentation only and does not require repeating application checks.

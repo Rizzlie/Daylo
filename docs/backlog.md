@@ -32,6 +32,10 @@ jako draft, ale jako ready for review)". Final verification and cleanup passed;
 F07-02 and parent F07 are closed with the recorded limits. No merge, deployment or
 subsequent task is authorized.
 
+Publication: [PR #27](https://github.com/Rizzlie/Daylo/pull/27) is open and ready
+for review as explicitly requested, and registered with the task thread. Hosted CI
+results are not claimed.
+
 Retrospective: send session probes through Chromium for Secure loopback cookies,
 recognize HTML quota redirects, keep time/database controls scoped and compile
 fixture support before stack startup.
