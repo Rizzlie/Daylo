@@ -74,7 +74,7 @@ Task discussions remain **not started** unless their individual records state ot
 | [F06-08](tasks/F06-08-pkce-for-google-oidc.md) | PKCE for Google OIDC | Closed: implemented, locally verified and owner-accepted on 2026-10-13: encrypted S256 PKCE, 207 API tests, 28 configuration tests, 3 repository tests and 22 real-stack E2E cases passed; real Google PKCE smoke incomplete |
 | [F06-09](tasks/F06-09-production-security-headers.md) | Production security headers | Pending: owner deferred discussion until hosting decisions, before public exposure; authorization pending |
 | [F06-10](tasks/F06-10-auth-security-event-logging.md) | Authentication security event logging | Closed: implemented, locally verified and owner-accepted on 2026-10-13; [draft PR #22](https://github.com/Rizzlie/Daylo/pull/22); bounded redacted JSON stdout events; 215 API and 10 recorder tests passed; hosted collection/retention/alerts deferred |
-| [F06-11](tasks/F06-11-expired-auth-record-cleanup.md) | Expired authentication record cleanup | Closed: implemented, locally verified and owner-accepted on 2026-10-14; NestJS scheduling, bounded PostgreSQL cleanup and declarative-code review |
+| [F06-11](tasks/F06-11-expired-auth-record-cleanup.md) | Expired authentication record cleanup | Closed: implemented, locally verified and owner-accepted on 2026-10-14; NestJS scheduling, bounded PostgreSQL cleanup and declarative-code review; [draft PR #24](https://github.com/Rizzlie/Daylo/pull/24) |
 | [F06-12](tasks/F06-12-security-dependency-review.md) | Security dependency review | Pending: planning requested on 2026-10-13; update scope/authorization pending |
 
 ### F07

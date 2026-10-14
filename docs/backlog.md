@@ -28,6 +28,10 @@ verify scheduling through the actual feature module and isolate global-deletion
 fixtures from regression databases. Subsequent tasks remain pending. The owner
 separately authorized a task-branch commit, push and draft PR on 2026-10-14.
 
+Publication: [draft PR #24](https://github.com/Rizzlie/Daylo/pull/24) contains the
+accepted F06-11 scope and is registered with the task thread. Hosted CI remains
+pending; no merge, deployment or subsequent implementation was performed.
+
 ### R01-01 API readability refactor — 2026-10-13
 
 The owner authorized readability work with "zrób to, ale na razie nie commituj"

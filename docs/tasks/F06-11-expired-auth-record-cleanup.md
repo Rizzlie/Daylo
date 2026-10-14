@@ -172,3 +172,7 @@ The owner separately requested "ok, wystaw PR", authorizing a task-branch commit
 push and draft PR for the accepted F06-11 scope only. Existing verification remains
 valid; no identical tests were repeated for publication. No merge, deployment or
 subsequent task implementation was requested.
+
+Publication: [draft PR #24](https://github.com/Rizzlie/Daylo/pull/24) contains the
+accepted F06-11 implementation and review follow-up and is registered with this
+task thread. Hosted CI remains pending; no merge or deployment was performed.
