@@ -1,10 +1,12 @@
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import { test, expect, type APIRequestContext } from '@playwright/test';
+import { syntheticSessionCookie } from './support/session-cookie';
+import { isolatedDatabaseUrl } from './support/isolated-database';
 import { waitForApiBudget } from './support/rate-limit-budget';
 
-const databaseUrl = process.env['F06_UI_DATABASE_URL'];
-const baseUrl = process.env['F06_UI_BASE_URL'] ?? '';
+const databaseUrl = process.env['DAYLO_E2E_DATABASE_URL'];
+const baseUrl = process.env['DAYLO_E2E_BASE_URL'] ?? '';
 const enabled = Boolean(databaseUrl && baseUrl);
 const message = 'Zbyt wiele żądań. Spróbuj ponownie za chwilę.';
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -17,11 +19,11 @@ async function exhaustBurst(request: APIRequestContext) {
 }
 
 test.describe('real-stack API rate limiting', () => {
-  // eslint-disable-next-line playwright/no-skipped-test -- Uses the same explicitly isolated real-stack opt-in as F06 authentication checks.
-  test.skip(!enabled, 'Requires a running real API and isolated F06 UI database');
+  // eslint-disable-next-line playwright/no-skipped-test -- The managed e2e-fullstack target provisions this suite's database and services.
+  test.skip(!enabled, 'Requires the managed e2e-fullstack target');
   let pool: Pool;
   test.beforeAll(() => {
-    if (!databaseUrl || !/^\/daylo_f06_04_[a-z0-9_]+$/.test(new URL(databaseUrl).pathname)) throw new Error('An isolated daylo_f06_04_* database is required');
+    isolatedDatabaseUrl();
     pool = new Pool({ connectionString: databaseUrl });
   });
   test.beforeEach(async ({ request }) => {
@@ -55,7 +57,7 @@ test.describe('real-stack API rate limiting', () => {
     try {
       await pool.query('INSERT INTO users (id,google_subject,email,display_name,access_status,updated_at) VALUES ($1,$2,$3,$4,\'active\',now())', [id, `f06-rate-${id}`, `${id}@example.test`, 'Synthetic User']);
       await pool.query('INSERT INTO sessions (id,user_id,token_hash,csrf_token_hash,expires_at) VALUES ($1,$2,$3,$4,now()+interval \'1 day\')', [randomUUID(), id, hash(token), hash(csrf)]);
-      await context.addCookies([{ name: 'daylo_session', value: token, url: baseUrl, httpOnly: true, sameSite: 'Lax' }]);
+      await context.addCookies([syntheticSessionCookie(baseUrl, token)]);
       await page.goto('/today');
       await expect(page.getByText('Cześć, Synthetic User', { exact: true })).toBeVisible();
       const second = await context.newPage();
@@ -71,7 +73,7 @@ test.describe('real-stack API rate limiting', () => {
       const sessions = await pool.query('SELECT id FROM sessions WHERE user_id=$1', [id]);
       expect(sessions.rowCount).toBe(1);
       const cookies = await context.cookies();
-      expect(cookies.some((cookie) => cookie.name === 'daylo_session' && cookie.value === token)).toBe(true);
+      expect(cookies.some((cookie) => cookie.name === '__Host-daylo_session' && cookie.value === token)).toBe(true);
       await waitForApiBudget(request);
       await page.getByRole('button', { name: 'Wyloguj się', exact: true }).click();
       await expect(page).toHaveURL(/\/login$/);

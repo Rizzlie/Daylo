@@ -4,17 +4,28 @@
   "projectType": "application",
   "sourceRoot": "apps/web-e2e/src",
   "implicitDependencies": [
-    "web"
+    "web",
+    "api"
   ],
   "// targets": "to see all targets run: nx show project web-e2e --web",
-  "tags": ["platform:web", "scope:app", "type:e2e"],
+  "tags": [
+    "platform:web",
+    "scope:app",
+    "type:e2e"
+  ],
   "targets": {
     "e2e": {
       "cache": false,
       "configurations": {
-        "headed": { "command": "playwright test --headed" },
-        "debug": { "command": "playwright test --debug --project=chromium-desktop" },
-        "ui": { "command": "playwright test --ui" }
+        "headed": {
+          "command": "playwright test --headed"
+        },
+        "debug": {
+          "command": "playwright test --debug --project=chromium-desktop"
+        },
+        "ui": {
+          "command": "playwright test --ui"
+        }
       }
     },
     "e2e-report": {
@@ -24,6 +35,75 @@
       "options": {
         "cwd": "apps/web-e2e",
         "command": "playwright show-report ../../dist/.playwright/apps/web-e2e/playwright-report --host=127.0.0.1"
+      }
+    },
+    "e2e-fullstack": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "parallelism": false,
+      "dependsOn": [
+        "typecheck",
+        {
+          "projects": [
+            "api"
+          ],
+          "target": "e2e-build"
+        },
+        {
+          "projects": [
+            "api"
+          ],
+          "target": "build"
+        },
+        {
+          "projects": [
+            "web"
+          ],
+          "target": "build"
+        }
+      ],
+      "options": {
+        "command": "node apps/web-e2e/environment/run.mjs"
+      },
+      "configurations": {
+        "inspect": {
+          "command": "node apps/web-e2e/environment/run.mjs --inspect"
+        }
+      }
+    },
+    "environment-test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "parallelism": false,
+      "dependsOn": [
+        {
+          "projects": [
+            "api"
+          ],
+          "target": "e2e-build"
+        },
+        {
+          "projects": [
+            "api"
+          ],
+          "target": "build"
+        },
+        {
+          "projects": [
+            "web"
+          ],
+          "target": "build"
+        }
+      ],
+      "options": {
+        "command": "node --test apps/web-e2e/environment/*.test.mjs"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "tsc --project apps/web-e2e/tsconfig.check.json --noEmit"
       }
     }
   }

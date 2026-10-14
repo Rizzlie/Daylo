@@ -1,8 +1,34 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-14. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-14. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. F07-01 is implemented, locally verified and owner-accepted on 2026-10-14; F07-02 remains pending, so parent F07 is incomplete. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### F07-01 isolated E2E environment acceptance - 2026-10-14
+
+The owner accepted the delivered F07-01 scope with "ok akceptuje" after reviewing
+its behavior and operating instructions. The managed Nx target starts the real
+frontend/API and isolated temporary PostgreSQL, applies migrations, seeds synthetic
+identities and replaces only Google's HTTP endpoints through a separate test-only
+API entrypoint. OAuth/PKCE, verification, admission, CSRF and persisted sessions
+remain real. Startup, readiness, isolation and owned-resource cleanup are managed.
+
+Six infrastructure tests and all 24 desktop/mobile E2E cases passed, along with
+relevant lint, E2E typecheck, builds and existing OpenAPI/client drift and compilation
+checks. Independent browser sign-in/sign-out and desktop/mobile layout/storage/
+diagnostics inspection passed; final cleanup left no run-owned services. Ten
+pre-existing API lint warnings remain. See
+[F07-01](tasks/F07-01-isolated-e2e-environment.md) for evidence and retrospective.
+
+F07-01 is closed. Hosted CI/Linux, real Google, deployed HTTPS and exact pinned
+Node patch verification remain unverified; local checks used Node 24.16.0 rather
+than the pinned 24.19.0. Forced termination/Docker failure can prevent cleanup.
+F07-02 and parent F07 remain incomplete. Acceptance required documentation changes
+only; no application changes or repeated checks were needed, and no commit, PR,
+deployment or subsequent implementation is authorized.
+
+Retrospective: resolve CLI paths through package metadata, preserve actual cookie
+policy in fixtures and scope SQL assertions to the current transaction.
 
 ### F06-12 dependency review — 2026-10-14
 
