@@ -67,7 +67,7 @@ Serve defaults to development at `http://localhost:4200/`. If the port is occupi
 
 The initial page shows the `Daylo` heading and a Polish preparation message. Its document title is `Daylo` and language is Polish. Themes follow system appearance by default; document-level `data-theme="light"` or `data-theme="dark"` overrides remain available. Plus Jakarta Sans is bundled locally; Material Symbols Outlined is loaded from Google Fonts for planned icon use, with preconnect links to its stylesheet and font hosts. Product navigation, authentication and task screens remain pending.
 
-Development requests under `/api` are proxied to the NestJS server at `http://localhost:3000`. Full-stack E2E setup remains pending before API-consuming features.
+Development requests under `/api` are proxied to the NestJS server at `http://localhost:3000`. Managed real-stack E2E is available through `web-e2e:e2e-fullstack`; see the verification instructions below.
 
 ## Frontend shell smoke tests
 
@@ -84,7 +84,7 @@ npm exec nx -- run web-e2e:e2e-report
 
 The smoke test opens the real Angular shell and checks its `Daylo` heading, document title and Polish preparation message. Projects `chromium-desktop` (1440 × 900) and `chromium-mobile` (390 × 844, touch/mobile emulation) run by default. Mobile emulation does not replace a physical phone check. To select one project, append `--project=chromium-desktop` or `--project=chromium-mobile` to the E2E command.
 
-Nx starts `web:serve` and waits for `http://localhost:4200` before the tests. Keep that port free when starting a run; Playwright reuses the server owned by the Nx task graph. The normal E2E target disables cache; retain `--skipNxCache` when requesting fresh evidence or using inferred CI targets. Tests do not mock responses. This endpoint-free shell needs only the frontend; API, isolated PostgreSQL and provider fixtures will be added for their corresponding functional tasks.
+Nx starts `web:serve` and waits for `http://localhost:4200` before the tests. Keep that port free when starting a run; Playwright reuses the server owned by the Nx task graph. The normal E2E target disables cache; retain `--skipNxCache` when requesting fresh evidence or using inferred CI targets. Tests do not mock responses. This endpoint-free shell needs only the frontend. The separate `e2e-fullstack` target owns API, isolated PostgreSQL and controlled-provider startup.
 
 The headed configuration shows both browser projects; debug opens the Playwright Inspector for desktop, and UI opens the interactive test runner. Stop interactive sessions with Ctrl+C. The report target serves the latest HTML report at a loopback address (default port 9323) until stopped. These interactive commands are for local debugging, not CI verification.
 
@@ -212,15 +212,26 @@ npm exec nx -- run web:serve --port=4200
 
 Keep `FRONTEND_ORIGIN` and `GOOGLE_CALLBACK_URL` consistent with that frontend origin. Real Google sign-in verification remains F06-05.
 
-Focused auth checks use `npm exec nx -- run-many -t lint,test -p web-core-auth-data-access,web-core-shell,web-auth-feature-login,web-shared-util-router,web`. The ordinary `web-e2e:e2e` target checks the public login error screen without a backend. Its opt-in F06-04 suite uses the actual running frontend/API and PostgreSQL, seeding isolated synthetic sessions rather than adding runtime test authentication. With a migrated disposable database named `daylo_f06_04_*` and a separately running API/frontend configured for it:
+Focused auth checks use `npm exec nx -- run-many -t lint,test -p web-core-auth-data-access,web-core-shell,web-auth-feature-login,web-shared-util-router,web`. The ordinary `web-e2e:e2e` target keeps the public login-screen smoke check. The managed real-stack target runs that check, the existing session/rate-limit suites and a successful controlled-provider login on desktop/mobile:
 
 ```powershell
-$env:F06_UI_BASE_URL = 'http://localhost:4208'
-$env:F06_UI_DATABASE_URL = 'postgresql://daylo_verify:synthetic-f06-04@127.0.0.1:5447/daylo_f06_04_verify'
-npm exec nx -- run web-e2e:e2e
+npm exec nx -- run web-e2e:e2e-fullstack
+npm exec nx -- run web-e2e:environment-test
 ```
 
-The example database is synthetic; do not point this suite at development or production data. The suite owns only its UUID-scoped user/session fixtures and removes them after each scenario. It covers active/pending routing, reload, real CSRF sign-out, expiry and invalid Google callbacks at desktop/mobile widths. Reusable stack startup and successful controlled-provider browser login fixtures remain F07. Reports, screenshots and traces stay under ignored `dist` paths.
+Prerequisites are Docker Desktop with Linux containers, installed Chromium (`npm exec playwright -- install chromium`) and the existing workspace build prerequisites. No real Google credentials or owner database configuration are required. Nx builds the production frontend, normal API and separate test API. The runner creates a uniquely named PostgreSQL 17 container with temporary storage, random credentials and loopback-only kernel-assigned ports, applies migrations through Nx and seeds synthetic owner/member/invited/outsider identities. It starts the real API with only Google's HTTP endpoints replaced, then serves the frontend build with a same-origin API proxy. Login exercises real OAuth state/browser binding, encrypted S256 PKCE, RS256 verification, admission and database sessions. Existing direct-session fixtures remain focused session checks; they do not prove successful Google login.
+
+The test-only API entrypoint is absent from the normal API bundle and refuses development/production mode. Its local provider offers synthetic account selection, validates redirect/client/PKCE and consumes codes once. Production has no provider URL switch or test authentication endpoint. Comprehensive authentication scenarios, controlled clock and reusable multi-context fixtures remain F07-02.
+
+Pass Playwright filters through Nx run-commands, for example `--args="--grep=active --project=chromium-desktop"`, to avoid confusing the Playwright project with the Nx project.
+
+Every run owns its database/container and fresh browser contexts. No reset/drop command accepts an external database. Cleanup checks the exact container identity and run label, stops only owned processes and removes temporary PostgreSQL storage on success or failure. Existing listeners are never reused or killed. For independent browser inspection:
+
+```powershell
+npm exec nx -- run web-e2e:e2e-fullstack:inspect --output-style=stream
+```
+
+Open the printed loopback URL. Stop normally with Ctrl+C, or create the exact run-private `stop` file printed by the runner to request cleanup (useful from another PowerShell terminal). Forced termination of the runner or Docker can prevent cleanup; inspect containers by their `daylo.e2e.run` label and remove only the exact run-owned container after checking its identity. Reports, synthetic API logs and public-address/cleanup records stay under ignored `dist/.playwright`; browser authentication state and database credentials are not written to manifests. Hosted CI still runs the existing shell suite; hosted full-stack execution is not claimed.
 
 The `web-shared-api-client:check` target exports, validates and generates twice under ignored `dist`, checks determinism, then compares the specification and the entire generated directory byte for byte with source artifacts. It does not rewrite source. A failure lists added, removed and changed files and recommends `npm run api:generate`. Temporary output is removed on success or failure. Avoid running generation and drift checks concurrently.
 

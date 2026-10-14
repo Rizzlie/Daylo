@@ -139,6 +139,32 @@
       "options": {
         "command": "node apps/api/scripts/validate-openapi.mjs"
       }
+    },
+    "e2e-build": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": [
+        {
+          "projects": [
+            "api-core-database"
+          ],
+          "target": "prisma-generate"
+        }
+      ],
+      "inputs": [
+        "default",
+        "^default"
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/tools/e2e-api"
+      ],
+      "options": {
+        "cwd": "apps/api",
+        "command": "webpack-cli build --config webpack.e2e.config.js",
+        "env": {
+          "NODE_ENV": "test"
+        }
+      }
     }
   }
 }
