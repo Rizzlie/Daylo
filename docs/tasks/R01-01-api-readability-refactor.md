@@ -168,3 +168,9 @@ uncommitted statements describe the state before this request.
 Reuse the recorded final 268-test, lint/build and contract/client verification:
 only acceptance/publication documentation changed after those checks. No merge,
 deployment or subsequent implementation is authorized. Hosted CI remains unverified.
+
+Published: [draft PR #23](https://github.com/Rizzlie/Daylo/pull/23), branch
+`refactor/r01-01-api-readability`, targeting `main`. The PR is linked to this
+thread. Commit `2a2f035` contains the accepted implementation and acceptance
+record. Recorded local verification is preserved; hosted CI was not assessed
+during publication. Only the publication record changed afterward.
