@@ -10,6 +10,6 @@ export default defineConfig({
   webServer: undefined,
   testIgnore: [],
   workers: 1,
-  testMatch: ['**/shell.spec.ts', '**/authentication.spec.ts', '**/rate-limiting.spec.ts', '**/environment.spec.ts'],
+  testMatch: ['**/shell.spec.ts', '**/authentication.spec.ts', '**/rate-limiting.spec.ts', '**/environment.spec.ts', '**/access.spec.ts'],
   use: { ...base.use, baseURL: process.env['DAYLO_E2E_BASE_URL'] },
 });
