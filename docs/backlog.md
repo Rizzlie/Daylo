@@ -30,6 +30,10 @@ commit, push and draft PR publication. F06-12 is closed; parent F06 still awaits
 F06-09. Deferred findings and unverified checks remain as recorded. No merge,
 deployment, recurring CI policy or subsequent task is authorized.
 
+Publication: [draft PR #25](https://github.com/Rizzlie/Daylo/pull/25) contains the
+accepted F06-12 scope and is registered with the task thread. Hosted CI results
+are not claimed; no merge, deployment or subsequent task was performed.
+
 Retrospective: audit the runtime artifact separately, deduplicate inherited
 findings and verify attack prerequisites before interpreting severity counts.
 

@@ -126,3 +126,8 @@ branch, push and draft PR publication. F06-12 is closed. Acceptance does not tur
 unverified checks or deferred findings into passes, enable the proposed recurring
 CI policy, or authorize packaging repairs, merge, deployment or the next task.
 Parent F06 remains incomplete because F06-09 is deferred until hosting decisions.
+
+Publication: [draft PR #25](https://github.com/Rizzlie/Daylo/pull/25), branch
+`chore/f06-12-security-dependencies`, targeting `main`, is registered with the task
+thread. Hosted CI is not claimed to have passed. No merge, deployment or later
+implementation was performed.
