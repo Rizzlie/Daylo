@@ -26,6 +26,8 @@ import {
 
 class GoogleCallbackQueryDto extends createZodDto(googleCallbackQuerySchema) {}
 
+const LOGIN_DESTINATIONS = { active: '/today', pending: '/invitations' } as const;
+
 @ApiTags('Authentication')
 @SetMetadata(PUBLIC_ENDPOINT, true)
 @Controller('auth/google')
@@ -145,11 +147,13 @@ export class GoogleOidcController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<void> {
     response.clearCookie(this.cookieName(), this.cookieOptions());
-    const identity = await this.oidc.callback(query, readAuthCookie(request.headers.cookie, this.cookieName()), request);
+    const browserBinding = readAuthCookie(request.headers.cookie, this.cookieName());
+    const identity = await this.oidc.callback(query, browserBinding, request);
     const user = await this.admission.admit(identity);
     await this.sessions.issue(user.id, request, response);
     this.events.record({ event: 'login_succeeded', reason: 'authenticated' }, request, user.id);
-    const path = user.accessStatus === 'active' ? '/today' : '/invitations';
-    response.redirect(302, new URL(path, this.config.getOrThrow<string>('runtime.frontendOrigin')).href);
+    const origin = this.config.getOrThrow<string>('runtime.frontendOrigin');
+    const destination = new URL(LOGIN_DESTINATIONS[user.accessStatus], origin);
+    response.redirect(302, destination.href);
   }
 }

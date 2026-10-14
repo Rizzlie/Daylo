@@ -13,6 +13,23 @@ const associatedData = (binding: PkceBinding) => Buffer.from(JSON.stringify([
   'daylo:oauth-pkce:v1', binding.stateHash, binding.browserBindingHash, binding.nonce,
 ]));
 
+function decodeVerifier(encryptedVerifier: string | null) {
+  // Fixed lengths and canonical base64url reject legacy or malformed records.
+  if (!encryptedVerifier || !/^v1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{58}\.[A-Za-z0-9_-]{22}$/.test(encryptedVerifier)) {
+    throw authenticationFailed();
+  }
+  const encoded = encryptedVerifier.split('.').slice(1);
+  const decoded = encoded.map((part) => Buffer.from(part, 'base64url'));
+  const isCanonical = decoded.every((value, index) => value.toString('base64url') === encoded[index]);
+  if (!isCanonical) throw authenticationFailed();
+  const [iv, ciphertext, tag] = decoded;
+  return { iv, ciphertext, tag };
+}
+
+function encodeVerifier(iv: Buffer, ciphertext: Buffer, tag: Buffer): string {
+  return ['v1', ...[iv, ciphertext, tag].map((value) => value.toString('base64url'))].join('.');
+}
+
 @Injectable()
 export class OAuthPkceService {
   constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
@@ -25,24 +42,17 @@ export class OAuthPkceService {
     const ciphertext = Buffer.concat([cipher.update(verifier, 'utf8'), cipher.final()]);
     return {
       challenge: createHash('sha256').update(verifier).digest('base64url'),
-      encryptedVerifier: ['v1', iv.toString('base64url'), ciphertext.toString('base64url'),
-        cipher.getAuthTag().toString('base64url')].join('.'),
+      encryptedVerifier: encodeVerifier(iv, ciphertext, cipher.getAuthTag()),
     };
   }
 
   recover(encryptedVerifier: string | null, binding: PkceBinding): string {
     try {
-      // Fixed lengths and canonical base64url reject legacy or malformed records.
-      if (!encryptedVerifier || !/^v1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{58}\.[A-Za-z0-9_-]{22}$/.test(encryptedVerifier))
-        throw authenticationFailed();
-      const [, iv, ciphertext, tag] = encryptedVerifier.split('.');
-      const values = [iv, ciphertext, tag].map((part) => Buffer.from(part, 'base64url'));
-      if (values.some((value, index) => value.toString('base64url') !== [iv, ciphertext, tag][index]))
-        throw authenticationFailed();
-      const decipher = createDecipheriv('aes-256-gcm', this.key(), values[0]);
+      const { iv, ciphertext, tag } = decodeVerifier(encryptedVerifier);
+      const decipher = createDecipheriv('aes-256-gcm', this.key(), iv);
       decipher.setAAD(associatedData(binding));
-      decipher.setAuthTag(values[2]);
-      const verifier = Buffer.concat([decipher.update(values[1]), decipher.final()]).toString('utf8');
+      decipher.setAuthTag(tag);
+      const verifier = Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
       if (!/^[A-Za-z0-9_-]{43}$/.test(verifier)) throw authenticationFailed();
       return verifier;
     } catch {

@@ -17,18 +17,28 @@ function isGoogleRoute(context: ExecutionContext, suffix: string): boolean {
 @Module({ providers: [BoundedThrottlerStorage], exports: [BoundedThrottlerStorage] })
 class RateLimitStorageModule {}
 
+async function admitRequest(
+  guard: ApiRateLimitGuard,
+  errors: ApiHttpExceptionFilter,
+  request: Request,
+  response: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    await guard.admitHttp(request, response);
+    next();
+  } catch (error) {
+    // Nest's controller exception filters do not run for Swagger middleware.
+    errors.catch(error, new ExecutionContextHost([request, response, next]));
+  }
+}
+
 @Injectable()
 class ApiRateLimitMiddleware implements NestMiddleware {
   constructor(private readonly guard: ApiRateLimitGuard, private readonly errors: ApiHttpExceptionFilter) {}
 
-  async use(request: Request, response: Response, next: NextFunction): Promise<void> {
-    try {
-      await this.guard.admitHttp(request, response);
-      next();
-    } catch (error) {
-      // Nest's controller exception filters do not run for Swagger middleware.
-      this.errors.catch(error, new ExecutionContextHost([request, response, next]));
-    }
+  use(request: Request, response: Response, next: NextFunction): Promise<void> {
+    return admitRequest(this.guard, this.errors, request, response, next);
   }
 }
 
@@ -63,8 +73,6 @@ export function protectApiDocumentation(app: INestApplication): void {
   const guard = app.get(ApiRateLimitGuard);
   const errors = app.get(ApiHttpExceptionFilter);
   app.use(['/api/docs', '/api/openapi.json'], (request: Request, response: Response, next: NextFunction) => {
-    void guard.admitHttp(request, response).then(() => next()).catch((error: unknown) => {
-      errors.catch(error, new ExecutionContextHost([request, response, next]));
-    });
+    void admitRequest(guard, errors, request, response, next);
   });
 }

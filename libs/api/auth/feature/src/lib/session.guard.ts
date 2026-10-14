@@ -11,6 +11,18 @@ export interface AuthenticatedRequest extends Request {
   actor: ActorContext;
 }
 
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+function actorFromSession(session: StoredSession): ActorContext {
+  return {
+    sessionId: session.id,
+    userId: session.user.id,
+    email: session.user.email,
+    displayName: session.user.displayName,
+    accessStatus: session.user.accessStatus === 'ACTIVE' ? 'active' : 'pending',
+  };
+}
+
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(
@@ -26,20 +38,21 @@ export class SessionGuard implements CanActivate {
     const response = context.switchToHttp().getResponse<Response>();
     response.setHeader('Cache-Control', 'no-store');
     const session = await this.sessions.authenticate(request, response);
-    const accessStatus = session.user.accessStatus === 'ACTIVE' ? 'active' : 'pending';
-    if (accessStatus === 'pending'
-      && !this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING_SESSION, targets)) {
-      this.events.record({ event: 'admission_denied', reason: 'pending_access' }, request, session.user.id);
-      throw new ForbiddenException();
-    }
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+    const actor = actorFromSession(session);
+    this.requireAllowedAccess(actor, request, context);
+    if (!SAFE_METHODS.has(request.method)) {
       this.sessions.verifyMutation(request, session);
     }
     request.dayloSession = session;
-    request.actor = {
-      sessionId: session.id, userId: session.user.id, email: session.user.email,
-      displayName: session.user.displayName, accessStatus,
-    };
+    request.actor = actor;
     return true;
+  }
+
+  private requireAllowedAccess(actor: ActorContext, request: Request, context: ExecutionContext): void {
+    const allowed = actor.accessStatus !== 'pending'
+      || this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING_SESSION, [context.getHandler(), context.getClass()]);
+    if (allowed) return;
+    this.events.record({ event: 'admission_denied', reason: 'pending_access' }, request, actor.userId);
+    throw new ForbiddenException();
   }
 }

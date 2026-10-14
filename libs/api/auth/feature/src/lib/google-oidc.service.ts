@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { OAuthTransactionStore } from '@daylo/api/auth/data-access';
 import { SecurityEvents, SecurityEventInput } from '@daylo/api/core/security-events';
-import { OAuthPkceService } from './oauth-pkce.service';
+import { OAuthPkceService, PkceBinding } from './oauth-pkce.service';
 import {
   authenticationFailed,
   GoogleOidcProvider,
@@ -20,6 +20,8 @@ const hash = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 const validBinding = (value: unknown): value is string =>
   typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value);
+
+type CallbackRejectionReason = Extract<SecurityEventInput, { event: 'callback_rejected' }>['reason'];
 
 @Injectable()
 export class GoogleOidcService {
@@ -59,17 +61,24 @@ export class GoogleOidcService {
     browserBinding?: string,
     request?: object,
   ): Promise<VerifiedGoogleIdentity> {
-    const reject = (reason: Extract<SecurityEventInput, { event: 'callback_rejected' }>['reason']): never => {
-      this.events.record({ event: 'callback_rejected', reason }, request);
-      throw authenticationFailed();
-    };
     if (!validBinding(input.state) || !validBinding(browserBinding))
-      return reject('invalid_binding');
+      return this.rejectCallback('invalid_binding', request);
     const stateHash = hash(input.state);
     const browserBindingHash = hash(browserBinding);
-    let transaction: { nonce: string; encryptedVerifier: string | null } | null;
+    // Consume before provider outcome/PKCE validation; every valid attempt is single-use.
+    const transaction = await this.consumeTransaction(stateHash, browserBindingHash);
+    if (!transaction) return this.rejectCallback('invalid_expired_or_replayed_transaction', request);
+    if (input.error !== undefined) return this.rejectCallback('provider_declined', request);
+    if (!input.code) return this.rejectCallback('missing_code', request);
+    const verifier = this.recoverVerifier(transaction.encryptedVerifier, {
+      stateHash, browserBindingHash, nonce: transaction.nonce,
+    }, request);
+    return this.provider.verify(input.code, transaction.nonce, verifier);
+  }
+
+  private async consumeTransaction(stateHash: string, browserBindingHash: string) {
     try {
-      transaction = await this.transactions.consume(
+      return await this.transactions.consume(
         stateHash,
         browserBindingHash,
         new Date(),
@@ -77,17 +86,18 @@ export class GoogleOidcService {
     } catch {
       throw new ServiceUnavailableException();
     }
-    if (!transaction) return reject('invalid_expired_or_replayed_transaction');
-    if (input.error !== undefined) return reject('provider_declined');
-    if (!input.code) return reject('missing_code');
-    let verifier: string;
+  }
+
+  private recoverVerifier(encryptedVerifier: string | null, binding: PkceBinding, request?: object): string {
     try {
-      verifier = this.pkce.recover(transaction.encryptedVerifier, {
-        stateHash, browserBindingHash, nonce: transaction.nonce,
-      });
+      return this.pkce.recover(encryptedVerifier, binding);
     } catch {
-      return reject('invalid_pkce');
+      return this.rejectCallback('invalid_pkce', request);
     }
-    return this.provider.verify(input.code, transaction.nonce, verifier);
+  }
+
+  private rejectCallback(reason: CallbackRejectionReason, request?: object): never {
+    this.events.record({ event: 'callback_rejected', reason }, request);
+    throw authenticationFailed();
   }
 }

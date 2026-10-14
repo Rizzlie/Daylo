@@ -44,6 +44,30 @@ const claimsSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
 });
 
+type GoogleClaims = z.infer<typeof claimsSchema>;
+type SigningCertificates = Awaited<ReturnType<OAuth2Client['getFederatedSignonCertsAsync']>>;
+
+function validClaims(
+  claims: GoogleClaims,
+  nonce: string,
+  clientId: string,
+  now: number,
+): boolean {
+  const validLifetime = claims.exp > now && claims.iat <= now + 60 && claims.exp > claims.iat;
+  const validNotBefore = claims.nbf === undefined || claims.nbf <= now + 60;
+  const validAuthorizedParty = claims.azp === undefined || claims.azp === clientId;
+  return validLifetime && validNotBefore && validAuthorizedParty && claims.nonce === nonce;
+}
+
+function mapIdentity(claims: GoogleClaims): VerifiedGoogleIdentity {
+  return {
+    googleSubject: claims.sub,
+    email: claims.email,
+    emailAuthoritative: claims.email.toLowerCase().endsWith('@gmail.com') || claims.hd !== undefined,
+    ...(claims.name ? { displayName: claims.name } : {}),
+  };
+}
+
 @Injectable()
 export class GoogleOidcProvider {
   constructor(
@@ -64,13 +88,19 @@ export class GoogleOidcProvider {
   }
 
   async verify(code: string, nonce: string, codeVerifier: string): Promise<VerifiedGoogleIdentity> {
-    let idToken: string;
+    const idToken = await this.exchangeCode(code, codeVerifier);
+    this.validateTokenHeader(idToken);
+    const certificates = await this.signingCertificates();
+    return this.verifyIdentity(idToken, certificates.certs, nonce);
+  }
+
+  private async exchangeCode(code: string, codeVerifier: string): Promise<string> {
     try {
       const { tokens } = await this.client.getToken({ code, codeVerifier });
       if (typeof tokens.id_token !== 'string' || !tokens.id_token)
         throw authenticationFailed();
-      idToken = tokens.id_token;
       // Never call setCredentials, subscribe to tokens, or persist provider tokens.
+      return tokens.id_token;
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       const status = (error as { response?: { status?: number } })?.response
@@ -78,7 +108,9 @@ export class GoogleOidcProvider {
       if (status === 400 || status === 401) throw authenticationFailed();
       throw providerUnavailable();
     }
+  }
 
+  private validateTokenHeader(idToken: string): void {
     // Restrict the Google signing algorithm before passing the JWT to the
     // official verifier. Library diagnostics can contain tokens; never log them.
     try {
@@ -94,21 +126,26 @@ export class GoogleOidcProvider {
     } catch {
       throw authenticationFailed();
     }
+  }
 
-    let certificates: Awaited<
-      ReturnType<OAuth2Client['getFederatedSignonCertsAsync']>
-    >;
+  private async signingCertificates(): Promise<SigningCertificates> {
     try {
-      certificates = await this.client.getFederatedSignonCertsAsync();
+      return await this.client.getFederatedSignonCertsAsync();
     } catch {
       throw providerUnavailable();
     }
+  }
 
+  private async verifyIdentity(
+    idToken: string,
+    certificates: SigningCertificates['certs'],
+    nonce: string,
+  ): Promise<VerifiedGoogleIdentity> {
     try {
       const clientId = this.config.getOrThrow<string>('runtime.googleClientId');
       const ticket = await this.client.verifySignedJwtWithCertsAsync(
         idToken,
-        certificates.certs,
+        certificates,
         clientId,
         ['https://accounts.google.com', 'accounts.google.com'],
       );
@@ -116,22 +153,10 @@ export class GoogleOidcProvider {
       const now = Date.now() / 1000;
       // The library allows five minutes of clock skew. Do not accept an already
       // expired token, non-numeric dates, or an inconsistent authorized party.
-      if (
-        claims.exp <= now ||
-        claims.iat > now + 60 ||
-        claims.exp <= claims.iat ||
-        (claims.nbf !== undefined && claims.nbf > now + 60) ||
-        (claims.azp !== undefined && claims.azp !== clientId) ||
-        claims.nonce !== nonce
-      ) {
+      if (!validClaims(claims, nonce, clientId, now)) {
         throw authenticationFailed();
       }
-      return {
-        googleSubject: claims.sub,
-        email: claims.email,
-        emailAuthoritative: claims.email.toLowerCase().endsWith('@gmail.com') || claims.hd !== undefined,
-        ...(claims.name ? { displayName: claims.name } : {}),
-      };
+      return mapIdentity(claims);
     } catch {
       throw authenticationFailed();
     }

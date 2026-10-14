@@ -10,6 +10,7 @@ export type SecurityEventOutput = Pick<Writable,
 export class SecurityEventWriter implements OnModuleInit, OnModuleDestroy {
   private failed = false;
   private readonly onError = () => { this.failed = true; };
+  private readonly onWrite = (error?: Error | null) => { if (error) this.failed = true; };
 
   constructor(@Inject(SECURITY_EVENT_OUTPUT) private readonly output: SecurityEventOutput) {}
 
@@ -18,14 +19,19 @@ export class SecurityEventWriter implements OnModuleInit, OnModuleDestroy {
 
   write(line: string): boolean {
     try {
-      if (this.failed || this.output.destroyed || !this.output.writable || this.output.writableNeedDrain) return false;
+      if (!this.canWrite()) return false;
       // A false return means this line was accepted, but future writes must wait
       // for drain. The callback and listener cover asynchronous stream errors.
-      this.output.write(line, (error) => { if (error) this.failed = true; });
+      this.output.write(line, this.onWrite);
       return !this.failed;
     } catch {
       this.failed = true;
       return false;
     }
+  }
+
+  private canWrite(): boolean {
+    return !this.failed && !this.output.destroyed
+      && this.output.writable && !this.output.writableNeedDrain;
   }
 }

@@ -11,64 +11,48 @@ const requiredString = z.string({ error: 'is required' }).trim().min(1, {
   error: 'is required',
 });
 
-const databaseUrlSchema = requiredString.transform((value, context) => {
-  let url: URL;
+function parseUrl(value: string): URL | undefined {
+  try { return new URL(value); }
+  catch { return undefined; }
+}
 
-  try {
-    url = new URL(value);
-  } catch {
+function hasDatabaseLocation(url: URL): boolean {
+  return url.hostname.length > 0 && url.username.length > 0
+    && url.password.length > 0 && url.pathname !== '/';
+}
+
+function isHttpOrigin(url: URL): boolean {
+  return ['http:', 'https:'].includes(url.protocol) && url.pathname === '/'
+    && !url.username && !url.password && !url.search && !url.hash;
+}
+
+const parsedUrlSchema = requiredString.transform((value, context) => {
+  const url = parseUrl(value);
+  if (!url) {
     context.addIssue({
       code: 'custom',
       message: 'must be a valid URL',
     });
     return z.NEVER;
   }
+  return { value, url };
+});
 
-  if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
-    context.addIssue({
-      code: 'custom',
-      message: 'must use the postgresql protocol',
-    });
-    return z.NEVER;
-  }
-
-  if (
-    url.hostname.length === 0 ||
-    url.username.length === 0 ||
-    url.password.length === 0 ||
-    url.pathname === '/'
-  ) {
-    context.addIssue({
-      code: 'custom',
-      message: 'must include host, database, username, and password',
-    });
+const databaseUrlSchema = parsedUrlSchema.transform(({ value, url }, context) => {
+  const failedRule = [
+    { valid: ['postgres:', 'postgresql:'].includes(url.protocol), message: 'must use the postgresql protocol' },
+    { valid: hasDatabaseLocation(url), message: 'must include host, database, username, and password' },
+  ].find((rule) => !rule.valid);
+  if (failedRule) {
+    context.addIssue({ code: 'custom', message: failedRule.message });
     return z.NEVER;
   }
 
   return value;
 });
 
-const frontendOriginSchema = requiredString.transform((value, context) => {
-  let url: URL;
-
-  try {
-    url = new URL(value);
-  } catch {
-    context.addIssue({
-      code: 'custom',
-      message: 'must be a valid URL',
-    });
-    return z.NEVER;
-  }
-
-  if (
-    !['http:', 'https:'].includes(url.protocol) ||
-    url.pathname !== '/' ||
-    url.username.length > 0 ||
-    url.password.length > 0 ||
-    url.search.length > 0 ||
-    url.hash.length > 0
-  ) {
+const frontendOriginSchema = parsedUrlSchema.transform(({ url }, context) => {
+  if (!isHttpOrigin(url)) {
     context.addIssue({
       code: 'custom',
       message: 'must be an HTTP(S) origin without a path, query, or fragment',
@@ -78,6 +62,25 @@ const frontendOriginSchema = requiredString.transform((value, context) => {
 
   return url.origin;
 });
+
+function callbackErrors(callback: URL, environment: { FRONTEND_ORIGIN: string; NODE_ENV: NodeEnvironment }): string[] {
+  const matchesOrigin = callback.origin === environment.FRONTEND_ORIGIN
+    && callback.pathname === '/api/auth/google/callback'
+    && !callback.search && !callback.hash && !callback.username && !callback.password;
+  const localHttp = environment.NODE_ENV !== 'production'
+    && ['localhost', '127.0.0.1', '[::1]'].includes(callback.hostname)
+    && callback.protocol === 'http:';
+  return [
+    {
+      valid: matchesOrigin,
+      message: 'must match FRONTEND_ORIGIN with path /api/auth/google/callback and no credentials, query, or fragment',
+    },
+    {
+      valid: callback.protocol === 'https:' || localHttp,
+      message: 'must use HTTPS except for local non-production HTTP',
+    },
+  ].filter((rule) => !rule.valid).map((rule) => rule.message);
+}
 
 export const environmentSchema = z
   .object({
@@ -113,10 +116,8 @@ export const environmentSchema = z
   })
   .passthrough()
   .superRefine((environment, context) => {
-    let callback: URL;
-    try {
-      callback = new URL(environment.GOOGLE_CALLBACK_URL);
-    } catch {
+    const callback = parseUrl(environment.GOOGLE_CALLBACK_URL);
+    if (!callback) {
       context.addIssue({
         code: 'custom',
         path: ['GOOGLE_CALLBACK_URL'],
@@ -125,33 +126,9 @@ export const environmentSchema = z
       return;
     }
 
-    if (
-      callback.origin !== environment.FRONTEND_ORIGIN ||
-      callback.pathname !== '/api/auth/google/callback' ||
-      callback.search ||
-      callback.hash ||
-      callback.username ||
-      callback.password
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['GOOGLE_CALLBACK_URL'],
-        message:
-          'must match FRONTEND_ORIGIN with path /api/auth/google/callback and no credentials, query, or fragment',
-      });
-    }
-
-    const localHttp =
-      environment.NODE_ENV !== 'production' &&
-      ['localhost', '127.0.0.1', '[::1]'].includes(callback.hostname) &&
-      callback.protocol === 'http:';
-    if (callback.protocol !== 'https:' && !localHttp) {
-      context.addIssue({
-        code: 'custom',
-        path: ['GOOGLE_CALLBACK_URL'],
-        message: 'must use HTTPS except for local non-production HTTP',
-      });
-    }
+    callbackErrors(callback, environment).forEach((message) => {
+      context.addIssue({ code: 'custom', path: ['GOOGLE_CALLBACK_URL'], message });
+    });
   });
 
 export function validateEnvironment(

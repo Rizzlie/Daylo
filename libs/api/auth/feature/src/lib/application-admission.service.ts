@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   TRANSACTION_RUNNER,
   TransactionRunner,
+  TransactionContext,
 } from '@daylo/api/core/transactions/contracts';
 import {
   USER_IDENTITY,
@@ -45,17 +46,11 @@ export class ApplicationAdmissionService {
         ) {
           throw new ForbiddenException();
         }
-        const active = existing?.accessStatus === 'active'
-          || (identity.emailAuthoritative && email === ownerEmail);
-        if (
-          !active &&
-          (!identity.emailAuthoritative ||
-            !(await this.invitations.hasEligibleInvitation(email, new Date(), context)))
-        ) {
-          throw new ForbiddenException();
-        }
+        const accessStatus = await this.resolveAccessStatus(
+          identity, email, ownerEmail, existing, context,
+        );
         return this.users.saveProfile(
-          { ...identity, email, accessStatus: active ? 'active' : 'pending' },
+          { ...identity, email, accessStatus },
           context,
         );
       });
@@ -64,5 +59,25 @@ export class ApplicationAdmissionService {
       // Never return database diagnostics, subjects, emails or provider tokens.
       throw new ServiceUnavailableException();
     }
+  }
+
+  private async resolveAccessStatus(
+    identity: VerifiedGoogleIdentity,
+    email: string,
+    ownerEmail: string,
+    existing: IdentityUser | null,
+    context: TransactionContext,
+  ): Promise<IdentityUser['accessStatus']> {
+    const isActiveUser = existing?.accessStatus === 'active';
+    const isVerifiedOwner = identity.emailAuthoritative && email === ownerEmail;
+    if (isActiveUser || isVerifiedOwner) return 'active';
+
+    // Only authoritative email identities can gain new access through invitations.
+    if (!identity.emailAuthoritative) throw new ForbiddenException();
+    const hasInvitation = await this.invitations.hasEligibleInvitation(
+      email, new Date(), context,
+    );
+    if (!hasInvitation) throw new ForbiddenException();
+    return 'pending';
   }
 }

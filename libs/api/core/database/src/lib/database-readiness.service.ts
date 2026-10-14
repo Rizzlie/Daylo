@@ -15,8 +15,18 @@ export class DatabaseReadinessService {
       query_timeout: readinessTimeoutMilliseconds,
       statement_timeout: readinessTimeoutMilliseconds,
     });
-    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await this.probeWithinDeadline(client);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      await client.end().catch(() => undefined);
+    }
+  }
 
+  private async probeWithinDeadline(client: Client): Promise<void> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
         this.runProbe(client),
@@ -27,15 +37,8 @@ export class DatabaseReadinessService {
           );
         }),
       ]);
-
-      return true;
-    } catch {
-      return false;
     } finally {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      await client.end().catch(() => undefined);
+      clearTimeout(timeout);
     }
   }
 

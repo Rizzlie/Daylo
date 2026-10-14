@@ -34,6 +34,24 @@ function mapUser(row: {
   };
 }
 
+function profileData(profile: AdmittedProfile) {
+  const accessStatus = profile.accessStatus === 'active' ? 'ACTIVE' as const : 'PENDING' as const;
+  const email = profile.email;
+  return {
+    create: {
+      googleSubject: profile.googleSubject,
+      email,
+      displayName: profile.displayName ?? email.split('@')[0].slice(0, 200),
+      accessStatus,
+    },
+    update: {
+      email,
+      ...(profile.displayName !== undefined ? { displayName: profile.displayName } : {}),
+      accessStatus,
+    },
+  };
+}
+
 @Injectable()
 export class UserIdentityStore implements UserIdentity {
   async lockIdentity(
@@ -81,22 +99,9 @@ export class UserIdentityStore implements UserIdentity {
     profile: AdmittedProfile,
     context: TransactionContext,
   ): Promise<IdentityUser> {
-    const accessStatus = profile.accessStatus === 'active' ? 'ACTIVE' : 'PENDING';
     const row = await client(context).user.upsert({
       where: { googleSubject: profile.googleSubject },
-      create: {
-        googleSubject: profile.googleSubject,
-        email: profile.email,
-        displayName: profile.displayName ?? profile.email.split('@')[0].slice(0, 200),
-        accessStatus,
-      },
-      update: {
-        email: profile.email,
-        ...(profile.displayName !== undefined
-          ? { displayName: profile.displayName }
-          : {}),
-        accessStatus,
-      },
+      ...profileData(profile),
       select: identitySelect,
     });
     return mapUser(row);
