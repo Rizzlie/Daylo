@@ -100,3 +100,7 @@ staging, a task-branch commit, push and draft PR publication of F07-01. This
 supersedes the earlier publication-pending record only; merge, deployment and
 F07-02 implementation remain unauthorized. Existing verification evidence remains
 applicable because subsequent edits concern documentation only.
+
+Publication: [draft PR #26](https://github.com/Rizzlie/Daylo/pull/26) contains the
+accepted F07-01 scope and is registered with the task thread. Hosted CI results
+are not claimed; no merge, deployment or later task was performed.

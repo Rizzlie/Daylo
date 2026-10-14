@@ -30,6 +30,13 @@ deployment or subsequent implementation is authorized.
 Retrospective: resolve CLI paths through package metadata, preserve actual cookie
 policy in fixtures and scope SQL assertions to the current transaction.
 
+Publication: after acceptance, the owner requested "oh smart, wystaw PR" and
+authorized the task-branch commit, push and draft publication.
+[Draft PR #26](https://github.com/Rizzlie/Daylo/pull/26) contains the accepted
+F07-01 scope and is registered with the task thread. This supersedes the earlier
+publication-pending statement only. Hosted CI results are not claimed; no merge,
+deployment or subsequent implementation was performed.
+
 ### F06-12 dependency review — 2026-10-14
 
 The owner authorized a read-only current dependency review. The
