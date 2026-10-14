@@ -1,8 +1,41 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-14. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-09 and F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-14. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### F06-12 dependency review — 2026-10-14
+
+The owner authorized a read-only current dependency review. The
+[report](security/dependency-review-2026-10-14.md) records 55 full-workspace
+affected package entries representing 30 unique advisories, nine omit-dev entries
+and four entries in the existing generated API artifact. Official advisory
+conditions, runtime/tooling reachability and compatible candidate updates are
+documented. No remote application exploit was demonstrated. At the initial review
+stage, deployed exposure and clean-install/runtime verification were untested;
+the subsequent local remediation verification is recorded below.
+
+The owner subsequently approved bounded remediation with Nx migrate latest first.
+Implemented Nx 23.3.0, Angular 22.2.2, Analog 2.8.0, Config 4.0.4 and scoped
+js-yaml/Undici patches. Final clean install/peers, 22 lint targets, 357 distinct
+test cases, PostgreSQL migrations/schema checks, production builds, contract/client
+checks and 22 real-stack desktop/mobile E2E passed. Independent browser layouts,
+recovery/storage and diagnostics were inspected; focus-ring reproduction remains
+incomplete despite passing automated assertions. Generated API artifact installs
+and audits cleanly; existing api:prune fails for its missing source manifest, with
+no passing prior baseline established. Six residual advisories, packaging/browser
+limits and recurring review policy are recorded. The owner accepted the delivered
+scope with "akcceptuje, mozna pr zrobic" on 2026-10-14 and authorized task-branch
+commit, push and draft PR publication. F06-12 is closed; parent F06 still awaits
+F06-09. Deferred findings and unverified checks remain as recorded. No merge,
+deployment, recurring CI policy or subsequent task is authorized.
+
+Publication: [draft PR #25](https://github.com/Rizzlie/Daylo/pull/25) contains the
+accepted F06-12 scope and is registered with the task thread. Hosted CI results
+are not claimed; no merge, deployment or subsequent task was performed.
+
+Retrospective: audit the runtime artifact separately, deduplicate inherited
+findings and verify attack prerequisites before interpreting severity counts.
 
 ### F06-11 expired-record cleanup delivery — 2026-10-14
 

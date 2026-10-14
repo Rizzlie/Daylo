@@ -1,7 +1,7 @@
 {
   "generatorName": "typescript-angular",
   "additionalProperties": {
-    "ngVersion": "22.1.8",
+    "ngVersion": "22.2.2",
     "rxjsVersion": "7.8.2",
     "tsVersion": "6.0.3",
     "providedIn": "root",

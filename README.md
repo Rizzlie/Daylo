@@ -43,12 +43,12 @@ Use Node.js 24.19.0 and npm 11.17.0, the verified local baseline. Install the lo
 
 | Tool | Pinned version |
 | --- | --- |
-| Nx and frontend Nx plugins | 23.2.1 |
-| Angular runtime, compiler and language service | 22.1.8 |
-| Angular CLI, build, devkit and schematics | 22.1.9 |
+| Nx and frontend Nx plugins | 23.3.0 |
+| Angular runtime, compiler and language service | 22.2.2 |
+| Angular CLI, build, devkit and schematics | 22.2.2 |
 | Angular Material and CDK | 22.2.1 |
 | TypeScript | 6.0.3 |
-| Analog Angular/Vitest integration | 2.6.4 |
+| Analog Angular/Vitest integration | 2.8.0 |
 | Vite / Vitest | 8.3.2 / 4.1.11 |
 | Angular ESLint / ESLint | 22.5.0 / 9.39.5 |
 | Playwright | 1.63.0 |
@@ -171,7 +171,7 @@ npm exec nx -- run web-shared-api-client:lint
 
 Generation first builds the offline exporter, exports and validates `docs/api/openapi.json`, then replaces only `libs/web/shared/api-client/src/generated`. Export/validation require installed npm dependencies, but no `.env`, secrets, HTTP server or running PostgreSQL. NestJS preview mode scans the actual application controller graph without constructing providers or running database lifecycle hooks. Normal API startup still loads and validates runtime configuration.
 
-Client generation requires a running Docker engine with Linux containers and access to the workspace bind mount. It uses the official `openapitools/openapi-generator-cli` image pinned to version 7.26.0 and its SHA-256 digest; the first run needs network access to download that image. Java is not required on the host. Generator options pin Angular 22.1.8, RxJS 7.8.2 and TypeScript 6.0.3. Generation stages output under ignored `dist`, publishing only unmodified TypeScript sources, without timestamps, machine paths or generator bookkeeping.
+Client generation requires a running Docker engine with Linux containers and access to the workspace bind mount. It uses the official `openapitools/openapi-generator-cli` image pinned to version 7.26.0 and its SHA-256 digest; the first run needs network access to download that image. Java is not required on the host. Generator options pin Angular 22.2.2, RxJS 7.8.2 and TypeScript 6.0.3. Generation stages output under ignored `dist`, publishing only unmodified TypeScript sources, without timestamps, machine paths or generator bookkeeping.
 
 Use the public import `@daylo/web/shared/api-client` from handwritten data-access libraries. The client includes `AuthenticationService.getCurrentSession()` and `HealthService.getReadiness()`. Application bootstrap imports `provideAuthentication` directly from `@daylo/web/core/auth/data-access`; that provider configures HttpClient and `provideApi('')` for same-origin `/api` requests. The generator's standalone default base URL is `http://localhost`. The library is consumed as source and has no publishable package or separate packaging build. Its `typecheck` target compiles all generated services/models with Angular's compiler. Generated templates have narrowly scoped lint style exceptions; Nx boundaries remain enforced.
 
