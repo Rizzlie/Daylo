@@ -7,6 +7,14 @@ dependency upgrades, deployment or acceptance of later backlog tasks.
 
 ## Result and priorities
 
+F06-11 follow-up: On 2026-10-14, the owner-authorized periodic expired-record
+cleanup was implemented and locally verified using NestJS scheduling, bounded
+PostgreSQL batches, session sliding/absolute cutoffs and concurrency protection.
+The owner accepted the reviewed scope on 2026-10-14. See
+[F06-11](../tasks/F06-11-expired-auth-record-cleanup.md) for evidence and operational
+limits. Historical findings below describe the audited baseline; this is a delivery
+follow-up, not a new security audit or production verification.
+
 F06-07 follow-up: the owner-discussed local global rate-limit scope was explicitly
 authorized, implemented, locally verified and owner-accepted on 2026-10-13.
 Common per-peer-IP API quotas, separate Google quotas, bounded in-memory storage

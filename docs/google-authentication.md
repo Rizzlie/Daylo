@@ -163,6 +163,58 @@ resolution remains a separately authorized transaction use case.
 
 ## Verification
 
+### Expired-record cleanup
+
+The running API imports NestJS `ScheduleModule.forRoot()` and the runtime-only
+auth cleanup module. A named `@Interval` runs every 15 minutes from application
+startup, with a separate startup catch-up run. Offline OpenAPI export does not
+initialize scheduling or perform deletion. Graceful shutdown stops scheduling
+and waits for the active bounded batch.
+
+There is no additional retention after expiry. OAuth rows qualify at
+`expiresAt <= cutoff`; sessions qualify at `expiresAt <= cutoff` or creation
+plus 30 days `<= cutoff`, including legacy deadlines beyond that cap. Sign-out
+and callback consumption still delete their own records immediately. Authentication
+validity is enforced independently of the job. Login starts no longer clean old rows.
+
+Each batch deletes at most 500 records from one table. A run alternates tables,
+uses a fixed cutoff and a monotonic five-second budget, and stops starting batches
+when fewer than 200 ms remain. Transaction acquisition is limited to 100 ms;
+transaction timeouts fit the remaining budget and statement timeouts are at most
+two seconds. These are execution limits, not a hard real-time guarantee under
+event-loop or database/network stalls. Partial committed progress survives failure.
+
+Transaction-scoped PostgreSQL advisory lock 60611 coordinates batches across
+instances; a busy worker skips its run. Row locks skip concurrent auth operations,
+and eligible rows are checked in the deleting transaction. No persistent leader,
+queue or external scheduler is introduced. Skipped rows, timeouts and remaining
+backlog are retried on the next run. With no backlog, failures or conflicting locks,
+expired rows are removed at the next tick; while API is stopped they remain until
+restart. Large backlogs can require more than one tick.
+
+Each run emits one redacted operational summary with `event=auth_record_cleanup`,
+outcome (`completed`, `budget_exhausted`, `worker_busy`, `failed`, `stopped`),
+`sessionsDeleted`, `oauthDeleted` and `durationMs`. No raw database error,
+credential or personal identifier is emitted. This is an operational log, separate
+from the security-event allowlist; collection/retention/alerts remain hosting work.
+Only sessions/OAuth are deleted; users, invitations and business data are preserved.
+
+Global deletion tests require their own freshly migrated, empty disposable database:
+
+```powershell
+$env:DATABASE_URL = 'postgresql://daylo:daylo-test@localhost:55411/daylo_f06_cleanup'
+npm exec nx -- run api-core-database:prisma-migrate-deploy --skipNxCache
+$env:F06_CLEANUP_TEST_DATABASE_URL = $env:DATABASE_URL
+npm exec nx -- run api-auth-data-access:test --skipNxCache
+Remove-Item Env:F06_CLEANUP_TEST_DATABASE_URL
+Remove-Item Env:DATABASE_URL
+```
+
+The URL above is an example for a separately provisioned disposable PostgreSQL.
+Never point it at development/production or share it with other integration suites.
+
+### Authentication regression checks
+
 Ordinary HTTP tests replace only Google's external transport with synthetic signed
 tokens and certificates. There is no runtime environment flag for a controlled
 provider. They exercise the real verifier, use cases, HTTP cookies, Zod and error

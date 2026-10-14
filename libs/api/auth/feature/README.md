@@ -40,3 +40,11 @@ Google callback cases. Test controllers and provider fixtures never enter runtim
 modules. Full frontend authentication remains F06-04; real Google smoke is F06-05.
 See [configuration and verification](../../../../docs/google-authentication.md) and
 [API conventions](../../../../docs/api-conventions.md).
+
+`ApiAuthCleanupModule` is imported only by the runtime application, alongside
+NestJS `ScheduleModule.forRoot()`. It runs bounded cleanup on startup and every
+15 minutes through a named `@Interval`. The service owns scheduling, monotonic
+run budgets, overlap/shutdown handling and redacted operational summaries; the
+auth data-access store owns PostgreSQL deletion and worker coordination. Offline
+OpenAPI export and ordinary HTTP test applications omit this module. See the
+[cleanup policy](../../../../docs/google-authentication.md#expired-record-cleanup).

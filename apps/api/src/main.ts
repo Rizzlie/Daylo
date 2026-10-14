@@ -6,6 +6,7 @@ import { setupOpenApi } from './app/openapi';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(RuntimeAppModule);
+  app.enableShutdownHooks();
   const config = app.get(ConfigService);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);

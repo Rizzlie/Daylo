@@ -57,10 +57,8 @@ describe('Google OIDC HTTP flow', () => {
   const eventOutput = () => eventLines.map((line) => JSON.parse(line));
   const rows = new Map<string, NewOAuthTransaction>();
   const store = {
-    async create(row: NewOAuthTransaction, now: Date) {
+    async create(row: NewOAuthTransaction) {
       if (databaseFailure) throw new Error('private-database-url');
-      for (const [state, existing] of rows)
-        if (existing.expiresAt <= now) rows.delete(state);
       rows.set(row.stateHash, row);
     },
     async consume(stateHash: string, bindingHash: string, now: Date) {

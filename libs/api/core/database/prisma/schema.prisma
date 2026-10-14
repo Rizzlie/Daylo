@@ -75,6 +75,8 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "sessions_user_id_fkey")
 
   @@index([userId, expiresAt], map: "sessions_user_id_expires_at_idx")
+  @@index([expiresAt], map: "sessions_expires_at_idx")
+  @@index([createdAt], map: "sessions_created_at_idx")
   @@map("sessions")
 }
 
@@ -88,6 +90,7 @@ model OAuthTransaction {
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([browserBindingHash, expiresAt], map: "oauth_transactions_browser_expires_at_idx")
+  @@index([expiresAt], map: "oauth_transactions_expires_at_idx")
   @@map("oauth_transactions")
 }
 

@@ -48,7 +48,6 @@ describe.skipIf(!enabled || !databaseUrl)(
       stateHashes.push(stateHash);
       await store.create(
         { stateHash, browserBindingHash, nonce, encryptedVerifier, expiresAt },
-        new Date(),
       );
       return { stateHash, browserBindingHash, nonce, encryptedVerifier };
     }
@@ -107,7 +106,7 @@ describe.skipIf(!enabled || !databaseUrl)(
       ).toEqual({ nonce: transaction.nonce, encryptedVerifier: transaction.encryptedVerifier });
     });
 
-    it('rejects expiry at the exact deadline and cleans expired attempts on the next start', async () => {
+    it('rejects expiry at the exact deadline without cleaning on the next start', async () => {
       const deadline = new Date(Date.now() + 60_000);
       const transaction = await create(deadline);
       expect(
@@ -125,14 +124,13 @@ describe.skipIf(!enabled || !databaseUrl)(
           encryptedVerifier: 'next-encrypted-verifier',
           expiresAt: new Date(deadline.getTime() + 600_000),
         },
-        deadline,
       );
       stateHashes.push(hash('next-start'));
       expect(
         await prisma.client.oAuthTransaction.findUnique({
           where: { stateHash: transaction.stateHash },
         }),
-      ).toBeNull();
+      ).not.toBeNull();
     });
   },
 );
