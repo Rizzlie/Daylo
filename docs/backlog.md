@@ -1,8 +1,36 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-13. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-09, F06-11 and F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-14. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-09 and F06-12 remain pending, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### F06-11 expired-record cleanup delivery — 2026-10-14
+
+Implemented owner-authorized startup/15-minute cleanup using NestJS scheduling
+6.1.3, bounded 500-row PostgreSQL batches, a five-second run budget, database
+timeouts, advisory/row-lock coordination and redacted operational summaries.
+OAuth starts no longer perform unbounded cleanup. Session eligibility preserves
+sliding expiry and the 30-day cap, including legacy rows. Three Prisma indexes
+support expiry/creation predicates; users and business records are preserved.
+
+Local Nx checks passed: 221 API tests with PostgreSQL enabled, 16 auth repository
+tests including 13 cleanup cases, database unit tests, relevant lint, production
+API build, schema constraints and deterministic source-preserving OpenAPI/client
+drift checks. All three migrations applied to two empty isolated PostgreSQL 17
+databases; EXPLAIN verified index eligibility. No UI/HTTP response change, so
+browser/frontend E2E inspection is inapplicable. No production load/hosted CI or
+real Google smoke is claimed. The owner accepted the reviewed scope with
+"akceptuje" on 2026-10-14; F06-11 is closed. See
+[F06-11](tasks/F06-11-expired-auth-record-cleanup.md) for evidence and timing limits.
+
+Retrospective: check package module format as well as Nest peer compatibility;
+verify scheduling through the actual feature module and isolate global-deletion
+fixtures from regression databases. Subsequent tasks remain pending. The owner
+separately authorized a task-branch commit, push and draft PR on 2026-10-14.
+
+Publication: [draft PR #24](https://github.com/Rizzlie/Daylo/pull/24) contains the
+accepted F06-11 scope and is registered with the task thread. Hosted CI remains
+pending; no merge, deployment or subsequent implementation was performed.
 
 ### R01-01 API readability refactor — 2026-10-13
 

@@ -99,6 +99,12 @@ The Google client secret remains on the backend. The application does not retain
 - Expire sessions after seven days without renewal, capped at 30 days from creation, and revoke the current session on sign-out. A successful `GET /api/auth/session` renews a still-valid session and its cookie for seven days from the request, without exceeding the absolute cap; expired/revoked sessions cannot be renewed. Other requests, including CSRF retrieval and background streams, do not renew sessions. The owner approved the absolute cap in F06-06; no separate refresh token is used.
 - Use `__Host-` cookie names, Secure, Path=/ and no Domain on HTTPS; keep compatible unprefixed cookies only for local HTTP development. Never accept unprefixed legacy cookies in secure mode.
 - Do not store authentication tokens in browser storage.
+- F06-11 adds runtime-only NestJS scheduling: startup cleanup and a named
+  15-minute interval remove expired OAuth/session rows, including the 30-day
+  session cap. Batches contain at most 500 rows and runs have a five-second
+  execution budget with database timeouts. PostgreSQL advisory/row locks
+  coordinate cleanup without changing authentication validity. See
+  [cleanup operation and verification](google-authentication.md#expired-record-cleanup).
 - Protect state-changing API requests using a session-bound CSRF token and allowed-origin checks.
 - OAuth `state` and browser binding protect the sign-in transaction; do not apply ordinary mutation-header requirements to the Google redirect callback.
 

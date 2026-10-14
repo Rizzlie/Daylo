@@ -13,11 +13,7 @@ export interface NewOAuthTransaction {
 export class OAuthTransactionStore {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async create(transaction: NewOAuthTransaction, now: Date): Promise<void> {
-    // Remove expired sign-in attempts without ever touching users or sessions.
-    await this.prisma.client.oAuthTransaction.deleteMany({
-      where: { expiresAt: { lte: now } },
-    });
+  async create(transaction: NewOAuthTransaction): Promise<void> {
     await this.prisma.client.oAuthTransaction.create({ data: transaction });
   }
 

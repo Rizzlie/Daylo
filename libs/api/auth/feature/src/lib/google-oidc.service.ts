@@ -48,7 +48,6 @@ export class GoogleOidcService {
           encryptedVerifier,
           expiresAt: new Date(now.getTime() + OAUTH_TRANSACTION_SECONDS * 1000),
         },
-        now,
       );
     } catch {
       throw new ServiceUnavailableException();
