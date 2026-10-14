@@ -16,6 +16,12 @@ Task discussions remain **not started** unless their individual records state ot
 
 ## Tasks
 
+### API maintenance
+
+| Task | Title | Delivery status |
+| --- | --- | --- |
+| [R01-01](tasks/R01-01-api-readability-refactor.md) | API readability refactor | Closed: full handwritten API scope implemented, locally verified and owner-accepted on 2026-10-14; draft PR publication authorized |
+
 ### F01
 
 | Task | Title | Delivery status |

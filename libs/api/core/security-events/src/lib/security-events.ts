@@ -21,6 +21,23 @@ const PER_REASON_LIMIT = 20;
 const TOTAL_LIMIT = 120;
 const increment = (value = 0) => Math.min(value + 1, Number.MAX_SAFE_INTEGER);
 
+function allowedEvent(input: SecurityEventInput): boolean {
+  return Object.prototype.hasOwnProperty.call(reasons, input.event)
+    && (reasons[input.event] as readonly string[]).includes(input.reason);
+}
+
+function eventLine(input: SecurityEventInput, now: number, requestId?: string, actorUserId?: string): string {
+  return JSON.stringify({
+    schemaVersion: 1,
+    timestamp: new Date(now).toISOString(),
+    level: input.event === 'login_succeeded' || input.event === 'session_revoked' ? 'info' : 'warn',
+    event: input.event,
+    reason: input.reason,
+    ...(requestId ? { requestId } : {}),
+    ...(typeof actorUserId === 'string' && UUID.test(actorUserId) ? { actorUserId } : {}),
+  }) + '\n';
+}
+
 /** Serializes allowlisted facts only; never serializes requests or exceptions. */
 @Injectable()
 export class SecurityEvents {
@@ -36,39 +53,49 @@ export class SecurityEvents {
     // Runtime allowlists also reject unexpected values crossing JS/test boundaries.
     // No exception or sink failure may escape into the security operation.
     try {
-      if (!Object.prototype.hasOwnProperty.call(reasons, input.event) ||
-          !(reasons[input.event] as readonly string[]).includes(input.reason)) return;
+      if (!allowedEvent(input)) return;
       const now = Date.now();
-      if (now - this.windowStarted >= WINDOW_MS) {
-        this.windowStarted = now;
-        this.counts.clear();
-        this.total = 0;
-        if (this.suppressed.size > 0 && this.writer.write(JSON.stringify({
-          schemaVersion: 1, timestamp: new Date(now).toISOString(), level: 'warn',
-          event: 'security_events_suppressed', reason: 'output_bounded_or_unavailable',
-          counts: Object.fromEntries(this.suppressed),
-        }) + '\n')) {
-          this.suppressed.clear();
-          this.total++;
-        }
-      }
+      this.advanceWindow(now);
       const key = `${input.event}:${input.reason}`;
-      const count = this.counts.get(key) ?? 0;
-      if (count >= PER_REASON_LIMIT || this.total >= TOTAL_LIMIT) {
+      if (!this.reserveOutput(key)) {
         this.suppress(key);
         return;
       }
-      this.counts.set(key, count + 1);
-      this.total++;
-      const line = JSON.stringify({
-        schemaVersion: 1, timestamp: new Date(now).toISOString(),
-        level: input.event === 'login_succeeded' || input.event === 'session_revoked' ? 'info' : 'warn',
-        event: input.event, reason: input.reason,
-        ...(request ? { requestId: this.requestId(request) } : {}),
-        ...(typeof actorUserId === 'string' && UUID.test(actorUserId) ? { actorUserId } : {}),
-      }) + '\n';
+      const line = eventLine(input, now, request ? this.requestId(request) : undefined, actorUserId);
       if (!this.writer.write(line)) this.suppress(key);
     } catch { /* Best-effort diagnostics must never change auth outcomes. */ }
+  }
+
+  private advanceWindow(now: number): void {
+    if (now - this.windowStarted < WINDOW_MS) return;
+    this.windowStarted = now;
+    this.counts.clear();
+    this.total = 0;
+    this.flushSuppressionSummary(now);
+  }
+
+  private flushSuppressionSummary(now: number): void {
+    if (this.suppressed.size === 0) return;
+    const line = JSON.stringify({
+      schemaVersion: 1,
+      timestamp: new Date(now).toISOString(),
+      level: 'warn',
+      event: 'security_events_suppressed',
+      reason: 'output_bounded_or_unavailable',
+      counts: Object.fromEntries(this.suppressed),
+    }) + '\n';
+    if (this.writer.write(line)) {
+      this.suppressed.clear();
+      this.total++;
+    }
+  }
+
+  private reserveOutput(key: string): boolean {
+    const count = this.counts.get(key) ?? 0;
+    if (count >= PER_REASON_LIMIT || this.total >= TOTAL_LIMIT) return false;
+    this.counts.set(key, count + 1);
+    this.total++;
+    return true;
   }
 
   private suppress(key: string): void {

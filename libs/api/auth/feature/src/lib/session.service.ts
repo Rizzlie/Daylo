@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SessionStore, StoredSession } from '@daylo/api/auth/data-access';
-import { SecurityEvents } from '@daylo/api/core/security-events';
+import { SecurityEvents, SecurityEventInput } from '@daylo/api/core/security-events';
 import type { Request, Response } from 'express';
 import { authCookieName, authCookieOptions, readAuthCookie, SESSION_COOKIE } from './auth-cookie';
 
@@ -18,6 +18,8 @@ const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 // Domain separation prevents the CSRF value from disclosing the session token.
 const csrfValue = (token: string) => createHmac('sha256', token)
   .update('daylo:session-csrf:v1').digest('base64url');
+
+type CsrfRejectionReason = Extract<SecurityEventInput, { event: 'csrf_rejected' }>['reason'];
 
 function sessionCookie(request: Request, name: string): string | undefined {
   const value = readAuthCookie(request.headers.cookie, name);
@@ -60,28 +62,36 @@ export class SessionService {
   }
 
   async authenticate(request: Request, response: Response): Promise<StoredSession> {
-    const token = sessionCookie(request, this.cookieName());
-    const session = token
-      ? await this.database(() => this.store.findValid(hash(token), new Date())) : null;
-    if (!session) {
-      response.clearCookie(this.cookieName(), this.cookieOptions());
-      throw new UnauthorizedException();
-    }
-    return session;
+    const token = this.requireToken(request, response);
+    const session = await this.database(() => this.store.findValid(hash(token), new Date()));
+    return this.requireSession(session, response);
   }
 
   async renew(request: Request, response: Response): Promise<StoredSession> {
-    const token = sessionCookie(request, this.cookieName());
+    const token = this.requireToken(request, response);
     const now = new Date();
-    const session = token ? await this.database(() => this.store.renew(
+    const stored = await this.database(() => this.store.renew(
       hash(token), now, new Date(now.getTime() + SESSION_SECONDS * 1000),
-    )) : null;
-    if (!session || !token) {
-      response.clearCookie(this.cookieName(), this.cookieOptions());
-      throw new UnauthorizedException();
-    }
+    ));
+    const session = this.requireSession(stored, response);
     this.setCookie(response, token, session.expiresAt);
     return session;
+  }
+
+  private requireToken(request: Request, response: Response): string {
+    const token = sessionCookie(request, this.cookieName());
+    if (!token) this.rejectAnonymous(response);
+    return token;
+  }
+
+  private requireSession(session: StoredSession | null, response: Response): StoredSession {
+    if (!session) this.rejectAnonymous(response);
+    return session;
+  }
+
+  private rejectAnonymous(response: Response): never {
+    response.clearCookie(this.cookieName(), this.cookieOptions());
+    throw new UnauthorizedException();
   }
 
   csrf(request: Request, session: StoredSession): string {
@@ -89,8 +99,7 @@ export class SessionService {
     if (!token) throw new UnauthorizedException();
     const value = csrfValue(token);
     if (!this.matchesCsrf(value, session.csrfTokenHash)) {
-      this.events.record({ event: 'csrf_rejected', reason: 'invalid_binding' }, request, session.user.id);
-      throw new ForbiddenException();
+      this.rejectCsrf('invalid_binding', request, session);
     }
     return value;
   }
@@ -101,13 +110,20 @@ export class SessionService {
   }
 
   verifyMutation(request: Request, session: StoredSession): void {
-    if (request.headers.origin !== this.config.getOrThrow<string>('runtime.frontendOrigin')
-      || !this.matchesCsrf(request.headers['x-csrf-token'], session.csrfTokenHash)) {
-      this.events.record({ event: 'csrf_rejected', reason:
-        request.headers.origin !== this.config.getOrThrow<string>('runtime.frontendOrigin') ? 'invalid_origin' : 'invalid_proof',
-      }, request, session.user.id);
-      throw new ForbiddenException();
-    }
+    const reason = this.mutationRejectionReason(request, session);
+    if (reason) this.rejectCsrf(reason, request, session);
+  }
+
+  private mutationRejectionReason(request: Request, session: StoredSession): CsrfRejectionReason | undefined {
+    const allowedOrigin = this.config.getOrThrow<string>('runtime.frontendOrigin');
+    if (request.headers.origin !== allowedOrigin) return 'invalid_origin';
+    if (!this.matchesCsrf(request.headers['x-csrf-token'], session.csrfTokenHash)) return 'invalid_proof';
+    return undefined;
+  }
+
+  private rejectCsrf(reason: CsrfRejectionReason, request: Request, session: StoredSession): never {
+    this.events.record({ event: 'csrf_rejected', reason }, request, session.user.id);
+    throw new ForbiddenException();
   }
 
   async signOut(session: StoredSession, response: Response, request?: Request): Promise<void> {

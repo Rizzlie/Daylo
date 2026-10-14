@@ -4,6 +4,24 @@ Status: Planning baseline, version 1.0, with delivery/acceptance updates through
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
 
+### R01-01 API readability refactor — 2026-10-13
+
+The owner authorized readability work with "zrób to, ale na razie nie commituj"
+and clarified the full API scope with "chodzi mi o cały kod, nie tylko to co bylo
+ostatnio". Reviewed all handwritten API runtime areas and refactored 21 source
+files, including configuration, HTTP/OpenAPI, quotas, auth/controllers/guards,
+persistence mapping, readiness and security events. Already declarative modules,
+contracts and simple adapters were retained. Locally verified with 268 tests
+(215 API, 28 configuration, 10 security events, 12 database, 3 OAuth repository),
+including isolated PostgreSQL variants, relevant lint, production build,
+OpenAPI/client drift checks and client compilation.
+Public contracts and accepted security behavior are preserved; no new dependency
+or migration was added. Ten existing API lint warnings remain. Browser/frontend
+E2E were not run for this behavior-preserving backend refactor. Owner accepted
+the full scope and authorized draft PR publication with "wygląda dobrze, wystaw PR"
+on 2026-10-14. See [R01-01](tasks/R01-01-api-readability-refactor.md).
+This maintenance task does not change phase acceptance or authorize further work.
+
 ### F06-10 security event logging delivery — 2026-10-13
 
 The owner agreed JSON stdout logging and authorized implementation with "okej,

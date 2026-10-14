@@ -17,6 +17,25 @@ import { OAuthPkceService } from './oauth-pkce.service';
 import { SessionService } from './session.service';
 import { SessionGuard } from './session.guard';
 
+function createGoogleOAuthClient(config: ConfigService): OAuth2Client {
+  const client = new OAuth2Client({
+    clientId: config.getOrThrow<string>('runtime.googleClientId'),
+    clientSecret: config.getOrThrow<string>('runtime.googleClientSecret'),
+    redirectUri: config.getOrThrow<string>('runtime.googleCallbackUrl'),
+    transporterOptions: { timeout: 10_000, retry: false },
+  });
+  // The library's per-request retry options override transporter defaults.
+  // A consumed authorization code must not be exchanged a second time.
+  client.transporter.interceptors.request.add({
+    resolved: async (request) => {
+      request.retry = false;
+      request.timeout = 10_000;
+      return request;
+    },
+  });
+  return client;
+}
+
 @Module({
   imports: [ConfigModule, ApiCoreDatabaseModule, ApiAuthDataAccessModule, ApiCoreSecurityEventsModule],
   controllers: [CurrentSessionController, GoogleOidcController],
@@ -30,24 +49,7 @@ import { SessionGuard } from './session.guard';
     {
       provide: GOOGLE_OAUTH_CLIENT,
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const client = new OAuth2Client({
-          clientId: config.getOrThrow<string>('runtime.googleClientId'),
-          clientSecret: config.getOrThrow<string>('runtime.googleClientSecret'),
-          redirectUri: config.getOrThrow<string>('runtime.googleCallbackUrl'),
-          transporterOptions: { timeout: 10_000, retry: false },
-        });
-        // The library's per-request retry options override transporter defaults.
-        // A consumed authorization code must not be exchanged a second time.
-        client.transporter.interceptors.request.add({
-          resolved: async (request) => {
-            request.retry = false;
-            request.timeout = 10_000;
-            return request;
-          },
-        });
-        return client;
-      },
+      useFactory: createGoogleOAuthClient,
     },
   ],
 })

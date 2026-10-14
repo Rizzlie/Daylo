@@ -9,7 +9,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SecurityEvents } from '@daylo/api/core/security-events';
+import { SecurityEvents, SecurityEventInput } from '@daylo/api/core/security-events';
 import type { Request } from 'express';
 import { HttpAdapterHost } from '@nestjs/core';
 import {
@@ -55,6 +55,46 @@ const statusDefaults: Record<number, Pick<HttpErrorResponse, 'code' | 'message'>
   },
 };
 
+const GOOGLE_AUTH_PATHS = new Set(['/api/auth/google', '/api/auth/google/callback']);
+const normalizedPath = (request: Request) => request.path.replace(/\/+$/, '').toLowerCase();
+
+function isGoogleNavigation(request: Request): boolean {
+  return request.method === 'GET'
+    && GOOGLE_AUTH_PATHS.has(normalizedPath(request))
+    && !!request.get('accept')?.includes('text/html');
+}
+
+function recoveryReason(status: number): 'rate-limit' | 'denied' | 'connection' | 'failed' {
+  if (status === HttpStatus.TOO_MANY_REQUESTS) return 'rate-limit';
+  if (status === HttpStatus.FORBIDDEN) return 'denied';
+  if (status >= HttpStatus.INTERNAL_SERVER_ERROR) return 'connection';
+  return 'failed';
+}
+
+function loginFailureReason(status: number): Extract<SecurityEventInput, { event: 'login_failed' }>['reason'] {
+  if (status === HttpStatus.FORBIDDEN) return 'admission_denied';
+  if (status === HttpStatus.SERVICE_UNAVAILABLE) return 'infrastructure_unavailable';
+  if (status >= HttpStatus.INTERNAL_SERVER_ERROR) return 'unexpected_failure';
+  return 'invalid_callback';
+}
+
+function securityFailures(status: number, request: Request): SecurityEventInput[] {
+  if (status === HttpStatus.TOO_MANY_REQUESTS) {
+    return [{ event: 'rate_limit_rejected', reason: 'quota_exceeded' }];
+  }
+  const path = normalizedPath(request);
+  const isAuthRequest = ['GET', 'HEAD'].includes(request.method) && GOOGLE_AUTH_PATHS.has(path);
+  if (!isAuthRequest) return [];
+
+  const invalidCallbackQuery = path.endsWith('/callback') && status === HttpStatus.BAD_REQUEST;
+  const admissionDenied = status === HttpStatus.FORBIDDEN;
+  const callbackEvents: SecurityEventInput[] = invalidCallbackQuery
+    ? [{ event: 'callback_rejected', reason: 'invalid_query' }] : [];
+  const admissionEvents: SecurityEventInput[] = admissionDenied
+    ? [{ event: 'admission_denied', reason: 'not_admitted' }] : [];
+  return [...callbackEvents, ...admissionEvents, { event: 'login_failed', reason: loginFailureReason(status) }];
+}
+
 @Catch()
 export class ApiHttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiHttpExceptionFilter.name);
@@ -72,17 +112,14 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
     const response = host.switchToHttp().getResponse<unknown>();
     const request = host.switchToHttp().getRequest<Request>();
-    const path = request.path;
     this.recordSecurityFailure(status, request);
     if (status === HttpStatus.TOO_MANY_REQUESTS) {
       this.adapterHost.httpAdapter.setHeader(response, 'Cache-Control', 'no-store');
     }
     const origin = this.config?.get<string>('runtime.frontendOrigin');
-    if (origin && request.method === 'GET' &&
-        ['/api/auth/google', '/api/auth/google/callback'].includes(path.replace(/\/+$/, '').toLowerCase()) &&
-        request.get('accept')?.includes('text/html')) {
+    if (origin && isGoogleNavigation(request)) {
       // Fixed destinations and allowlisted reasons never expose provider data.
-      const reason = status === 429 ? 'rate-limit' : status === 403 ? 'denied' : status >= 500 ? 'connection' : 'failed';
+      const reason = recoveryReason(status);
       this.adapterHost.httpAdapter.setHeader(response, 'Cache-Control', 'no-store');
       this.adapterHost.httpAdapter.setHeader(response, 'Referrer-Policy', 'no-referrer');
       this.adapterHost.httpAdapter.redirect(response, 302, new URL(`/login?error=${reason}`, origin).href);
@@ -167,22 +204,6 @@ export class ApiHttpExceptionFilter implements ExceptionFilter {
   }
 
   private recordSecurityFailure(status: number, request: Request): void {
-    if (status === HttpStatus.TOO_MANY_REQUESTS) {
-      this.events.record({ event: 'rate_limit_rejected', reason: 'quota_exceeded' }, request);
-      return;
-    }
-    const path = request.path.replace(/\/+$/, '').toLowerCase();
-    if (!['GET', 'HEAD'].includes(request.method) ||
-        !['/api/auth/google', '/api/auth/google/callback'].includes(path)) return;
-    if (path.endsWith('/callback') && status === HttpStatus.BAD_REQUEST) {
-      this.events.record({ event: 'callback_rejected', reason: 'invalid_query' }, request);
-    }
-    if (status === HttpStatus.FORBIDDEN) {
-      this.events.record({ event: 'admission_denied', reason: 'not_admitted' }, request);
-    }
-    this.events.record({ event: 'login_failed', reason:
-      status === 403 ? 'admission_denied' : status === 503 ? 'infrastructure_unavailable' :
-      status >= 500 ? 'unexpected_failure' : 'invalid_callback',
-    }, request);
+    securityFailures(status, request).forEach((event) => this.events.record(event, request));
   }
 }

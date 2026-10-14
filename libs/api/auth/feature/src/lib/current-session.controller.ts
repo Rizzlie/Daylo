@@ -4,12 +4,24 @@ import {
   ApiNoContentResponse, ApiOperation, ApiServiceUnavailableResponse, ApiTags, ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ALLOW_PENDING_SESSION } from '@daylo/api/core/identity/contracts';
+import type { StoredSession } from '@daylo/api/auth/data-access';
 import type { CurrentSessionResponse, CsrfTokenResponse } from '@daylo/shared/schemas';
 import type { Response } from 'express';
 import { ZodResponse } from 'nestjs-zod';
 import { CsrfTokenResponseDto, CurrentSessionResponseDto, SessionErrorResponseDto } from './current-session.response';
 import { AuthenticatedRequest } from './session.guard';
 import { CSRF_HEADER, SessionService } from './session.service';
+
+function sessionResponse(session: StoredSession): CurrentSessionResponse {
+  return {
+    status: session.user.accessStatus === 'ACTIVE' ? 'active' : 'pending',
+    user: {
+      id: session.user.id,
+      email: session.user.email,
+      displayName: session.user.displayName,
+    },
+  };
+}
 
 @ApiTags('Authentication')
 @ApiCookieAuth('dayloSession')
@@ -47,10 +59,7 @@ export class CurrentSessionController {
     // keep a session alive or refresh its cookie.
     const session = request.method === 'GET'
       ? await this.sessions.renew(request, response) : request.dayloSession;
-    return {
-      status: session.user.accessStatus === 'ACTIVE' ? 'active' : 'pending',
-      user: { id: session.user.id, email: session.user.email, displayName: session.user.displayName },
-    };
+    return sessionResponse(session);
   }
 
   @Get('csrf')

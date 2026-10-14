@@ -6,6 +6,19 @@ import { protectApiDocumentation } from './rate-limiting/api-rate-limit.module';
 
 class RateLimitErrorResponseDto extends createZodDto(httpErrorResponseSchema.meta({ id: undefined })) {}
 
+const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'] as const;
+
+function rateLimitResponse() {
+  return {
+    description: 'Per-IP API budget exceeded. HTML Google navigation redirects to /login?error=rate-limit instead. Rejections do not revoke sessions.',
+    headers: {
+      'Retry-After': { description: 'Seconds until this quota recovers.', schema: { type: 'integer' as const, minimum: 1 } },
+      'Cache-Control': { schema: { type: 'string' as const, enum: ['no-store'] } },
+    },
+    content: { 'application/json': { schema: { $ref: getSchemaPath(RateLimitErrorResponseDto.Output) } } },
+  };
+}
+
 export function createOpenApiDocument(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('Daylo API')
@@ -20,20 +33,10 @@ export function createOpenApiDocument(app: INestApplication) {
 
   const document = SwaggerModule.createDocument(app, config, { extraModels: [RateLimitErrorResponseDto.Output] });
   // Every controller operation is protected by default, including future routes.
-  for (const path of Object.values(document.paths)) {
-    for (const method of ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'] as const) {
-      const operation = path?.[method];
-      if (!operation) continue;
-      operation.responses['429'] = {
-        description: 'Per-IP API budget exceeded. HTML Google navigation redirects to /login?error=rate-limit instead. Rejections do not revoke sessions.',
-        headers: {
-          'Retry-After': { description: 'Seconds until this quota recovers.', schema: { type: 'integer', minimum: 1 } },
-          'Cache-Control': { schema: { type: 'string', enum: ['no-store'] } },
-        },
-        content: { 'application/json': { schema: { $ref: getSchemaPath(RateLimitErrorResponseDto.Output) } } },
-      };
-    }
-  }
+  const operations = Object.values(document.paths)
+    .flatMap((path) => HTTP_METHODS.map((method) => path?.[method]))
+    .filter((operation) => operation !== undefined);
+  operations.forEach((operation) => { operation.responses['429'] = rateLimitResponse(); });
   return cleanupOpenApiDoc(document, {
     version: '3.0',
   });

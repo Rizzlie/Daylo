@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerRequest } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
 const COMMON_BUDGETS = new Set(['burst', 'minute']);
+const isCommonBudget = (name?: string) => COMMON_BUDGETS.has(name ?? 'default');
 
 @Injectable()
 export class ApiRateLimitGuard extends ThrottlerGuard {
@@ -15,8 +16,9 @@ export class ApiRateLimitGuard extends ThrottlerGuard {
     if (this.admitted.has(request)) return;
     const context = new ExecutionContextHost([request, response], ApiRateLimitGuard, this.admitHttp);
     context.setType('http');
-    for (const throttler of this.throttlers) {
-      if (!COMMON_BUDGETS.has(throttler.name ?? 'default')) continue;
+    const commonBudgets = this.throttlers.filter((throttler) => isCommonBudget(throttler.name));
+    // Keep quota consumption sequential so a rejected budget stops admission.
+    for (const throttler of commonBudgets) {
       await super.handleRequest({
         context, throttler, limit: Number(throttler.limit), ttl: Number(throttler.ttl),
         blockDuration: Number(throttler.ttl),
@@ -29,7 +31,7 @@ export class ApiRateLimitGuard extends ThrottlerGuard {
 
   protected override async handleRequest(props: ThrottlerRequest): Promise<boolean> {
     const request = props.context.switchToHttp().getRequest<Request>();
-    if (COMMON_BUDGETS.has(props.throttler.name ?? 'default') && this.admitted.has(request)) return true;
+    if (isCommonBudget(props.throttler.name) && this.admitted.has(request)) return true;
     return super.handleRequest(props);
   }
 
