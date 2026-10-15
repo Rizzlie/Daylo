@@ -99,3 +99,24 @@ Publication: [PR #29](https://github.com/Rizzlie/Daylo/pull/29) is ready for rev
 contains the accepted M01-01/F06-13 scope and is linked to the task thread.
 Pre-commit formatting and commitlint passed. Hosted CI remains pending.
 No merge, deployment or subsequent task was performed.
+
+### PR CI correction — 2026-10-15
+
+PR #29 job [116650853315](https://github.com/Rizzlie/Daylo/actions/runs/38801209795/job/116650853315)
+failed only `web-core-shell:test`: the account-menu retry test still expected the
+removed GET `/api/auth/csrf` step, leaving POST `/api/auth/sign-out` unhandled.
+The error reproduced locally without Nx cache. Update the test to assert native
+XSRF on the direct POST, absence of a JSON-proof request, preservation after 503,
+and successful explicit retry into anonymous session state. This is a test-only
+correction; browser behavior and generated files are unchanged.
+
+Retrospective: include tests of transitive UI consumers when changing shared
+authentication behavior, and run the PR's full affected checks before publication.
+
+Correction verification: all eight shell tests and shell lint passed. The full
+`npm exec nx -- affected -t lint test build --base=origin/main --head=HEAD`
+passed all 37 tasks across 19 projects (six cached), including generated-client
+drift, auth/application tests and production builds. Opt-in database suites were
+not enabled in this CI-equivalent run; earlier PostgreSQL evidence remains
+applicable. Browser inspection is inapplicable to this test-only correction.
+The correction is published to the existing ready PR; its new hosted CI is pending.
