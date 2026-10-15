@@ -27,9 +27,12 @@ for (const account of ['owner', 'member', 'invited'] satisfies Account[]) {
       await page.evaluate(() => ({
         local: localStorage.length,
         session: sessionStorage.length,
-        cookie: document.cookie,
+        cookieNames: document.cookie
+          .split(';')
+          .map((cookie) => cookie.trim().split('=')[0])
+          .filter(Boolean),
       })),
-    ).toEqual({ local: 0, session: 0, cookie: '' });
+    ).toEqual({ local: 0, session: 0, cookieNames: ['daylo_xsrf'] });
     const signOut = page.waitForResponse((response) =>
       response.url().endsWith('/api/auth/sign-out'),
     );
@@ -99,6 +102,11 @@ for (const { detection, kind, revalidate } of [
     await actor.expire(kind);
     await revalidate(actor);
     await expect(actor.page).toHaveURL(/\/login\?error=expired$/);
+    expect(
+      (await actor.context.cookies()).filter((cookie) =>
+        ['daylo_xsrf', '__Host-daylo_session'].includes(cookie.name),
+      ),
+    ).toEqual([]);
     await expect(actor.page.getByRole('alert')).toHaveText('Sesja wygasła. Zaloguj się ponownie.');
     await actor.page.reload();
     await expect(actor.page.getByRole('alert')).toHaveText('Sesja wygasła. Zaloguj się ponownie.');

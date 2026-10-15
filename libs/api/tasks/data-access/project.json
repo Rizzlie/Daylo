@@ -1,0 +1,9 @@
+{
+  "name": "api-tasks-data-access",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api/tasks/data-access/src",
+  "projectType": "library",
+  "tags": ["platform:api", "scope:tasks", "type:api-data-access"],
+  "// targets": "to see all targets run: nx show project api-tasks-data-access --web",
+  "targets": {}
+}

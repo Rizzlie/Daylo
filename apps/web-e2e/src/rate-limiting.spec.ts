@@ -83,7 +83,7 @@ test.describe('real-stack API rate limiting', () => {
       await second.close();
       await exhaustBurst(request);
       const rejection = page.waitForResponse((response) =>
-        response.url().endsWith('/api/auth/csrf'),
+        response.url().endsWith('/api/auth/sign-out'),
       );
       await page.getByRole('button', { name: /^Konto:/ }).click();
       await page.getByRole('menuitem', { name: 'Wyloguj się', exact: true }).click();

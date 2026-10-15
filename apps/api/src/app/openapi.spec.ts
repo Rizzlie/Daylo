@@ -7,16 +7,15 @@ import { GOOGLE_OAUTH_CLIENT } from '@daylo/api/auth/feature';
 import { AppModule } from './app.module';
 import { DatabaseReadinessService, PrismaService } from '@daylo/api/core/database';
 import { OAuth2Client } from 'google-auth-library';
-import {
-  currentSessionResponseSchema,
-  httpErrorResponseSchema,
-} from '@daylo/shared/schemas';
+import { currentSessionResponseSchema, httpErrorResponseSchema } from '@daylo/shared/schemas';
 import { createZodDto, ZodResponse } from 'nestjs-zod';
 import { ApiHttpModule } from './api-http.module';
 import { DatabaseReadinessController } from './database-readiness.controller';
 import { createOpenApiDocument, setupOpenApi } from './openapi';
 
-class SessionFixtureDto extends createZodDto(currentSessionResponseSchema.meta({ id: undefined })) {}
+class SessionFixtureDto extends createZodDto(
+  currentSessionResponseSchema.meta({ id: undefined }),
+) {}
 
 const syntheticUser = {
   id: '3eac11b0-884a-4f50-a593-28bd8663387a',
@@ -59,13 +58,18 @@ describe('session contract and OpenAPI', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [ApiHttpModule, AppModule],
       controllers: [DatabaseReadinessController, SessionFixtureController],
-      providers: [
-        { provide: DatabaseReadinessService, useValue: { isReady: async () => true } },
-      ],
+      providers: [{ provide: DatabaseReadinessService, useValue: { isReady: async () => true } }],
     })
-      .overrideProvider(PrismaService).useValue({})
-      .overrideProvider(ConfigService).useValue(new ConfigService({ runtime: { environment: 'development', frontendOrigin: 'http://localhost:4200' } }))
-      .overrideProvider(GOOGLE_OAUTH_CLIENT).useValue(new OAuth2Client({ clientId: 'synthetic.apps.googleusercontent.com' }))
+      .overrideProvider(PrismaService)
+      .useValue({})
+      .overrideProvider(ConfigService)
+      .useValue(
+        new ConfigService({
+          runtime: { environment: 'development', frontendOrigin: 'http://localhost:4200' },
+        }),
+      )
+      .overrideProvider(GOOGLE_OAUTH_CLIENT)
+      .useValue(new OAuth2Client({ clientId: 'synthetic.apps.googleusercontent.com' }))
       .compile();
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix('api');
@@ -78,24 +82,30 @@ describe('session contract and OpenAPI', () => {
     await app?.close();
   });
 
-  it.each([undefined, 'synthetic-cookie=untrusted'])('returns the safe 401 envelope with cookie %s', async (cookie) => {
-    const response = await fetch(`${baseUrl}/api/auth/session`, {
-      headers: cookie ? { cookie } : {},
-    });
-    expect(response.status).toBe(401);
-    expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(httpErrorResponseSchema.parse(await response.json())).toEqual({
-      statusCode: 401,
-      code: 'AUTHENTICATION_REQUIRED',
-      message: 'Authentication required',
-    });
-  });
+  it.each([undefined, 'synthetic-cookie=untrusted'])(
+    'returns the safe 401 envelope with cookie %s',
+    async (cookie) => {
+      const response = await fetch(`${baseUrl}/api/auth/session`, {
+        headers: cookie ? { cookie } : {},
+      });
+      expect(response.status).toBe(401);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(httpErrorResponseSchema.parse(await response.json())).toEqual({
+        statusCode: 401,
+        code: 'AUTHENTICATION_REQUIRED',
+        message: 'Authentication required',
+      });
+    },
+  );
 
-  it.each(['pending', 'active'])('serializes the %s contract without exposing internal fields', async (status) => {
-    const response = await fetch(`${baseUrl}/api/session-fixtures/${status}`);
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ status, user: syntheticUser });
-  });
+  it.each(['pending', 'active'])(
+    'serializes the %s contract without exposing internal fields',
+    async (status) => {
+      const response = await fetch(`${baseUrl}/api/session-fixtures/${status}`);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ status, user: syntheticUser });
+    },
+  );
 
   it('rejects an invalid session response without leaking validation details', async () => {
     const response = await fetch(`${baseUrl}/api/session-fixtures/invalid`);
@@ -118,17 +128,28 @@ describe('session contract and OpenAPI', () => {
     expect(session.tags).toEqual(['Authentication']);
     expect(Object.keys(session.responses).sort()).toEqual(['200', '401', '429', '500', '503']);
     expect(session.security).toEqual([{ dayloSession: [] }]);
-    expect(document.components.securitySchemes.dayloSession).toMatchObject({ type: 'apiKey', in: 'cookie', name: '__Host-daylo_session' });
+    expect(document.components.securitySchemes.dayloSession).toMatchObject({
+      type: 'apiKey',
+      in: 'cookie',
+      name: '__Host-daylo_session',
+    });
     const csrf = document.paths['/api/auth/csrf'].get;
     expect(csrf.operationId).toBe('getCsrfToken');
     expect(csrf.security).toEqual([{ dayloSession: [] }]);
     const signOut = document.paths['/api/auth/sign-out'].post;
     expect(signOut.operationId).toBe('signOut');
     expect(signOut.responses['204'].content).toBeUndefined();
-    expect(signOut.parameters).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'X-CSRF-Token', in: 'header', required: true }),
-    ]));
-    expect(signOut.parameters.some((parameter: { name: string }) => parameter.name === 'Origin')).toBe(false);
+    expect(signOut.security).toEqual([{ dayloSession: [], dayloCsrf: [] }]);
+    expect(document.components.securitySchemes.dayloCsrf).toMatchObject({
+      type: 'apiKey',
+      in: 'header',
+      name: 'X-CSRF-Token',
+    });
+    expect(
+      (signOut.parameters ?? []).some((parameter: { name: string }) =>
+        ['Origin', 'X-CSRF-Token'].includes(parameter.name),
+      ),
+    ).toBe(false);
     expect(signOut.description).toContain('exact configured frontend Origin');
     expect(session.responses['200'].content['application/json'].schema.$ref).toBe(
       '#/components/schemas/CurrentSessionResponseDto_Output',
@@ -136,15 +157,26 @@ describe('session contract and OpenAPI', () => {
     expect(session.responses['401'].content['application/json'].schema.$ref).toBe(
       '#/components/schemas/SessionErrorResponseDto_Output',
     );
-    expect(httpErrorResponseSchema.parse(session.responses['401'].content['application/json'].example)).toEqual({
+    expect(
+      httpErrorResponseSchema.parse(session.responses['401'].content['application/json'].example),
+    ).toEqual({
       statusCode: 401,
       code: 'AUTHENTICATION_REQUIRED',
       message: 'Authentication required',
     });
-    expect(document.components.schemas.CurrentSessionResponse_Output.properties.status.enum).toEqual(['pending', 'active']);
-    expect(document.components.schemas.SessionUser_Output.required).toEqual(['id', 'email', 'displayName']);
+    expect(
+      document.components.schemas.CurrentSessionResponse_Output.properties.status.enum,
+    ).toEqual(['pending', 'active']);
+    expect(document.components.schemas.SessionUser_Output.required).toEqual([
+      'id',
+      'email',
+      'displayName',
+    ]);
     expect(document.paths['/api/health/ready'].get.operationId).toBe('getReadiness');
-    expect(document.paths['/api/health/ready'].get.responses['503'].content['application/json'].schema.$ref).toBe('#/components/schemas/ReadinessErrorResponseDto_Output');
+    expect(
+      document.paths['/api/health/ready'].get.responses['503'].content['application/json'].schema
+        .$ref,
+    ).toBe('#/components/schemas/ReadinessErrorResponseDto_Output');
     expect(document).toEqual(createOpenApiDocument(app));
   });
 

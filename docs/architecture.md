@@ -97,7 +97,7 @@ The Google client secret remains on the backend. The application does not retain
 - Use a cryptographically random opaque token in an `HttpOnly`, `SameSite=Lax`, path `/` cookie.
 - Store only the token hash in the database.
 - Expire sessions after seven days without renewal, capped at 30 days from creation, and revoke the current session on sign-out. A successful `GET /api/auth/session` renews a still-valid session and its cookie for seven days from the request, without exceeding the absolute cap; expired/revoked sessions cannot be renewed. Other requests, including CSRF retrieval and background streams, do not renew sessions. The owner approved the absolute cap in F06-06; no separate refresh token is used.
-- Use `__Host-` cookie names, Secure, Path=/ and no Domain on HTTPS; keep compatible unprefixed cookies only for local HTTP development. Never accept unprefixed legacy cookies in secure mode.
+- Use `__Host-` names for session/OAuth cookies, Secure, Path=/ and no Domain on HTTPS; keep compatible unprefixed authentication cookies only for local HTTP development. Never accept unprefixed legacy authentication cookies in secure mode.
 - Do not store authentication tokens in browser storage.
 - F06-11 adds runtime-only NestJS scheduling: startup cleanup and a named
   15-minute interval remove expired OAuth/session rows, including the 30-day
@@ -106,6 +106,13 @@ The Google client secret remains on the backend. The application does not retain
   coordinate cleanup without changing authentication validity. See
   [cleanup operation and verification](google-authentication.md#expired-record-cleanup).
 - Protect state-changing API requests using a session-bound CSRF token and allowed-origin checks.
+- F06-13 transports that token through the JavaScript-readable, host-only
+  `daylo_xsrf` cookie (Path=/, SameSite=Lax and the session's expiry/Secure policy).
+  Angular's built-in XSRF interceptor copies it into `X-CSRF-Token`; generated
+  methods do not take a CSRF argument. The backend checks the header against the
+  stored session hash, not against this readable cookie. Sign-in and successful
+  GET session issue/repair it; sign-out and rejected sessions clear it. The
+  session/OAuth cookies remain HttpOnly. No raw token is added to persistence.
 - OAuth `state` and browser binding protect the sign-in transaction; do not apply ordinary mutation-header requirements to the Google redirect callback.
 
 A pending user's session can only inspect and resolve invitations, read their session identity, and sign out. Accepting the first valid invitation activates normal application access. Invitation acceptance and membership creation use one transaction.
@@ -116,16 +123,16 @@ Use Prisma for PostgreSQL access and versioned migrations. Never expose Prisma m
 
 All entities use UUID identifiers. Audit timestamps are UTC instants.
 
-| Entity | Main fields |
-| --- | --- |
-| User | googleSubject, email, displayName, accessStatus, createdAt |
-| UserPreferences | userId, theme, playfulGreetingsEnabled |
-| Session | userId, tokenHash, csrfTokenHash, expiresAt |
-| OAuthTransaction | stateHash, browserBindingHash, nonce, encryptedVerifier, expiresAt |
-| Group | name, ownerId, createdAt |
-| Membership | groupId, userId, joinedAt |
-| Invitation | groupId, email, invitedById, status, expiresAt, resolvedAt |
-| Task | createdById, groupId, title, description, scheduledDate, scheduledTime, completedAt, completedById, version, createdAt, updatedAt |
+| Entity           | Main fields                                                                                                                       |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| User             | googleSubject, email, displayName, accessStatus, createdAt                                                                        |
+| UserPreferences  | userId, theme, playfulGreetingsEnabled                                                                                            |
+| Session          | userId, tokenHash, csrfTokenHash, expiresAt                                                                                       |
+| OAuthTransaction | stateHash, browserBindingHash, nonce, encryptedVerifier, expiresAt                                                                |
+| Group            | name, ownerId, createdAt                                                                                                          |
+| Membership       | groupId, userId, joinedAt                                                                                                         |
+| Invitation       | groupId, email, invitedById, status, expiresAt, resolvedAt                                                                        |
+| Task             | createdById, groupId, title, description, scheduledDate, scheduledTime, completedAt, completedById, version, createdAt, updatedAt |
 
 Constraints and behavior:
 
@@ -169,15 +176,15 @@ Keep runtime business rules that cannot be represented in OpenAPI in backend ser
 
 Expose REST endpoints under `/api`. Provide Swagger UI at `/api/docs` and OpenAPI JSON at `/api/openapi.json`.
 
-| Area | Operations |
-| --- | --- |
+| Area           | Operations                                                          |
+| -------------- | ------------------------------------------------------------------- |
 | Authentication | Google redirect and callback, current session, CSRF token, sign-out |
-| Preferences | Read and update appearance and greeting preferences |
-| Groups | Create and list accessible groups, list members |
-| Invitations | Create, list, cancel, accept, reject |
-| Tasks | List Today data, create, edit, delete, complete, reopen |
-| Updates | Open an authenticated SSE stream |
-| Health | Readiness check including database availability |
+| Preferences    | Read and update appearance and greeting preferences                 |
+| Groups         | Create and list accessible groups, list members                     |
+| Invitations    | Create, list, cancel, accept, reject                                |
+| Tasks          | List Today data, create, edit, delete, complete, reopen             |
+| Updates        | Open an authenticated SSE stream                                    |
+| Health         | Readiness check including database availability                     |
 
 Each operation declares a stable English `operationId`, tag, request/response schemas, status codes, and authentication requirements.
 

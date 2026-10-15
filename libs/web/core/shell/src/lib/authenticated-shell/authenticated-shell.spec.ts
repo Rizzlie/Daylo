@@ -28,6 +28,7 @@ describe('responsive protected shell', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    document.cookie = 'daylo_xsrf=shell-test-proof; Path=/';
     TestBed.configureTestingModule({
       providers: [
         provideAuthentication(),
@@ -54,6 +55,7 @@ describe('responsive protected shell', () => {
   });
 
   afterEach(() => {
+    document.cookie = 'daylo_xsrf=; Path=/; Max-Age=0';
     http.verify();
     localStorage.clear();
     vi.restoreAllMocks();
@@ -129,13 +131,27 @@ describe('responsive protected shell', () => {
     );
     await menu.open();
     await (await menu.getItems({ text: /Wyloguj się$/ }))[0].click();
-    http.expectOne('/api/auth/csrf').flush({}, { status: 503, statusText: 'Unavailable' });
+    const signOut = http.expectOne({ method: 'POST', url: '/api/auth/sign-out' });
+    expect(signOut.request.headers.get('X-CSRF-Token')).toBe('shell-test-proof');
+    http.expectNone('/api/auth/csrf');
+    signOut.flush({}, { status: 503, statusText: 'Unavailable' });
     await harness.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe('/today');
     expect(harness.routeNativeElement?.querySelector('[role="alert"]')?.textContent).toContain(
       'Nie udało się wylogować.',
     );
     await menu.open();
-    expect(await (await menu.getItems({ text: /Wyloguj się$/ }))[0].isDisabled()).toBe(false);
+    const retry = (await menu.getItems({ text: /Wyloguj się$/ }))[0];
+    expect(await retry.isDisabled()).toBe(false);
+    await retry.click();
+    http.expectOne({ method: 'POST', url: '/api/auth/sign-out' }).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+    await harness.fixture.whenStable();
+    expect(TestBed.inject(AuthSession).state()).toEqual({
+      status: 'anonymous',
+      reason: 'signed-out',
+    });
   });
 });

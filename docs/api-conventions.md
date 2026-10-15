@@ -8,6 +8,39 @@ Zod 4 schemas are the source of truth for public request and response shapes. Th
 
 Optional text and wall-clock time fields are represented as `null` in responses when their value is absent or empty. Required text rejects empty or whitespace-only values. Public task times use `HH:mm`; public dates and timestamps use the formats defined in the architecture.
 
+## Personal tasks (M01-01)
+
+Active sessions can create/list personal tasks at `/api/tasks/personal` and
+read/edit/delete them at `/api/tasks/personal/{id}`. POST suffixes `/complete` and
+`/reopen` change completion state. Every resource lookup filters creator and
+personal visibility; missing, foreign and group task IDs return the same 404.
+Pending users receive 403 for all task operations. Mutations retain the existing
+session-bound CSRF and exact-Origin policy below.
+
+Creation requires a title trimmed to 1–200 characters. Description has a 5000
+character limit; blank description/time normalize to null. Omitted creation date
+defaults to the backend's current date in Europe/Warsaw, including midnight and
+DST transitions. Past dates are allowed. Calendar dates use YYYY-MM-DD (years
+0001–9999) and optional times use HH:mm. Clients cannot set creator, visibility,
+completion actor/time, timestamps or initial version.
+
+PATCH is partial and requires at least one editable field plus numeric `version`.
+Omitted fields are preserved; empty/null description/time clears them. Complete
+and reopen take `{ "version": 1 }`; DELETE takes the current `version` as a query
+parameter. Creation returns 201, reads/edits/state changes return 200, deletion
+returns 204 without a body. Stale requests return 409 `VERSION_CONFLICT`; reload
+the task before retrying, preserving the user's intended changes in the editor.
+Repeating complete/reopen with the current version, or editing to identical
+normalized values, changes neither the version nor timestamps. Resource privacy
+is checked before version comparison. Completion actor/time are backend-owned;
+reopening clears both atomically. No completion history is retained.
+
+List queries accept `limit` (default 50, maximum 100) and optional UUID `after`.
+Responses contain `{ items, nextCursor }` in UUID ascending order; pass nextCursor
+as the next after value. A null nextCursor means the end. The cursor is only an
+ordering boundary and never grants access to a resource. This bounded CRUD list
+includes all dates and completion states; Today selection/grouping belongs to M02.
+
 ## Error envelope
 
 API errors use this JSON shape:
@@ -31,16 +64,16 @@ API errors use this JSON shape:
 
 The foundation codes and status semantics are:
 
-| HTTP status | Foundation code | Meaning |
-| --- | --- | --- |
-| 400 | `VALIDATION_ERROR` | The request does not satisfy its public schema. |
-| 401 | `AUTHENTICATION_REQUIRED` | A valid Daylo session is missing or expired. |
-| 403 | `ACCESS_FORBIDDEN` | The authenticated account lacks application access or a mutation fails origin/CSRF checks. |
-| 404 | `RESOURCE_NOT_FOUND` | The resource does not exist or is intentionally hidden from this actor. |
-| 409 | `VERSION_CONFLICT` | The supplied resource version conflicts with the current version. |
-| 429 | `RATE_LIMIT_EXCEEDED` | A per-IP API request budget is exhausted; retry after the indicated delay. |
-| 500 | `INTERNAL_SERVER_ERROR` | An unexpected failure occurred, including an invalid declared response. |
-| 503 | `SERVICE_UNAVAILABLE` | A required service, such as PostgreSQL readiness, is unavailable. |
+| HTTP status | Foundation code           | Meaning                                                                                    |
+| ----------- | ------------------------- | ------------------------------------------------------------------------------------------ |
+| 400         | `VALIDATION_ERROR`        | The request does not satisfy its public schema.                                            |
+| 401         | `AUTHENTICATION_REQUIRED` | A valid Daylo session is missing or expired.                                               |
+| 403         | `ACCESS_FORBIDDEN`        | The authenticated account lacks application access or a mutation fails origin/CSRF checks. |
+| 404         | `RESOURCE_NOT_FOUND`      | The resource does not exist or is intentionally hidden from this actor.                    |
+| 409         | `VERSION_CONFLICT`        | The supplied resource version conflicts with the current version.                          |
+| 429         | `RATE_LIMIT_EXCEEDED`     | A per-IP API request budget is exhausted; retry after the indicated delay.                 |
+| 500         | `INTERNAL_SERVER_ERROR`   | An unexpected failure occurred, including an invalid declared response.                    |
+| 503         | `SERVICE_UNAVAILABLE`     | A required service, such as PostgreSQL readiness, is unavailable.                          |
 
 ## Session cookie and CSRF
 
@@ -124,7 +157,19 @@ active or pending session. The token is stable for that session and reconstructa
 using HMAC-SHA256 keyed by the random session token with the domain-separated
 `daylo:session-csrf:v1` label. Its SHA-256 hash is stored in PostgreSQL; neither raw
 session nor CSRF tokens are stored there. Stable retrieval avoids invalidating
-other tabs or requiring plaintext persistence. Keep CSRF only in frontend memory.
+other tabs or requiring plaintext persistence. This JSON endpoint remains available
+to direct clients; Angular UI operations do not fetch it.
+
+F06-13 issues the same proof in a separate JavaScript-readable `daylo_xsrf`
+cookie on successful sign-in and GET current-session renewal. The cookie has no
+Domain, Path=/, SameSite=Lax, and the session's expiry and Secure policy. Its
+unprefixed name is stable across runtime environments for Angular configuration;
+it is not an authentication credential. Angular uses `withXsrfConfiguration` to
+copy it into `X-CSRF-Token` on eligible same-origin mutations, without token
+arguments or application-managed proof caching. Reload/session revalidation
+repairs a missing or replaced cookie with the same session-bound token. HEAD and
+other operations do not reissue/renew it. No token is stored in localStorage or
+sessionStorage, and the opaque authentication cookie remains HttpOnly.
 
 Every unsafe API request requires both:
 
@@ -139,10 +184,11 @@ from another session are invalid. `GET`, `HEAD` and `OPTIONS` do not require mut
 proof. OAuth navigation retains its separate transaction protection.
 
 `POST /api/auth/sign-out` (`signOut`) requires the same CSRF/Origin proof, deletes
-only the current session and clears its cookie using matching attributes. It
+only the current session and clears both session/XSRF cookies using matching attributes. It
 returns 204 with no body; other device sessions remain valid. Expired/revoked
 requests return 401. Failed revocation returns 503 and does not claim success or
-clear the still-valid cookie.
+clear the still-valid cookies. Anonymous/expired/revoked session rejection clears
+both cookies; a leftover XSRF cookie alone never authenticates or authorizes.
 
 A global guard authenticates every Nest business operation by default and requires
 active access unless the endpoint explicitly permits pending sessions. Pending
@@ -154,8 +200,13 @@ context; resource authorization remains required in feature use cases.
 
 Authenticated responses and errors use `Cache-Control: no-store`.
 Swagger is at `/api/docs`; OpenAPI 3.0 JSON is at `/api/openapi.json`.
-The `dayloSession` cookie security scheme names the HTTPS `__Host-daylo_session`; sign-out declares
-the required CSRF header. Zod output schemas, official client generation and
+The `dayloSession` cookie security scheme names the HTTPS `__Host-daylo_session`.
+Authenticated mutations declare both `dayloSession` and the `dayloCsrf` header
+security scheme in the same requirement object (AND). The required header is not
+an ordinary operation parameter, so generated Angular task/sign-out methods need
+no CSRF argument; Angular supplies it. The backend never accepts the readable
+cookie as the submitted proof, and cross-session or injected proof fails against
+the stored hash. Zod output schemas, official client generation and
 source-preserving drift checks remain the contract pipeline.
 
 ### Google browser navigation failures

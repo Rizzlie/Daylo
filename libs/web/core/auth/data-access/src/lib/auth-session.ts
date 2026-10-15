@@ -11,18 +11,13 @@ import {
   map,
   of,
   startWith,
-  switchMap,
   take,
   tap,
   throwError,
   timeout,
 } from 'rxjs';
 import { AuthenticationService } from '@daylo/web/shared/api-client';
-import {
-  SessionResult,
-  SessionState,
-  isSessionResult,
-} from './auth-session.model';
+import { SessionResult, SessionState, isSessionResult } from './auth-session.model';
 
 type SignOutState = 'idle' | 'loading' | 'signed-out' | 'expired' | 'failed' | 'rate-limited';
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -38,32 +33,34 @@ export class AuthSession {
   private readonly signOutRequests = new Subject<void>();
 
   private readonly sessionResource = rxResource<SessionResult, boolean | undefined>({
-    params: () => this.sessionRequested() ? true : undefined,
-    stream: () => this.api.getCurrentSession().pipe(
-      timeout(REQUEST_TIMEOUT_MS),
-      map(({ status, user }): SessionResult => ({
-        status,
-        user: {
-          id: user.id,
-          displayName: user.displayName,
-          email: user.email,
-        },
-      })),
-      catchError((error: unknown) => isUnauthorized(error)
-        ? of<SessionResult>({ status: 'anonymous', reason: null })
-        : throwError(() => error)),
-    ),
+    params: () => (this.sessionRequested() ? true : undefined),
+    stream: () =>
+      this.api.getCurrentSession().pipe(
+        timeout(REQUEST_TIMEOUT_MS),
+        map(({ status, user }): SessionResult => ({
+          status,
+          user: {
+            id: user.id,
+            displayName: user.displayName,
+            email: user.email,
+          },
+        })),
+        catchError((error: unknown) =>
+          isUnauthorized(error)
+            ? of<SessionResult>({ status: 'anonymous', reason: null })
+            : throwError(() => error),
+        ),
+      ),
   });
 
   readonly state = computed<SessionState>(() => {
     if (this.sessionResource.isLoading()) return { status: 'loading' };
     const error = this.sessionResource.error();
-    if (error) return error instanceof HttpErrorResponse && error.status === 429
-      ? { status: 'error', reason: 'rate-limit' }
-      : { status: 'error' };
-    return this.sessionResource.hasValue()
-      ? this.sessionResource.value()
-      : { status: 'unknown' };
+    if (error)
+      return error instanceof HttpErrorResponse && error.status === 429
+        ? { status: 'error', reason: 'rate-limit' }
+        : { status: 'error' };
+    return this.sessionResource.hasValue() ? this.sessionResource.value() : { status: 'unknown' };
   });
 
   readonly status = computed(() => this.state().status);
@@ -75,10 +72,12 @@ export class AuthSession {
   private readonly sessionChanges = toObservable(this.state);
   private readonly signOutState = toSignal(
     this.signOutRequests.pipe(
-      exhaustMap(() => this.revokeSession().pipe(
-        tap((result) => this.applySignOutResult(result)),
-        startWith<SignOutState>('loading'),
-      )),
+      exhaustMap(() =>
+        this.revokeSession().pipe(
+          tap((result) => this.applySignOutResult(result)),
+          startWith<SignOutState>('loading'),
+        ),
+      ),
     ),
     { initialValue: 'idle' as SignOutState },
   );
@@ -113,16 +112,18 @@ export class AuthSession {
   }
 
   private revokeSession(): Observable<SignOutState> {
-    return this.api.getCsrfToken().pipe(
+    return this.api.signOut().pipe(
       timeout(REQUEST_TIMEOUT_MS),
-      switchMap(({ csrfToken }) => this.api.signOut(csrfToken).pipe(
-        timeout(REQUEST_TIMEOUT_MS),
-      )),
       map((): SignOutState => 'signed-out'),
-      catchError((error: unknown) => of<SignOutState>(
-        isUnauthorized(error) ? 'expired'
-          : error instanceof HttpErrorResponse && error.status === 429 ? 'rate-limited' : 'failed',
-      )),
+      catchError((error: unknown) =>
+        of<SignOutState>(
+          isUnauthorized(error)
+            ? 'expired'
+            : error instanceof HttpErrorResponse && error.status === 429
+              ? 'rate-limited'
+              : 'failed',
+        ),
+      ),
     );
   }
 

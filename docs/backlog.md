@@ -4,6 +4,50 @@ Status: Planning baseline, version 1.0, with delivery/acceptance updates through
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
 
+### Accepted M01-01/F06-13 publication — 2026-10-15
+
+[PR #29](https://github.com/Rizzlie/Daylo/pull/29) is ready for review and linked
+to the task thread. It contains the owner-accepted personal-task API, repository
+type simplification and automatic XSRF transport. Commit hooks passed; hosted CI
+is pending. M01-02 remains pending.
+
+### F06-13 automatic XSRF transport — 2026-10-15
+
+Implemented the owner-authorized readable XSRF cookie and Angular's native
+cookie-to-header transport. Generated task/sign-out calls require no CSRF
+argument; OpenAPI declares session AND CSRF security requirements. Existing
+session-bound backend verification and HttpOnly session cookies are preserved.
+Generated artifacts came exclusively from the official generator and passed
+the source-preserving drift check.
+
+API, frontend-auth and application/router tests, affected lint/typechecks,
+production builds and independent desktop/mobile browser inspection passed.
+All 48 distinct managed desktop/mobile E2E scenarios passed across the regression
+and focused correction runs. The owner accepted the delivered scope with "Akceptuje zmiany" on 2026-10-15; see
+[F06-13](tasks/F06-13-automatic-xsrf-cookie-transport.md) for evidence and limits.
+No commit, publication, deployment or subsequent task was performed.
+
+### M01-01 personal-task API delivery — 2026-10-15
+
+Implemented the owner-approved personal-task create/list/read/edit/delete/complete/
+reopen API with strict Zod contracts, generated Angular client, private resource
+filters, existing active-session/CSRF policy and transactional row/version checks.
+Warsaw date defaults and optional values follow the agreed rules; repeated state
+operations with a current version leave timestamps/version unchanged.
+
+All 250 distinct API cases were verified across the full PostgreSQL regression
+run and the focused correction of its exact OpenAPI endpoint assertion. The
+29 shared-schema and nine task-feature date cases passed, as did relevant lint,
+E2E/client typechecks, production builds and source-preserving client drift checks.
+Four real-stack desktop/mobile cases and independent browser Swagger/session/API
+inspection passed. Existing ten API lint warnings remain. Disposable resources
+were cleaned up. See [M01-01](tasks/M01-01-personal-task-api.md) for evidence,
+browser diagnostics and hosted/real-provider/runtime verification limits.
+
+M01-01, including the requested type simplification, is implemented, locally verified and owner-accepted with "Akceptuje zmiany" on 2026-10-15. M01-02,
+parent M01 and later feature work remain pending. No task UI, dependency or
+migration was added. No commit, publication or deployment was performed.
+
 ### Owner acceptance and publication — 2026-10-15
 
 Published as [ready-for-review PR #28](https://github.com/Rizzlie/Daylo/pull/28),

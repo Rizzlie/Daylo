@@ -80,6 +80,9 @@ Task discussions remain **not started** unless their individual records state ot
 | [F06-11](tasks/F06-11-expired-auth-record-cleanup.md)       | Expired authentication record cleanup | Closed: implemented, locally verified and owner-accepted on 2026-10-14; NestJS scheduling, bounded PostgreSQL cleanup and declarative-code review; [draft PR #24](https://github.com/Rizzlie/Daylo/pull/24)                                                                                          |
 | [F06-12](tasks/F06-12-security-dependency-review.md)        | Security dependency review            | Closed: implemented, locally verified and owner-accepted on 2026-10-14 after Nx migrate latest; [draft PR #25](https://github.com/Rizzlie/Daylo/pull/25); 357 test cases and 22 real-stack E2E passed; generated API artifact audit clean; six residual advisories and prune/browser limits retained |
 
+Additional F06 task: [F06-13 — Automatic XSRF cookie transport](tasks/F06-13-automatic-xsrf-cookie-transport.md).
+Closed: implemented, locally verified and owner-accepted on 2026-10-15.
+
 ### F07
 
 | Task                                                  | Title                                   | Delivery status                                                                                                                                                                                                                                                                   |
@@ -89,10 +92,10 @@ Task discussions remain **not started** unless their individual records state ot
 
 ### M01
 
-| Task                                           | Title                               | Delivery status |
-| ---------------------------------------------- | ----------------------------------- | --------------- |
-| [M01-01](tasks/M01-01-personal-task-api.md)    | Personal-task API and authorization | Pending         |
-| [M01-02](tasks/M01-02-personal-task-editor.md) | Personal-task editor and actions    | Pending         |
+| Task                                           | Title                               | Delivery status                                                                                                                                                                                              |
+| ---------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [M01-01](tasks/M01-01-personal-task-api.md)    | Personal-task API and authorization | Implemented and locally verified on 2026-10-15: private CRUD/state API, PostgreSQL concurrency/authorization checks, generated client and four real-stack desktop/mobile cases; owner-accepted on 2026-10-15 |
+| [M01-02](tasks/M01-02-personal-task-editor.md) | Personal-task editor and actions    | Pending                                                                                                                                                                                                      |
 
 ### M02
 

@@ -164,7 +164,7 @@ describe('authentication screens and routing', () => {
     await navigate;
 
     await signOut(harness);
-    http.expectOne('/api/auth/csrf').flush({ csrfToken: 'synthetic-proof' });
+
     http.expectOne('/api/auth/sign-out').flush(null, { status: 204, statusText: 'No Content' });
     await vi.waitFor(() =>
       http.expectOne('/api/auth/session').flush({}, { status: 401, statusText: 'Unauthorized' }),
@@ -182,7 +182,7 @@ describe('authentication screens and routing', () => {
     await navigate;
 
     await signOut(harness);
-    http.expectOne('/api/auth/csrf').flush({}, { status: 503, statusText: 'Unavailable' });
+    http.expectOne('/api/auth/sign-out').flush({}, { status: 503, statusText: 'Unavailable' });
     await harness.fixture.whenStable();
 
     expect(TestBed.inject(Router).url).toBe('/today');

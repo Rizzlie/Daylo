@@ -14,7 +14,16 @@ describe('offline OpenAPI export', () => {
       const document = await exportOpenApiDocument();
       expect(document.openapi).toBe('3.0.0');
       expect(Object.keys(document.paths).sort()).toEqual([
-        '/api/auth/csrf', '/api/auth/google', '/api/auth/google/callback', '/api/auth/session', '/api/auth/sign-out', '/api/health/ready',
+        '/api/auth/csrf',
+        '/api/auth/google',
+        '/api/auth/google/callback',
+        '/api/auth/session',
+        '/api/auth/sign-out',
+        '/api/health/ready',
+        '/api/tasks/personal',
+        '/api/tasks/personal/{id}',
+        '/api/tasks/personal/{id}/complete',
+        '/api/tasks/personal/{id}/reopen',
       ]);
       expect(document.paths['/api/auth/session'].get?.operationId).toBe('getCurrentSession');
       expect(document.paths['/api/health/ready'].get?.operationId).toBe('getReadiness');

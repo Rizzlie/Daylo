@@ -92,6 +92,17 @@ constructor({ accessToken, apiKeys, basePath, credentials, encodeParam, encoder,
         this.encodeParam = encodeParam ?? (param => this.defaultEncodeParam(param));
         this.credentials = credentials ?? {};
 
+        // init default dayloCsrf credential
+        if (!this.credentials['dayloCsrf']) {
+            this.credentials['dayloCsrf'] = () => {
+                if (this.apiKeys === null || this.apiKeys === undefined) {
+                    return undefined;
+                } else {
+                    return this.apiKeys['dayloCsrf'] || this.apiKeys['X-CSRF-Token'];
+                }
+            };
+        }
+
         // init default dayloSession credential
         if (!this.credentials['dayloSession']) {
             this.credentials['dayloSession'] = () => {
