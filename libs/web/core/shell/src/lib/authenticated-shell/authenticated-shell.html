@@ -1,0 +1,25 @@
+<ng-template #account let-compact="compact">
+  <lib-account-menu [compact]="compact" />
+</ng-template>
+<lib-app-layout
+  [navigationEnabled]="active()"
+  [sidebarCollapsed]="sidebar.collapsed()"
+  [skipTarget]="skipTarget()"
+  [accountTemplate]="account"
+  (sidebarToggle)="sidebar.toggle()"
+>
+  @if (signOutRateLimited()) {
+    <p class="error" role="alert">Zbyt wiele żądań. Spróbuj ponownie za chwilę.</p>
+  } @else if (signOutFailed()) {
+    <p class="error" role="alert">Nie udało się wylogować. Spróbuj ponownie.</p>
+  }
+  @if (signingOut()) {
+    <p role="status">Wylogowywanie…</p>
+  }
+  @if (isLoading()) {
+    <p role="status">Sprawdzanie sesji…</p>
+  }
+  <div [hidden]="isLoading()">
+    <router-outlet />
+  </div>
+</lib-app-layout>

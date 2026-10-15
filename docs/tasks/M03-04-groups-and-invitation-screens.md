@@ -6,6 +6,12 @@ Discussion status: **Not started — required before implementation.**
 Implementation authorization: **Not granted by this document.**
 Delivery status: Pending. No implementation or verification is claimed by this task file.
 
+Preparation note (2026-10-15): the owner's M05-02 review extracted the existing
+minimal `Invitations` route page into `libs/web/groups/features/invitations`.
+Its page frame and session greeting preserve the pending-user entry destination;
+group UI and invitation actions below remain unimplemented and require their own
+discussion and authorization.
+
 ## Assumptions and sources
 
 - Only the configured owner creates groups and manages invitations. Invitations expire after seven days; resolution matches verified email. Pending users stay restricted until atomic first acceptance activates access.

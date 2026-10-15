@@ -43,24 +43,46 @@ Example: `libs/web/tasks/features/today` has project name `web-tasks-feature-tod
 
 ## Library responsibilities
 
-| Type | Responsibility | Allowed target types |
-| --- | --- | --- |
-| feature | Route, screen, or user workflow; composes UI and state | data-access, ui, domain, util |
-| data-access | API orchestration, state, loading/errors, SSE adapters | api-client, domain, util |
-| ui | Inputs and events; no HTTP or stores | ui, domain, util |
-| domain | Frontend models and pure business rules | domain, util |
-| util | Technical helpers without area-specific business rules | util |
-| api-client | Generated Angular transport models/services | No Daylo library dependencies |
-| app | Bootstrap and route composition | feature, ui, util; the explicit auth-bootstrap capability described below |
+| Type        | Responsibility                                         | Allowed target types                                                      |
+| ----------- | ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| feature     | Route, screen, or user workflow; composes UI and state | data-access, ui, domain, util                                             |
+| data-access | API orchestration, state, loading/errors, SSE adapters | api-client, domain, util                                                  |
+| ui          | Inputs and events; no HTTP or stores                   | ui, domain, util                                                          |
+| domain      | Frontend models and pure business rules                | domain, util                                                              |
+| util        | Technical helpers without area-specific business rules | util                                                                      |
+| api-client  | Generated Angular transport models/services            | No Daylo library dependencies                                             |
+| app         | Bootstrap and route composition                        | feature, ui, util; the explicit auth-bootstrap capability described below |
 
 Features do not import other features. Compose routes in the application or publish reusable logic/UI in lower layers. App routing wires feature screens; shell is `type:feature` and does not import routed features. Grouping Today tasks is domain logic; timezone conversion is a technical utility. API transport types stay behind handwritten data-access mapping, so UI does not import the generated client.
 
 `core` and `shared` are scopes, not types. Shell is `scope:core, type:feature`; auth state is `scope:core, type:data-access`. Specific state-management and form-library choices remain separate decisions.
 
 The login page is `scope:auth, type:feature` at `libs/web/auth/features/login`.
-Application routing composes and lazily loads login and the protected placeholder
-shell; shell does not import the login feature. Prefer separate named signals in
+Application routing composes and lazily loads login and the protected responsive
+shell. The shell exposes a child router outlet. `Today` lives in
+`libs/web/tasks/features/today` and `Invitations` in
+`libs/web/groups/features/invitations`; application routing lazily loads each
+through its public entrypoint. Both currently contain only their existing page
+frame and session-based greeting; task content and invitation actions remain in
+their pending backlog tasks. The core shell does not import these pages or the
+login feature. Prefer separate named signals in
 templates over a combined `vm` or view model, as requested by the owner.
+
+`libs/web/shared/ui` exposes `AppLayout`, the presentational Daylo application
+frame built with Angular Material. It owns responsive geometry, branding and
+navigation presentation, accepts navigation visibility, collapsed state, a
+skip-link target and an account template, and emits a sidebar-toggle request.
+The core shell owns session state, collapse persistence, sign-out feedback and
+the child router outlet. It passes the account template and projects screen
+content into the layout. Shared UI does not import authentication state,
+data-access libraries or storage services. Reusable components are added here
+when needed; design tokens and Material theming remain the design-system
+foundation, without a second component-library project.
+
+Session-loading presentation belongs to `AuthenticatedShell`, not individual
+feature pages. The guard awaits the initial session result; later revalidation
+shows one shell status and hides routed content without unmounting the outlet,
+preserving local page state. Features own loading of their business data only.
 
 `libs/web/shared/util-router` provides `injectQueryParamMap()` for reactive route
 query parameters and `injectRouteData()` for static/resolved route data, both
@@ -145,23 +167,81 @@ Configure `@nx/enforce-module-boundaries` at error severity in the root flat ESL
   "ignoredCircularDependencies": [],
   "allowCircularSelfDependency": false,
   "depConstraints": [
-    { "sourceTag": "platform:web", "onlyDependOnLibsWithTags": ["platform:web", "platform:shared"], "bannedExternalImports": ["@prisma/client", "@prisma/*", "@nestjs/*"] },
-    { "sourceTag": "platform:api", "onlyDependOnLibsWithTags": ["platform:api", "platform:shared"] },
-    { "sourceTag": "platform:shared", "onlyDependOnLibsWithTags": ["platform:shared"], "bannedExternalImports": ["@angular/*", "@nestjs/*", "@prisma/client", "@prisma/*"] },
-    { "allSourceTags": ["platform:web", "type:app"], "onlyDependOnLibsWithTags": ["type:feature", "type:ui", "type:util", "capability:auth-bootstrap"] },
-    { "allSourceTags": ["platform:web", "type:feature"], "onlyDependOnLibsWithTags": ["type:data-access", "type:ui", "type:domain", "type:util"] },
-    { "allSourceTags": ["platform:web", "type:data-access"], "onlyDependOnLibsWithTags": ["type:api-client", "type:domain", "type:util"] },
-    { "allSourceTags": ["platform:web", "type:ui"], "onlyDependOnLibsWithTags": ["type:ui", "type:domain", "type:util"] },
-    { "sourceTag": "type:domain", "onlyDependOnLibsWithTags": ["type:domain", "type:util"], "bannedExternalImports": ["@angular/*", "@nestjs/*", "@prisma/client", "@prisma/*"] },
-    { "sourceTag": "type:util", "onlyDependOnLibsWithTags": ["type:util"], "bannedExternalImports": ["@nestjs/*", "@prisma/client", "@prisma/*"] },
+    {
+      "sourceTag": "platform:web",
+      "onlyDependOnLibsWithTags": ["platform:web", "platform:shared"],
+      "bannedExternalImports": ["@prisma/client", "@prisma/*", "@nestjs/*"]
+    },
+    {
+      "sourceTag": "platform:api",
+      "onlyDependOnLibsWithTags": ["platform:api", "platform:shared"]
+    },
+    {
+      "sourceTag": "platform:shared",
+      "onlyDependOnLibsWithTags": ["platform:shared"],
+      "bannedExternalImports": ["@angular/*", "@nestjs/*", "@prisma/client", "@prisma/*"]
+    },
+    {
+      "allSourceTags": ["platform:web", "type:app"],
+      "onlyDependOnLibsWithTags": [
+        "type:feature",
+        "type:ui",
+        "type:util",
+        "capability:auth-bootstrap"
+      ]
+    },
+    {
+      "allSourceTags": ["platform:web", "type:feature"],
+      "onlyDependOnLibsWithTags": ["type:data-access", "type:ui", "type:domain", "type:util"]
+    },
+    {
+      "allSourceTags": ["platform:web", "type:data-access"],
+      "onlyDependOnLibsWithTags": ["type:api-client", "type:domain", "type:util"]
+    },
+    {
+      "allSourceTags": ["platform:web", "type:ui"],
+      "onlyDependOnLibsWithTags": ["type:ui", "type:domain", "type:util"]
+    },
+    {
+      "sourceTag": "type:domain",
+      "onlyDependOnLibsWithTags": ["type:domain", "type:util"],
+      "bannedExternalImports": ["@angular/*", "@nestjs/*", "@prisma/client", "@prisma/*"]
+    },
+    {
+      "sourceTag": "type:util",
+      "onlyDependOnLibsWithTags": ["type:util"],
+      "bannedExternalImports": ["@nestjs/*", "@prisma/client", "@prisma/*"]
+    },
     { "sourceTag": "type:api-client", "onlyDependOnLibsWithTags": [] },
-    { "allSourceTags": ["platform:web", "scope:tasks"], "onlyDependOnLibsWithTags": ["scope:tasks", "scope:core", "scope:shared"] },
-    { "allSourceTags": ["platform:web", "scope:auth"], "onlyDependOnLibsWithTags": ["scope:auth", "scope:core", "scope:shared"] },
-    { "allSourceTags": ["platform:web", "scope:groups"], "onlyDependOnLibsWithTags": ["scope:groups", "scope:core", "scope:shared"] },
-    { "allSourceTags": ["platform:web", "scope:settings"], "onlyDependOnLibsWithTags": ["scope:settings", "scope:core", "scope:shared"] },
+    {
+      "allSourceTags": ["platform:web", "scope:tasks"],
+      "onlyDependOnLibsWithTags": ["scope:tasks", "scope:core", "scope:shared"]
+    },
+    {
+      "allSourceTags": ["platform:web", "scope:auth"],
+      "onlyDependOnLibsWithTags": ["scope:auth", "scope:core", "scope:shared"]
+    },
+    {
+      "allSourceTags": ["platform:web", "scope:groups"],
+      "onlyDependOnLibsWithTags": ["scope:groups", "scope:core", "scope:shared"]
+    },
+    {
+      "allSourceTags": ["platform:web", "scope:settings"],
+      "onlyDependOnLibsWithTags": ["scope:settings", "scope:core", "scope:shared"]
+    },
     { "sourceTag": "scope:core", "onlyDependOnLibsWithTags": ["scope:core", "scope:shared"] },
     { "sourceTag": "scope:shared", "onlyDependOnLibsWithTags": ["scope:shared"] },
-    { "allSourceTags": ["platform:web", "scope:app"], "onlyDependOnLibsWithTags": ["scope:core", "scope:auth", "scope:tasks", "scope:groups", "scope:settings", "scope:shared"] }
+    {
+      "allSourceTags": ["platform:web", "scope:app"],
+      "onlyDependOnLibsWithTags": [
+        "scope:core",
+        "scope:auth",
+        "scope:tasks",
+        "scope:groups",
+        "scope:settings",
+        "scope:shared"
+      ]
+    }
   ]
 }
 ```
@@ -174,20 +254,20 @@ Keep generated code excluded from handwritten style fixes, but preserve its proj
 
 Verify with representative temporary fixtures, not only a passing clean application:
 
-| Import | Expected |
-| --- | --- |
-| tasks feature -> tasks data-access / UI | Allowed |
-| tasks UI -> tasks domain | Allowed |
-| tasks data-access -> generated web API client | Allowed |
-| tasks feature -> core auth data-access | Allowed |
-| tasks UI -> tasks data-access | Rejected |
-| tasks feature -> groups feature or groups data-access | Rejected |
-| future finance feature -> tasks library | Rejected once finance rules are registered |
-| web project -> API library or Prisma npm package | Rejected |
-| shared utility -> Angular library | Rejected |
-| feature -> feature, generated client -> handwritten library | Rejected |
-| cyclic project imports or deep private imports | Rejected |
-| missing/duplicate/unknown dimension tags | Rejected by metadata validation |
+| Import                                                      | Expected                                   |
+| ----------------------------------------------------------- | ------------------------------------------ |
+| tasks feature -> tasks data-access / UI                     | Allowed                                    |
+| tasks UI -> tasks domain                                    | Allowed                                    |
+| tasks data-access -> generated web API client               | Allowed                                    |
+| tasks feature -> core auth data-access                      | Allowed                                    |
+| tasks UI -> tasks data-access                               | Rejected                                   |
+| tasks feature -> groups feature or groups data-access       | Rejected                                   |
+| future finance feature -> tasks library                     | Rejected once finance rules are registered |
+| web project -> API library or Prisma npm package            | Rejected                                   |
+| shared utility -> Angular library                           | Rejected                                   |
+| feature -> feature, generated client -> handwritten library | Rejected                                   |
+| cyclic project imports or deep private imports              | Rejected                                   |
+| missing/duplicate/unknown dimension tags                    | Rejected by metadata validation            |
 
 Fixtures need only the dependency graph and imports required to prove the rules; they do not justify scaffolding full product areas in F01. Record lint/check results and ensure CI runs the tag check and lint. Production ESLint configuration and rule execution remain pending until F01.
 

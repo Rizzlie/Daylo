@@ -1,0 +1,23 @@
+<button
+  matButton
+  class="account"
+  [class.compact]="compact()"
+  [matMenuTriggerFor]="accountMenu"
+  [attr.aria-label]="label()"
+  [matTooltip]="label()"
+  [matTooltipDisabled]="!compact()"
+>
+  <span class="account-content" aria-hidden="true">
+    <span class="avatar">{{ initials() }}</span>
+    <span class="account-copy">
+      <span class="account-name">{{ user()?.displayName }}</span>
+      <span class="account-email">{{ user()?.email }}</span>
+    </span>
+  </span>
+</button>
+<mat-menu #accountMenu="matMenu">
+  <button mat-menu-item [disabled]="signingOut()" (click)="signOut()">
+    <mat-icon fontSet="material-symbols-outlined">logout</mat-icon>
+    <span>{{ signOutLabel() }}</span>
+  </button>
+</mat-menu>

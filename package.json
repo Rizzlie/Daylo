@@ -5,7 +5,10 @@
   "private": true,
   "description": "Daylo is a personal and shared task planner built incrementally with coding agents.",
   "scripts": {
+    "dev": "docker compose up -d --wait postgres && nx run api-core-database:prisma-migrate-deploy && nx run-many -t serve -p api web --parallel=2 --output-style=stream",
     "api:generate": "nx run web-shared-api-client:generate",
+    "format": "nx format:write --all",
+    "format:check": "nx format:check --all",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -50,7 +53,9 @@
     "eslint-plugin-playwright": "1.8.3",
     "husky": "9.1.7",
     "jsdom": "27.4.0",
+    "lint-staged": "17.6.0",
     "nx": "23.3.0",
+    "prettier": "3.9.10",
     "prisma": "7.10.0",
     "tslib": "2.8.1",
     "typescript": "6.0.3",
@@ -60,6 +65,9 @@
     "webpack": "^5.101.3",
     "webpack-cli": "^7.0.0",
     "webpack-dev-server": "^5.2.1"
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown"
   },
   "nx": {},
   "dependencies": {

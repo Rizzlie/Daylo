@@ -26,6 +26,13 @@ Breaking changes use `!` before the colon and/or a `BREAKING CHANGE:` footer; de
 
 F01-05 provides commitlint with the conventional preset, a Husky commit-message hook, and CI validation of PR titles and PR commit messages. Check valid/invalid examples. Hooks are convenience; CI is the enforcement point. Define the checked commit range against the actual target branch and preserve sufficient Git history. The implementation uses commitlint 21.2.3 and Husky 9.1.7; `npm ci` activates the local hook. PR title checks run even on title edits, with default ignore patterns disabled. Git-generated merge commits use conventional-preset default handling. PR commit checks use the merge base of the event base/head SHA with full history; missing history fails. See the README for commands and `.github/workflows/ci.yml` for the implementation. Squash merging is a recommendation, not a repository setting changed here; if adopted, the final squash title must also follow the convention.
 
+The `pre-commit` hook runs lint-staged with `prettier --write --ignore-unknown`
+on staged files. It respects `.prettierignore`, automatically stages formatting
+fixes for those files and uses default backup/partial-staging protection. Do not
+add a blanket `git add` to the hook. Prettier errors block the commit; the existing
+`commit-msg` commitlint hook remains independent. This local formatting hook does
+not add a formatting CI gate or authorize formatting/staging unrelated work.
+
 ## PR workflow
 
 Never commit directly on `main`, including an initial/root commit. Apply the same restriction to `master` and any other repository default branch. Before every commit, inspect the current branch and confirm it is a dedicated task branch. Create a task branch first when on a protected/default branch; if HEAD is detached, create or switch to an appropriate task branch before committing. Preserve existing working changes when switching. This requirement applies to all commit workflows, including `yeet`; being on an existing branch does not exempt it from the check. Direct pushes to `main`, `master`, or the default branch are also prohibited; deliver changes through a PR. Do not merge or alter GitHub branch protection without an explicit request.

@@ -1,1 +1,1 @@
-export { WebCoreShell } from './lib/web-core-shell/web-core-shell';
+export { AuthenticatedShell } from './lib/authenticated-shell/authenticated-shell';

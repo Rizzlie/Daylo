@@ -15,62 +15,31 @@
     "skipDefaultLibCheck": true,
     "strict": false,
     "paths": {
-      "@daylo/api/core/configuration": [
-        "./libs/api/core/configuration/src/index.ts"
-      ],
-      "@daylo/api/core/database": [
-        "./libs/api/core/database/src/index.ts"
-      ],
+      "@daylo/api/core/configuration": ["./libs/api/core/configuration/src/index.ts"],
+      "@daylo/api/core/database": ["./libs/api/core/database/src/index.ts"],
       "@daylo/api/core/transactions/contracts": [
         "./libs/api/core/transactions/contracts/src/index.ts"
       ],
-      "@daylo/shared/schemas": [
-        "./libs/shared/schemas/src/index.ts"
-      ],
-      "@daylo/api/auth/feature": [
-        "./libs/api/auth/feature/src/index.ts"
-      ],
-      "@daylo/web/shared/api-client": [
-        "./libs/web/shared/api-client/src/index.ts"
-      ],
-      "@daylo/api/auth/data-access": [
-        "./libs/api/auth/data-access/src/index.ts"
-      ],
-      "@daylo/api/users/contracts": [
-        "./libs/api/users/contracts/src/index.ts"
-      ],
-      "@daylo/api/users/data-access": [
-        "./libs/api/users/data-access/src/index.ts"
-      ],
-      "@daylo/api/users/feature": [
-        "./libs/api/users/feature/src/index.ts"
-      ],
-      "@daylo/api/groups/contracts": [
-        "./libs/api/groups/contracts/src/index.ts"
-      ],
-      "@daylo/api/groups/data-access": [
-        "./libs/api/groups/data-access/src/index.ts"
-      ],
-      "@daylo/api/groups/feature": [
-        "./libs/api/groups/feature/src/index.ts"
-      ],
-      "@daylo/api/core/identity/contracts": [
-        "./libs/api/core/identity/contracts/src/index.ts"
-      ],
-      "@daylo/web/core/auth/data-access": [
-        "./libs/web/core/auth/data-access/src/index.ts"
-      ],
-      "@daylo/web/core/shell": [
-        "./libs/web/core/shell/src/index.ts"
-      ],
-      "@daylo/web/auth/features/login": [
-        "./libs/web/auth/features/login/src/index.ts"
-      ],
-      "@daylo/web/shared/util-router": [
-        "./libs/web/shared/util-router/src/index.ts"
-      ],
-      "@daylo/api/core/security-events": [
-        "./libs/api/core/security-events/src/index.ts"
+      "@daylo/shared/schemas": ["./libs/shared/schemas/src/index.ts"],
+      "@daylo/api/auth/feature": ["./libs/api/auth/feature/src/index.ts"],
+      "@daylo/web/shared/api-client": ["./libs/web/shared/api-client/src/index.ts"],
+      "@daylo/api/auth/data-access": ["./libs/api/auth/data-access/src/index.ts"],
+      "@daylo/api/users/contracts": ["./libs/api/users/contracts/src/index.ts"],
+      "@daylo/api/users/data-access": ["./libs/api/users/data-access/src/index.ts"],
+      "@daylo/api/users/feature": ["./libs/api/users/feature/src/index.ts"],
+      "@daylo/api/groups/contracts": ["./libs/api/groups/contracts/src/index.ts"],
+      "@daylo/api/groups/data-access": ["./libs/api/groups/data-access/src/index.ts"],
+      "@daylo/api/groups/feature": ["./libs/api/groups/feature/src/index.ts"],
+      "@daylo/api/core/identity/contracts": ["./libs/api/core/identity/contracts/src/index.ts"],
+      "@daylo/web/core/auth/data-access": ["./libs/web/core/auth/data-access/src/index.ts"],
+      "@daylo/web/core/shell": ["./libs/web/core/shell/src/index.ts"],
+      "@daylo/web/auth/features/login": ["./libs/web/auth/features/login/src/index.ts"],
+      "@daylo/web/shared/util-router": ["./libs/web/shared/util-router/src/index.ts"],
+      "@daylo/api/core/security-events": ["./libs/api/core/security-events/src/index.ts"],
+      "@daylo/web/shared/ui": ["./libs/web/shared/ui/src/index.ts"],
+      "@daylo/web/tasks/features/today": ["./libs/web/tasks/features/today/src/index.ts"],
+      "@daylo/web/groups/features/invitations": [
+        "./libs/web/groups/features/invitations/src/index.ts"
       ]
     }
   },

@@ -1,0 +1,69 @@
+@use '@angular/material' as mat;
+:host {
+  display: block;
+  min-width: 0;
+  @include mat.button-overrides(
+    (
+      text-label-text-color: var(--daylo-text),
+    )
+  );
+}
+.account {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  height: auto;
+  padding: 8px;
+  border: 1px solid var(--daylo-border);
+  border-radius: var(--daylo-radius-row);
+  background: var(--daylo-surface-raised);
+  color: var(--daylo-text);
+  white-space: normal;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--daylo-radius-control);
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-weight: 600;
+}
+.account-copy {
+  display: grid;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.account-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.account-name {
+  font: var(--mat-sys-label-large);
+}
+.account-email {
+  font: var(--mat-sys-body-small);
+  color: var(--daylo-muted);
+}
+.compact {
+  justify-content: center;
+  min-width: 44px;
+  min-height: 48px;
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+}
+.compact .account-copy {
+  display: none;
+}
+:focus-visible {
+  outline: 2px solid var(--daylo-focus);
+  outline-offset: 3px;
+}

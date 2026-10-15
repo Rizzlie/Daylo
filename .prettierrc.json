@@ -1,0 +1,15 @@
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "tabWidth": 2,
+  "printWidth": 100,
+  "endOfLine": "lf",
+  "overrides": [
+    {
+      "files": ["apps/web/**/*.html", "libs/web/**/*.html"],
+      "options": {
+        "parser": "angular"
+      }
+    }
+  ]
+}
