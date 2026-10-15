@@ -4,6 +4,13 @@ Status: Planning baseline, version 1.0, with delivery/acceptance updates through
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
 
+### Accepted M01-01/F06-13 publication — 2026-10-15
+
+[PR #29](https://github.com/Rizzlie/Daylo/pull/29) is ready for review and linked
+to the task thread. It contains the owner-accepted personal-task API, repository
+type simplification and automatic XSRF transport. Commit hooks passed; hosted CI
+is pending. M01-02 remains pending.
+
 ### F06-13 automatic XSRF transport — 2026-10-15
 
 Implemented the owner-authorized readable XSRF cookie and Angular's native

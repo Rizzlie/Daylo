@@ -171,3 +171,8 @@ After accepting the delivered changes, the owner requested "super, wystaw gotowÄ
 This authorizes selective staging, task-branch commits, push and a ready-for-review
 pull request containing M01-01, its type simplification and F06-13. Recorded
 verification limits remain; merge, deployment and subsequent tasks are not authorized.
+
+Publication: [PR #29](https://github.com/Rizzlie/Daylo/pull/29) is ready for review,
+contains the accepted M01-01/F06-13 scope and is linked to the task thread.
+Pre-commit formatting and commitlint passed. Hosted CI remains pending.
+No merge, deployment or subsequent task was performed.

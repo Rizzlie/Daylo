@@ -68,7 +68,7 @@ host-only scope, Secure policy and session-bound verification remain required.
   first run passed 44, with a premature cookie assertion, overly precise expiry
   comparison and two shared trace-directory collisions corrected/verified by
   six expiry cases, two XSRF cases and one mobile privacy case. No clean single
-  48-case run is claimed. Changed-file formatting and whitespace checks passed.
+  48-case run is claimed. Authored-file formatting and whitespace checks passed; generated files retain generator-produced whitespace.
   Disposable API/browser databases and managed service processes were cleaned up.
 - Browser inspection: Desktop/mobile inspection against synthetic Google and
   isolated PostgreSQL passed: only the XSRF cookie is JavaScript-readable,
@@ -94,3 +94,8 @@ After accepting the delivered changes, the owner requested "super, wystaw gotowÄ
 This authorizes selective staging, task-branch commits, push and a ready-for-review
 pull request containing M01-01, its type simplification and F06-13. Recorded
 verification limits remain; merge, deployment and subsequent tasks are not authorized.
+
+Publication: [PR #29](https://github.com/Rizzlie/Daylo/pull/29) is ready for review,
+contains the accepted M01-01/F06-13 scope and is linked to the task thread.
+Pre-commit formatting and commitlint passed. Hosted CI remains pending.
+No merge, deployment or subsequent task was performed.
