@@ -32,5 +32,10 @@ Owner-accepted on 2026-10-15.
 
 ## Retrospective
 
+Publication in [PR #28](https://github.com/Rizzlie/Daylo/pull/28) exercised the
+actual pre-commit flow on 77 staged files: backup, Prettier, task-change staging
+and cleanup succeeded, followed by commitlint. Partial-hunk staging was not part
+of that invocation.
+
 Use lint-staged's established partial-staging behavior rather than a custom hook
 that formats whole working files and stages unrelated hunks.

@@ -297,6 +297,11 @@ remain; overall task acceptance is pending.
 
 ### Publication verification — 2026-10-15
 
+Published as [ready-for-review PR #28](https://github.com/Rizzlie/Daylo/pull/28)
+from `feat/responsive-authenticated-shell` into `main`, linked to the task thread.
+The owner-accepted scope also includes the recorded tooling tasks. No merge or
+deployment was performed.
+
 After the owner-requested formatting pass, relevant lint, 29 component/router
 tests across shared UI, core shell, pages and web, E2E typecheck, production build
 and deterministic client drift checks passed. The final six tagged shell E2E

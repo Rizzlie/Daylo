@@ -6,6 +6,11 @@ See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separa
 
 ### Owner acceptance and publication — 2026-10-15
 
+Published as [ready-for-review PR #28](https://github.com/Rizzlie/Daylo/pull/28),
+linked to this task thread. Final local checks passed: 29 component/router tests,
+relevant lint/typecheck/production build/client drift, six real-stack shell E2E
+cases, changed-file formatting and actual pre-commit/commitlint execution.
+
 The owner accepted the delivered scope and changes and requested a ready-for-review
 PR. This accepts M05-02 and the accompanying F01-06/F01-07 formatter/hook and
 F02-03 local-runtime tooling. It includes dedicated feature page frames, shared
