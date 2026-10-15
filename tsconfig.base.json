@@ -40,7 +40,9 @@
       "@daylo/web/tasks/features/today": ["./libs/web/tasks/features/today/src/index.ts"],
       "@daylo/web/groups/features/invitations": [
         "./libs/web/groups/features/invitations/src/index.ts"
-      ]
+      ],
+      "@daylo/api/tasks/feature": ["./libs/api/tasks/feature/src/index.ts"],
+      "@daylo/api/tasks/data-access": ["./libs/api/tasks/data-access/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

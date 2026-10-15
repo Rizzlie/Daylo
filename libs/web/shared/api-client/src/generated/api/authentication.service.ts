@@ -239,23 +239,19 @@ export class AuthenticationService extends BaseService {
      * Revoke the current Daylo session
      * Requires the exact configured frontend Origin and a valid session-bound X-CSRF-Token. Deletes the current session and clears its cookie; other device sessions remain valid. Available to pending users.
      * @endpoint post /api/auth/sign-out
-     * @param xCSRFToken Session-bound CSRF token obtained from GET /api/auth/csrf.
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public signOut(xCSRFToken: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
-    public signOut(xCSRFToken: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
-    public signOut(xCSRFToken: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
-    public signOut(xCSRFToken: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (xCSRFToken === null || xCSRFToken === undefined) {
-            throw new Error('Required parameter xCSRFToken was null or undefined when calling signOut.');
-        }
+    public signOut(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
+    public signOut(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
+    public signOut(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public signOut(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
-        if (xCSRFToken !== undefined && xCSRFToken !== null) {
-            localVarHeaders = localVarHeaders.set('X-CSRF-Token', String(xCSRFToken));
-        }
+
+        // authentication (dayloCsrf) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('dayloCsrf', 'X-CSRF-Token', localVarHeaders);
 
         // authentication (dayloSession) required
 

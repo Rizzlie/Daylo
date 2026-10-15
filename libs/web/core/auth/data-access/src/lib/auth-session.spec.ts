@@ -18,11 +18,15 @@ describe('authentication session', () => {
     TestBed.configureTestingModule({
       providers: [provideAuthentication(), provideHttpClientTesting()],
     });
+    document.cookie = 'daylo_xsrf=synthetic-proof; Path=/';
     auth = TestBed.inject(AuthSession);
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    document.cookie = 'daylo_xsrf=; Path=/; Max-Age=0';
+    http.verify();
+  });
 
   async function loadActiveSession() {
     const result = firstValueFrom(auth.refresh());
@@ -57,10 +61,13 @@ describe('authentication session', () => {
   it('represents normal anonymous entry without an expiry reason', async () => {
     const result = firstValueFrom(auth.refresh());
     await vi.waitFor(() => {
-      http.expectOne('/api/auth/session').flush({}, {
-        status: 401,
-        statusText: 'Unauthorized',
-      });
+      http.expectOne('/api/auth/session').flush(
+        {},
+        {
+          status: 401,
+          statusText: 'Unauthorized',
+        },
+      );
     });
 
     expect(await result).toEqual({ status: 'anonymous', reason: null });
@@ -70,10 +77,13 @@ describe('authentication session', () => {
   it('recovers after a connection failure instead of returning a cached result', async () => {
     const failed = firstValueFrom(auth.refresh());
     await vi.waitFor(() => {
-      http.expectOne('/api/auth/session').flush({}, {
-        status: 503,
-        statusText: 'Unavailable',
-      });
+      http.expectOne('/api/auth/session').flush(
+        {},
+        {
+          status: 503,
+          statusText: 'Unavailable',
+        },
+      );
     });
     expect(await failed).toEqual({ status: 'error' });
 
@@ -90,7 +100,6 @@ describe('authentication session', () => {
     auth.signOut();
     expect(auth.signingOut()).toBe(true);
 
-    http.expectOne('/api/auth/csrf').flush({ csrfToken: 'synthetic-proof' });
     const request = http.expectOne('/api/auth/sign-out');
     expect(request.request.method).toBe('POST');
     expect(request.request.headers.get('X-CSRF-Token')).toBe('synthetic-proof');
@@ -104,17 +113,20 @@ describe('authentication session', () => {
   it('keeps identity on failed sign-out and allows a new attempt', async () => {
     await loadActiveSession();
     auth.signOut();
-    http.expectOne('/api/auth/csrf').flush({}, {
-      status: 503,
-      statusText: 'Unavailable',
-    });
+    http.expectOne('/api/auth/sign-out').flush(
+      {},
+      {
+        status: 503,
+        statusText: 'Unavailable',
+      },
+    );
     expect(auth.status()).toBe('active');
     expect(auth.signOutFailed()).toBe(true);
     expect(auth.signingOut()).toBe(false);
 
     auth.signOut();
     expect(auth.signOutFailed()).toBe(false);
-    http.expectOne('/api/auth/csrf').flush({ csrfToken: 'retry-proof' });
+
     http.expectOne('/api/auth/sign-out').flush(null, {
       status: 204,
       statusText: 'No Content',
@@ -125,10 +137,13 @@ describe('authentication session', () => {
   it('records expiry if the session disappears during sign-out', async () => {
     await loadActiveSession();
     auth.signOut();
-    http.expectOne('/api/auth/csrf').flush({}, {
-      status: 401,
-      statusText: 'Unauthorized',
-    });
+    http.expectOne('/api/auth/sign-out').flush(
+      {},
+      {
+        status: 401,
+        statusText: 'Unauthorized',
+      },
+    );
     expect(auth.state()).toEqual({ status: 'anonymous', reason: 'expired' });
     http.expectNone('/api/auth/sign-out');
   });
@@ -144,44 +159,60 @@ describe('authentication session', () => {
   });
 
   it('records a protected API 401 as session expiry', () => {
-    TestBed.inject(HttpClient).get('/api/protected').subscribe({
-      error: () => undefined,
-    });
-    http.expectOne('/api/protected').flush({}, {
-      status: 401,
-      statusText: 'Unauthorized',
-    });
+    TestBed.inject(HttpClient)
+      .get('/api/protected')
+      .subscribe({
+        error: () => undefined,
+      });
+    http.expectOne('/api/protected').flush(
+      {},
+      {
+        status: 401,
+        statusText: 'Unauthorized',
+      },
+    );
     expect(auth.state()).toEqual({ status: 'anonymous', reason: 'expired' });
   });
 
   it('ignores third-party authentication failures', () => {
-    TestBed.inject(HttpClient).get('https://external.example.test/api').subscribe({
-      error: () => undefined,
-    });
-    http.expectOne('https://external.example.test/api').flush({}, {
-      status: 401,
-      statusText: 'Unauthorized',
-    });
+    TestBed.inject(HttpClient)
+      .get('https://external.example.test/api')
+      .subscribe({
+        error: () => undefined,
+      });
+    http.expectOne('https://external.example.test/api').flush(
+      {},
+      {
+        status: 401,
+        statusText: 'Unauthorized',
+      },
+    );
     expect(auth.status()).toBe('unknown');
   });
 
   it('keeps a rate-limited sign-out session active and allows an explicit retry', async () => {
     await loadActiveSession();
     auth.signOut();
-    http.expectOne('/api/auth/csrf').flush({}, { status: 429, statusText: 'Too Many Requests' });
+    http
+      .expectOne('/api/auth/sign-out')
+      .flush({}, { status: 429, statusText: 'Too Many Requests' });
     expect(auth.state()).toEqual({ status: 'active', user });
     expect(auth.signOutRateLimited()).toBe(true);
     expect(auth.signOutFailed()).toBe(false);
     http.expectNone('/api/auth/sign-out');
     auth.signOut();
-    http.expectOne('/api/auth/csrf').flush({ csrfToken: 'transient-proof' });
+
     http.expectOne('/api/auth/sign-out').flush(null);
     expect(auth.state()).toEqual({ status: 'anonymous', reason: 'signed-out' });
   });
 
   it('reports a rate-limited session check without expiry or an automatic retry', async () => {
     const checked = firstValueFrom(auth.refresh());
-    await vi.waitFor(() => http.expectOne('/api/auth/session').flush({}, { status: 429, statusText: 'Too Many Requests' }));
+    await vi.waitFor(() =>
+      http
+        .expectOne('/api/auth/session')
+        .flush({}, { status: 429, statusText: 'Too Many Requests' }),
+    );
     expect(await checked).toEqual({ status: 'error', reason: 'rate-limit' });
     http.expectNone('/api/auth/session');
   });

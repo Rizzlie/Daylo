@@ -4,10 +4,14 @@ Owns handwritten session state and generated-client orchestration. Session check
 run on entry/foreground return. `rxResource` owns the generated-client read,
 loading/error state and cancellation; identity/status are computed from one typed
 session result. Explicit invalidation replaces the resource value and cancels
-outstanding reads. Sign-out is an `exhaustMap` mutation pipeline: it retrieves
-CSRF proof, passes it directly to the generated sign-out call and derives activity
-and failure signals from its result. Proof exists only within that request chain;
-no authentication state is persisted in browser storage. The HTTP interceptor
+outstanding reads. Sign-out is an `exhaustMap` mutation pipeline calling the
+generated `signOut()` method without a token argument or preliminary CSRF request.
+Angular's built-in XSRF interceptor reads the host-only `daylo_xsrf` cookie and
+adds `X-CSRF-Token` on eligible same-origin mutations. The backend issues/repairs
+this readable cookie on sign-in and GET session, binds it to the database session
+and clears it on sign-out/invalid sessions. The authentication cookie stays
+HttpOnly; no authentication state is persisted in localStorage/sessionStorage.
+The handwritten HTTP interceptor
 records protected Daylo 401 responses. Auth also owns reusable access guards and
 redirect decisions. `AuthSessionLifecycle` owns foreground checks and navigation
 on session loss/sign-out independently of any mounted shell or feature.

@@ -68,9 +68,12 @@ test.describe('real-stack authentication screens', () => {
         const stored = await page.evaluate(() => ({
           local: localStorage.length,
           session: sessionStorage.length,
-          cookie: document.cookie,
+          cookieNames: document.cookie
+            .split(';')
+            .map((cookie) => cookie.trim().split('=')[0])
+            .filter(Boolean),
         }));
-        expect(stored).toEqual({ local: 0, session: 0, cookie: '' });
+        expect(stored).toEqual({ local: 0, session: 0, cookieNames: ['daylo_xsrf'] });
         const signOut = page.waitForResponse(
           (response) => response.url().endsWith('/api/auth/sign-out'),
           { timeout: 5_000 },
