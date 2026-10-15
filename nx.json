@@ -4,21 +4,13 @@
   "analytics": false,
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "sharedGlobals": [
-      "{workspaceRoot}/.node-version",
-      "{workspaceRoot}/.github/workflows/ci.yml"
-    ]
+    "sharedGlobals": ["{workspaceRoot}/.node-version", "{workspaceRoot}/.github/workflows/ci.yml"]
   },
   "targetDefaults": {
     "@angular/build:application": {
       "cache": true,
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "default",
-        "^default"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^default"]
     },
     "@nx/eslint:lint": {
       "cache": true,
@@ -33,10 +25,7 @@
     },
     "@nx/vitest:test": {
       "cache": true,
-      "inputs": [
-        "default",
-        "^default"
-      ]
+      "inputs": ["default", "^default"]
     }
   },
   "plugins": [

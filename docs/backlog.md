@@ -1,8 +1,91 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-14. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; the rest of M05 remains pending. F07-01 and F07-02 are implemented, locally verified and owner-accepted on 2026-10-14; parent F07 is closed with recorded verification limits. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-15. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; M05-02 is implemented, locally verified and owner-accepted on 2026-10-15 with recorded limits; other M05 work remains pending. F07-01 and F07-02 are implemented, locally verified and owner-accepted on 2026-10-14; parent F07 is closed with recorded verification limits. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+### Owner acceptance and publication — 2026-10-15
+
+Published as [ready-for-review PR #28](https://github.com/Rizzlie/Daylo/pull/28),
+linked to this task thread. Final local checks passed: 29 component/router tests,
+relevant lint/typecheck/production build/client drift, six real-stack shell E2E
+cases, changed-file formatting and actual pre-commit/commitlint execution.
+
+The owner accepted the delivered scope and changes and requested a ready-for-review
+PR. This accepts M05-02 and the accompanying F01-06/F01-07 formatter/hook and
+F02-03 local-runtime tooling. It includes dedicated feature page frames, shared
+AppLayout, AuthenticatedShell and central session-loading ownership. Existing
+verification limitations remain recorded. Earlier pending statements below are
+historical delivery snapshots. Remaining M01–M06 functionality stays pending;
+this acceptance authorizes task-branch commit/push/PR publication, not merge or
+deployment.
+
+### F01-07 staged formatting hook — 2026-10-15
+
+Owner-requested Husky pre-commit hook uses pinned lint-staged with Prettier for
+staged files, existing ignore rules and default partial-staging protection.
+Commitlint remains in commit-msg. Configuration/shell checks and empty-index hook
+smoke passed without staging changes or creating a commit. Actual partial-staging
+integration was not exercised. Acceptance pending; see
+[F01-07](tasks/F01-07-prettier-pre-commit-hook.md).
+
+### F01-06 formatter setup — 2026-10-15
+
+Owner-requested Prettier 3.9.10 setup adds root configuration/ignore rules and
+Nx-backed npm format/check commands. Targeted configuration, Angular parser and
+generated-file exclusion checks pass. Full-repository check reports existing
+formatting differences; a bulk reformat and new CI gate were not performed.
+Owner acceptance pending; see [F01-06](tasks/F01-06-prettier-configuration.md).
+
+### F02-03 local development command — 2026-10-15
+
+Owner-requested `npm run dev` chains existing Docker Compose health wait,
+committed Prisma migrations and Nx `run-many` for API/web. Web's Nx serve wrapper
+scopes PORT=4200 to prevent the API's root PORT=3000 from overriding Angular.
+Live database readiness, web/proxy HTTP checks, browser login smoke and Ctrl+C
+cleanup passed. No custom launcher or dependency remains. Owner acceptance is
+pending; see [F02-03](tasks/F02-03-local-stack-launcher.md).
+
+### M05-02 responsive shell delivery — 2026-10-15
+
+Implemented the owner-authorized responsive shell using Material Sidenav,
+navigation lists, buttons, tooltips, account menu and card with the approved Daylo
+SVG and themes. Desktop collapse persists in this browser; mobile preserves that
+choice and provides bottom navigation/account access. Pending users retain a
+restricted layout. Identity comes from the real session with initials; Groups and
+Settings remain unavailable until their feature tasks deliver them.
+
+Owner review extracted `AppLayout` into the planned `libs/web/shared/ui` library;
+core shell retains session state, collapse persistence and route composition.
+After extraction, lint, 25 component/router/preference tests, production build and
+six existing shell E2E cases passed. Browser DOM/flow inspection and fresh E2E
+screenshots were reviewed; independent preview screenshots/console collection
+remain incomplete due to automation-client errors. Acceptance is pending.
+
+A subsequent owner-requested refinement removed the generic route page. Today
+and Invitations now have independent lazy feature components in their approved
+business areas; the core shell remains separate. The refinement passed 24 affected
+unit/router tests, lint/build, 14 real-stack desktop/mobile session E2E cases and
+independent browser route/layout inspection. A fresh collaborative tab restored
+screenshot/console inspection for this refinement. Functional M02/M03 work remains
+pending; see the latest M05-02 delivery record.
+
+Session-loading review moved the shared status into AuthenticatedShell and removed
+it from Today/Invitations. The outlet stays mounted during revalidation, preserving
+local page state. The change passed lint/build, 26 component/router tests, two
+foreground-expiry E2E cases and a real browser refresh check with one status and
+the same page host. Overall M05-02 acceptance remains pending.
+
+Relevant lint, 22 component/router/preference tests, E2E typecheck, production
+build, existing client/contract checks and 46 distinct real-stack desktop/mobile
+E2E cases passed in scoped runs. Final layout/keyboard/long-name reruns cover the
+declarative shared panel/content geometry. Independent browser layouts and flows
+were inspected; intermittent tooling limits full console inspection. Native zoom,
+physical safe areas, hosted/Linux, real Google, deployed HTTPS and the exact pinned
+Node patch remain unverified. See [M05-02](tasks/M05-02-responsive-shell-and-identity.md)
+for evidence, cleanup and retrospective. No dependency, API contract or migration
+changed. Owner acceptance is pending; parent M05 and later tasks remain incomplete.
+No commit, publication or deployment is authorized by delivery.
 
 ### F07-02 authentication E2E delivery and acceptance — 2026-10-14
 
@@ -286,13 +369,13 @@ The owner requested backlog registration for the remaining audit recommendations
 All items below are pending, with assumptions, scope, acceptance criteria,
 verification and unresolved policy decisions in their own task files:
 
-| Task | Planned outcome |
-| --- | --- |
-| [F06-08](tasks/F06-08-pkce-for-google-oidc.md) | Add transaction-bound S256 PKCE while preserving existing OIDC defenses |
-| [F06-09](tasks/F06-09-production-security-headers.md) | Apply and validate security headers/CSP on the actual frontend and API serving paths |
-| [F06-10](tasks/F06-10-auth-security-event-logging.md) | Add structured redacted security events with agreed retention and operational handling |
-| [F06-11](tasks/F06-11-expired-auth-record-cleanup.md) | Periodically remove eligible expired auth records safely and in bounded batches |
-| [F06-12](tasks/F06-12-security-dependency-review.md) | Review current advisories/reachability and perform separately approved compatible remediation |
+| Task                                                  | Planned outcome                                                                               |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [F06-08](tasks/F06-08-pkce-for-google-oidc.md)        | Add transaction-bound S256 PKCE while preserving existing OIDC defenses                       |
+| [F06-09](tasks/F06-09-production-security-headers.md) | Apply and validate security headers/CSP on the actual frontend and API serving paths          |
+| [F06-10](tasks/F06-10-auth-security-event-logging.md) | Add structured redacted security events with agreed retention and operational handling        |
+| [F06-11](tasks/F06-11-expired-auth-record-cleanup.md) | Periodically remove eligible expired auth records safely and in bounded batches               |
+| [F06-12](tasks/F06-12-security-dependency-review.md)  | Review current advisories/reachability and perform separately approved compatible remediation |
 
 Global API rate limiting remains the existing F06-07 task. Before public exposure,
 prioritize it, production headers and reachable dependency findings; discuss the
@@ -601,15 +684,15 @@ accepted F06-03 scope and is registered with the task thread. Hosted CI is pendi
 
 Work in small reviewed increments. Do not execute the next item merely because the previous item is finished.
 
-| ID | Deliverable | Acceptance criteria | Verification |
-| --- | --- | --- | --- |
-| F01 | Nx workspace | Angular `web`, NestJS `api`, and Playwright `web-e2e` projects; npm lockfile; boundary rules; documented serve, lint, test, and build targets | Apps start; relevant lint and builds pass; Playwright can open the initial frontend shell |
-| F02 | Local runtime | PostgreSQL Compose service; documented environment; API readiness endpoint checks database | Empty local database starts; readiness succeeds with DB and reports unavailability when DB is down |
-| F03 | Prisma persistence | Models, constraints, migrations, and Prisma client for agreed entities | Apply migrations to an empty isolated DB; verify identity/membership uniqueness and invitation transaction behavior |
-| F04 | Zod and Swagger | Request/response schemas, NestJS validation and serialization, documented current-session contract | Invalid payload rejected; valid response conforms; Swagger and OpenAPI endpoints work |
-| F05 | OpenAPI client generation | Export, validate, and generate Nx targets; pinned Angular generator; committed client | Export without live DB; repeated generation stable; generated client compiles; drift check works |
-| F06 | Google OAuth and sessions | Owner and invitation access; browser-bound single-use OAuth transactions; cookie sessions; sign-out; CSRF protection | Valid/invalid provider flows, invalid state/nonce, replay, denied outsider, session expiry/revocation, CSRF rejection; real Google smoke check separately |
-| F07 | Browser verification foundation | Real test stack, isolated fixtures, controlled provider, multi-user contexts, reports and artifacts | Authentication E2E passes; fixture isolation holds; normal runtime excludes test provider; agent browser workflow exercised |
+| ID  | Deliverable                     | Acceptance criteria                                                                                                                           | Verification                                                                                                                                              |
+| --- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F01 | Nx workspace                    | Angular `web`, NestJS `api`, and Playwright `web-e2e` projects; npm lockfile; boundary rules; documented serve, lint, test, and build targets | Apps start; relevant lint and builds pass; Playwright can open the initial frontend shell                                                                 |
+| F02 | Local runtime                   | PostgreSQL Compose service; documented environment; API readiness endpoint checks database                                                    | Empty local database starts; readiness succeeds with DB and reports unavailability when DB is down                                                        |
+| F03 | Prisma persistence              | Models, constraints, migrations, and Prisma client for agreed entities                                                                        | Apply migrations to an empty isolated DB; verify identity/membership uniqueness and invitation transaction behavior                                       |
+| F04 | Zod and Swagger                 | Request/response schemas, NestJS validation and serialization, documented current-session contract                                            | Invalid payload rejected; valid response conforms; Swagger and OpenAPI endpoints work                                                                     |
+| F05 | OpenAPI client generation       | Export, validate, and generate Nx targets; pinned Angular generator; committed client                                                         | Export without live DB; repeated generation stable; generated client compiles; drift check works                                                          |
+| F06 | Google OAuth and sessions       | Owner and invitation access; browser-bound single-use OAuth transactions; cookie sessions; sign-out; CSRF protection                          | Valid/invalid provider flows, invalid state/nonce, replay, denied outsider, session expiry/revocation, CSRF rejection; real Google smoke check separately |
+| F07 | Browser verification foundation | Real test stack, isolated fixtures, controlled provider, multi-user contexts, reports and artifacts                                           | Authentication E2E passes; fixture isolation holds; normal runtime excludes test provider; agent browser workflow exercised                               |
 
 Dependencies: F01 -> F02 -> F03 -> F04 -> F05 -> F06. Establish Playwright in F01 and finish authentication fixtures and F07 after F06. F04-F05 use the current-session endpoint as the first complete contract-to-client example; authenticated behavior is finished in F06.
 
@@ -627,14 +710,14 @@ Merge the accepted [Backend architecture](backend-architecture.md) tag/type/scop
 
 ## 2. Functional slices after the foundation
 
-| ID | Slice | Acceptance criteria |
-| --- | --- | --- |
-| M01 | Personal tasks | Create, edit, delete, complete, reopen; API access restricted to owner; persistence and conflict handling |
-| M02 | Today | Timeline, untimed, overdue, completed sections; quick creation; greeting; loading/error/empty states; timezone boundaries |
-| M03 | Groups and invitations | Owner creates groups and invitations; recipient accepts/rejects; atomic membership; pending users remain restricted |
+| ID  | Slice                         | Acceptance criteria                                                                                                                                |
+| --- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M01 | Personal tasks                | Create, edit, delete, complete, reopen; API access restricted to owner; persistence and conflict handling                                          |
+| M02 | Today                         | Timeline, untimed, overdue, completed sections; quick creation; greeting; loading/error/empty states; timezone boundaries                          |
+| M03 | Groups and invitations        | Owner creates groups and invitations; recipient accepts/rejects; atomic membership; pending users remain restricted                                |
 | M04 | Shared tasks and live updates | Members manage group tasks; shared completion/reopening appears in two sessions without refresh; unauthorized users receive no task data or events |
-| M05 | UI and preferences | Dark/light/system themes, saved preferences, greeting toggle, mobile bottom navigation, accessible forms |
-| M06 | MVP acceptance | Core automated checks pass; browser inspection completed; seven-day owner usage exercise recorded separately |
+| M05 | UI and preferences            | Dark/light/system themes, saved preferences, greeting toggle, mobile bottom navigation, accessible forms                                           |
+| M06 | MVP acceptance                | Core automated checks pass; browser inspection completed; seven-day owner usage exercise recorded separately                                       |
 
 M01 precedes M02. M03 precedes M04; M04 also depends on M01. M05 can be delivered incrementally with UI slices. M06 follows all functional slices.
 
@@ -661,16 +744,16 @@ Real Google sign-in requires a separate manual smoke check with configured crede
 
 Add each scenario when its feature exists; do not claim coverage for unimplemented features.
 
-| Area | Scenarios |
-| --- | --- |
-| Authentication | Owner sign-in; outsider denial; sign-out; expired session; valid session survives reload |
-| Invitations | Restricted pending screen; accept/reject; expired invite; wrong account; no group access before acceptance |
-| Personal tasks | All task operations; optional description/time; persistence; user privacy |
-| Today | Correct ordering and grouping; overdue retained; completed task union without duplicates; empty state; midnight change |
-| Shared tasks | Both members see the task; completion and reopening propagate without refresh |
-| Concurrency | Stale edit receives a recoverable conflict without silent overwrite |
-| Preferences and layout | Both themes; system preference; persisted selection; greeting toggle; usable mobile form and bottom navigation |
-| Failures | Failed save retains input; API failure message; lost SSE connection; reconnection reload |
+| Area                   | Scenarios                                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Authentication         | Owner sign-in; outsider denial; sign-out; expired session; valid session survives reload                               |
+| Invitations            | Restricted pending screen; accept/reject; expired invite; wrong account; no group access before acceptance             |
+| Personal tasks         | All task operations; optional description/time; persistence; user privacy                                              |
+| Today                  | Correct ordering and grouping; overdue retained; completed task union without duplicates; empty state; midnight change |
+| Shared tasks           | Both members see the task; completion and reopening propagate without refresh                                          |
+| Concurrency            | Stale edit receives a recoverable conflict without silent overwrite                                                    |
+| Preferences and layout | Both themes; system preference; persisted selection; greeting toggle; usable mobile form and bottom navigation         |
+| Failures               | Failed save retains input; API failure message; lost SSE connection; reconnection reload                               |
 
 Prefer accessible roles and labels in selectors. Use Playwright assertions and automatic waiting rather than fixed sleeps. Keep tests focused on observable behavior.
 

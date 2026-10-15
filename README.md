@@ -28,6 +28,31 @@ Nx, Angular, Angular Material, NestJS, PostgreSQL, Prisma, Zod, Swagger, OpenAPI
 
 Code and documentation use English. User-facing UI text uses Polish.
 
+## Formatting
+
+Prettier uses the root `.prettierrc.json`: two-space indentation, single quotes,
+trailing commas, a 100-column print width and LF line endings. Angular templates
+use the Angular parser. Use the existing Nx formatter integration:
+
+```powershell
+npm run format
+npm run format:check
+# Limit formatting to selected files when reviewing a bounded change:
+npm exec nx -- format:write --files=apps/web/src/app/app.routes.ts
+```
+
+`.prettierignore` excludes generated API/Prisma/client output, original design
+exports, managed skills, lock metadata and build/test artifacts. The formatter
+setup does not reformat the existing repository. The full check may report
+existing formatting differences until those files are deliberately formatted.
+Formatting is separate from ESLint; no new CI gate is added by this setup.
+
+The Husky `pre-commit` hook runs lint-staged with Prettier on staged files only.
+Formatting fixes are added to those staged files automatically; unstaged changes
+in partially staged files are protected by lint-staged's default stash/hide
+behavior. Existing `.prettierignore` rules apply and unsupported file types are
+skipped. A formatting error blocks the commit. `npm ci` installs the hooks.
+
 ## Delivery approach
 
 1. Review the planning documents.
@@ -41,18 +66,18 @@ Only explicitly requested slices are authorized; the full **F01: Nx workspace** 
 
 Use Node.js 24.19.0 and npm 11.17.0, the verified local baseline. Install the locked dependencies with `npm ci` from the workspace root. Frontend framework and tooling dependencies are pinned to their existing exact locked versions; this task does not upgrade packages.
 
-| Tool | Pinned version |
-| --- | --- |
-| Nx and frontend Nx plugins | 23.3.0 |
-| Angular runtime, compiler and language service | 22.2.2 |
-| Angular CLI, build, devkit and schematics | 22.2.2 |
-| Angular Material and CDK | 22.2.1 |
-| TypeScript | 6.0.3 |
-| Analog Angular/Vitest integration | 2.8.0 |
-| Vite / Vitest | 8.3.2 / 4.1.11 |
-| Angular ESLint / ESLint | 22.5.0 / 9.39.5 |
-| Playwright | 1.63.0 |
-| Plus Jakarta Sans Variable | 5.3.0 |
+| Tool                                           | Pinned version  |
+| ---------------------------------------------- | --------------- |
+| Nx and frontend Nx plugins                     | 23.3.0          |
+| Angular runtime, compiler and language service | 22.2.2          |
+| Angular CLI, build, devkit and schematics      | 22.2.2          |
+| Angular Material and CDK                       | 22.2.1          |
+| TypeScript                                     | 6.0.3           |
+| Analog Angular/Vitest integration              | 2.8.0           |
+| Vite / Vitest                                  | 8.3.2 / 4.1.11  |
+| Angular ESLint / ESLint                        | 22.5.0 / 9.39.5 |
+| Playwright                                     | 1.63.0          |
+| Plus Jakarta Sans Variable                     | 5.3.0           |
 
 The client-rendered Angular app lives in `apps/web`, tagged `platform:web`, `scope:app`, `type:app`. Use its Nx targets:
 
@@ -63,7 +88,7 @@ npm exec nx -- run web:test
 npm exec nx -- run web:build
 ```
 
-Serve defaults to development at `http://localhost:4200/`. If the port is occupied, use `npm exec nx -- run web:serve --port=4300`. Build defaults to production and writes to `dist/apps/web`; unit tests use Vitest. The root `npm test` script is not the web test target.
+Serve defaults to development at `http://localhost:4200/`; keep that port free. The public `web:serve` target sets the frontend's port environment and delegates to the Angular `web:serve-app` target, keeping the API's root `PORT=3000` setting separate. Build defaults to production and writes to `dist/apps/web`; unit tests use Vitest. The root `npm test` script is not the web test target.
 
 The initial page shows the `Daylo` heading and a Polish preparation message. Its document title is `Daylo` and language is Polish. Themes follow system appearance by default; document-level `data-theme="light"` or `data-theme="dark"` overrides remain available. Plus Jakarta Sans is bundled locally; Material Symbols Outlined is loaded from Google Fonts for planned icon use, with preconnect links to its stylesheet and font hosts. Product navigation, authentication and task screens remain pending.
 
@@ -101,6 +126,34 @@ npm exec nx -- run-many -t lint -p web api web-e2e --skipNxCache
 F01-04 uses only the built-in Nx rule. It adds no custom rules, metadata validator, fixture harness or workspace targets. Tag completeness, path consistency and capability-tag ownership are not automatically validated. Public entrypoints follow Nx's built-in import checks; no additional canonical-alias validation is implemented. CI wiring remains F01-05.
 
 ## Local runtime
+
+After `npm ci`, configure `.env` from `.env.example` once (do not overwrite an
+existing file), fill in the Google OAuth credentials, owner email and PKCE key,
+and start Docker Desktop with Linux containers. Then run:
+
+```powershell
+npm run dev
+```
+
+The npm script starts the existing Compose PostgreSQL service, waits for its
+health check, applies committed Prisma migrations through Nx and uses
+`nx run-many` to run `api:serve` and `web:serve` together with terminal logs.
+Existing Compose, Prisma and Nx environment loading remains in use. Keep shared
+database settings in `.env` so Compose and migrations use the same configuration.
+API and web run on
+the host; only PostgreSQL runs in Docker. Open `http://localhost:4200` after the
+frontend compiles. The API is at `http://localhost:3000/api`, also proxied under
+the frontend's `/api` path.
+
+Use the default API/frontend ports and origins from `.env.example`; keep ports
+3000 and 4200 free. The script never resets the database, replaces environment
+files or generates credentials. The web serve target explicitly uses port 4200.
+
+Press Ctrl+C to stop API and web. PostgreSQL remains running with persistent data;
+stop it separately with `docker compose stop postgres`. If startup fails, resolve
+the reported prerequisite/configuration error and rerun the command.
+
+Individual database and Nx commands remain available below.
 
 Install and start Docker Desktop. Copy the documented local configuration once, then start PostgreSQL from the workspace root:
 
@@ -180,7 +233,10 @@ Keep the specification and generated sources in version control, and never edit 
 ## Frontend authentication
 
 The login page lives in `libs/web/auth/features/login`. Application routes lazily
-load it and the protected placeholder shell. Templates read separate named signals;
+load it, the protected core shell and dedicated `Today` and `Invitations` pages
+from `libs/web/tasks/features/today` and `libs/web/groups/features/invitations`.
+The page frames currently preserve their headings and session greetings; task
+content and invitation actions remain pending. Templates read separate named signals;
 `@daylo/web/shared/util-router` exports `injectQueryParamMap()` for shared reactive
 query-parameter access. Reusable session state, guards and providers belong to core
 auth data-access.
@@ -247,7 +303,7 @@ In a restricted agent session that blocks Nx sockets or plugin subprocesses, set
 
 ## Commit conventions and CI
 
-Use English Conventional Commits for commit messages and PR titles, for example `ci(workspace): add affected PR checks`. Commitlint CLI/config-conventional 21.2.3 and Husky 9.1.7 are pinned in the npm lockfile. `npm ci` installs the local `commit-msg` hook through `prepare`; Git for Windows provides the shell used by Husky. Hook files keep LF endings. The hook validates messages only; it does not run lint or tests. English wording and imperative phrasing remain review responsibilities.
+Use English Conventional Commits for commit messages and PR titles, for example `ci(workspace): add affected PR checks`. Commitlint CLI/config-conventional 21.2.3 and Husky 9.1.7 are pinned in the npm lockfile. `npm ci` installs the local hooks through `prepare`; Git for Windows provides the shell used by Husky. Hook files keep LF endings. `commit-msg` validates messages; `pre-commit` formats staged files with Prettier through lint-staged. The hooks do not run lint or tests. English wording and imperative phrasing remain review responsibilities.
 
 Check examples in PowerShell without creating commits:
 

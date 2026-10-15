@@ -1,0 +1,27 @@
+# Tool-managed skills and local agent state
+.agents/
+.claude/
+
+# Dependencies and build/test artifacts
+node_modules/
+dist/
+coverage/
+out-tsc/
+tmp/
+.nx/
+.angular/
+.vitest/
+
+# Generated contracts and clients must stay identical to generator output
+docs/api/openapi.json
+libs/web/shared/api-client/src/generated/
+libs/api/core/database/src/generated/
+
+# Preserve original design exports
+docs/design/daylo_ekran_dzisiaj_desktop_mobile_wszystkie_stany/
+docs/design/daylo_ekran_dzisiaj_mobilny_jasny/
+docs/design/daylo_logo_mark/
+docs/design/warm_modern_planner/
+
+# Dependency lock metadata is maintained by npm
+package-lock.json

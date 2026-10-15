@@ -1,0 +1,20 @@
+{
+  "name": "web-tasks-feature-today",
+  "$schema": "../../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/web/tasks/features/today/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["platform:web", "scope:tasks", "type:feature"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/web/tasks/features/today"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

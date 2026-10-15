@@ -6,6 +6,11 @@ Discussion status: **Not started — required before implementation.**
 Implementation authorization: **Not granted by this document.**
 Delivery status: Pending. No implementation or verification is claimed by this task file.
 
+Preparation note (2026-10-15): the owner's M05-02 review extracted the existing
+minimal `Today` route page into `libs/web/tasks/features/today`. This provides a
+dedicated page frame and session greeting only; the behavior below remains
+unimplemented and requires its own discussion and authorization.
+
 ## Assumptions and sources
 
 - Today uses Europe/Warsaw and the approved timed, untimed, overdue and completed-union rules. Overdue dates are never rolled over. Counters derive from visible section data.

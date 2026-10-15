@@ -1,0 +1,147 @@
+<a class="skip-link" [href]="skipTarget()">Przejdź do treści</a>
+<mat-sidenav-container
+  class="shell"
+  [class.collapsed]="sidebarCollapsed()"
+  [class.restricted]="!navigationEnabled()"
+>
+  <mat-sidenav
+    class="sidebar"
+    role="complementary"
+    aria-label="Panel nawigacji"
+    mode="side"
+    [opened]="navigationEnabled() && desktop()"
+    [disableClose]="true"
+    fixedInViewport
+    [style.width.px]="sidebarWidth()"
+  >
+    @if (navigationEnabled()) {
+      <div class="sidebar-layout">
+        <div class="sidebar-top">
+          <ng-container [ngTemplateOutlet]="brand" />
+          <button
+            matIconButton
+            class="collapse-toggle"
+            [attr.aria-label]="collapseLabel()"
+            [attr.aria-expanded]="!sidebarCollapsed()"
+            aria-controls="desktop-navigation"
+            [matTooltip]="collapseLabel()"
+            (click)="sidebarToggle.emit()"
+          >
+            <mat-icon fontSet="material-symbols-outlined">{{
+              sidebarCollapsed() ? 'chevron_right' : 'chevron_left'
+            }}</mat-icon>
+          </button>
+        </div>
+        <mat-nav-list
+          id="desktop-navigation"
+          aria-label="Nawigacja główna"
+          class="desktop-navigation"
+        >
+          <a
+            mat-list-item
+            routerLink="/today"
+            routerLinkActive="selected"
+            #today="routerLinkActive"
+            [activated]="today.isActive"
+            ariaCurrentWhenActive="page"
+            aria-label="Dzisiaj"
+            matTooltip="Dzisiaj"
+            [matTooltipDisabled]="!sidebarCollapsed()"
+          >
+            <span class="navigation-content">
+              <mat-icon fontSet="material-symbols-outlined">today</mat-icon>
+              <span class="navigation-label">Dzisiaj</span>
+            </span>
+          </a>
+          <ng-container
+            [ngTemplateOutlet]="desktopUnavailable"
+            [ngTemplateOutletContext]="{ label: 'Grupy', icon: 'groups' }"
+          />
+        </mat-nav-list>
+        <div class="sidebar-bottom">
+          <mat-nav-list aria-label="Ustawienia">
+            <ng-container
+              [ngTemplateOutlet]="desktopUnavailable"
+              [ngTemplateOutletContext]="{ label: 'Ustawienia', icon: 'settings' }"
+            />
+          </mat-nav-list>
+          <ng-container
+            [ngTemplateOutlet]="accountTemplate()"
+            [ngTemplateOutletContext]="{ compact: sidebarCollapsed() }"
+          />
+        </div>
+      </div>
+    }
+  </mat-sidenav>
+
+  <mat-sidenav-content
+    class="workspace"
+    [style.margin-left.px]="navigationEnabled() && desktop() ? sidebarWidth() : 0"
+  >
+    <header class="mobile-header">
+      <ng-container [ngTemplateOutlet]="brand" />
+      <ng-container
+        [ngTemplateOutlet]="accountTemplate()"
+        [ngTemplateOutletContext]="{ compact: true }"
+      />
+    </header>
+    <main id="main-content" tabindex="-1">
+      <ng-content />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+@if (navigationEnabled()) {
+  <nav class="bottom-navigation" aria-label="Nawigacja mobilna">
+    <a
+      matButton
+      class="navigation-item"
+      routerLink="/today"
+      routerLinkActive="selected"
+      ariaCurrentWhenActive="page"
+      aria-label="Dzisiaj"
+    >
+      <span class="navigation-content">
+        <mat-icon fontSet="material-symbols-outlined">today</mat-icon>
+        <span>Dzisiaj</span>
+      </span>
+    </a>
+    @for (item of mobileDestinations; track item.label) {
+      <button
+        matButton
+        class="navigation-item"
+        disabled
+        [attr.aria-label]="item.label + ' — Wkrótce'"
+      >
+        <span class="navigation-content">
+          <mat-icon fontSet="material-symbols-outlined">{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+          <span class="soon">Wkrótce</span>
+        </span>
+      </button>
+    }
+  </nav>
+}
+
+<ng-template #brand>
+  <div class="brand" aria-label="Daylo">
+    <img src="/daylo.svg" alt="" width="48" height="48" />
+    <span class="wordmark">daylo</span>
+  </div>
+</ng-template>
+
+<ng-template #desktopUnavailable let-label="label" let-icon="icon">
+  <a
+    mat-list-item
+    class="unavailable"
+    role="link"
+    disabled
+    [attr.aria-label]="label + ' — Wkrótce'"
+  >
+    <span class="navigation-content">
+      <mat-icon fontSet="material-symbols-outlined">{{ icon }}</mat-icon>
+      <span class="navigation-label">{{ label }}</span>
+      <span class="soon">Wkrótce</span>
+    </span>
+  </a>
+</ng-template>

@@ -12,18 +12,18 @@ The existing exports have no pinned Angular version. Confirm compatible Angular/
 
 The neutral colors follow the accepted all-states HTML. `brand` remains the recognizable orange for the logo and decorative markers. Interactive primary colors deliberately differ from the logo color to preserve readable foregrounds. Use semantic roles, not arbitrary hex values scattered across components.
 
-| Role | Light | Dark | Usage |
-| --- | --- | --- | --- |
-| canvas | #FFF8F4 | #18181B | Application background |
-| surface | #FFFFFF | #242428 | Sidebar and main card |
-| surfaceRaised | #FFFDFC | #2C2C32 | Compact task rows |
-| text | #1F1B18 | #F4F4F6 | Primary copy |
-| muted | #756D67 | #A1A1AA | Date and task metadata |
-| border | #EFEAE6 | #35353C | Decorative dividers and surface edges |
-| controlOutline | #8A7D75 | #A1A1AA | Identifiable unchecked controls |
-| primary / onPrimary | #C43D17 / #FFFFFF | #FF9D7C / #3E160B | Action buttons and checked controls |
-| primaryContainer | #FFF1EC | #493129 | Selected navigation surface |
-| overdue / overdueSurface | #D61F4B / #FFF1F2 | #FDA4AF / #3B2029 | Overdue metadata, with explicit text |
+| Role                     | Light             | Dark              | Usage                                 |
+| ------------------------ | ----------------- | ----------------- | ------------------------------------- |
+| canvas                   | #FFF8F4           | #18181B           | Application background                |
+| surface                  | #FFFFFF           | #242428           | Sidebar and main card                 |
+| surfaceRaised            | #FFFDFC           | #2C2C32           | Compact task rows                     |
+| text                     | #1F1B18           | #F4F4F6           | Primary copy                          |
+| muted                    | #756D67           | #A1A1AA           | Date and task metadata                |
+| border                   | #EFEAE6           | #35353C           | Decorative dividers and surface edges |
+| controlOutline           | #8A7D75           | #A1A1AA           | Identifiable unchecked controls       |
+| primary / onPrimary      | #C43D17 / #FFFFFF | #FF9D7C / #3E160B | Action buttons and checked controls   |
+| primaryContainer         | #FFF1EC           | #493129           | Selected navigation surface           |
+| overdue / overdueSurface | #D61F4B / #FFF1F2 | #FDA4AF / #3B2029 | Overdue metadata, with explicit text  |
 
 Do not use the subtle decorative border as the only way to identify a form control. Inputs need a persistent visible label, distinct surface, supported Material outline styling, and a focus indicator. Do not communicate completion, selection, errors, or group visibility through color alone. Overdue tasks retain an explicit `Termin:` label; overdue is not a form-validation error.
 
@@ -31,17 +31,17 @@ Do not use the subtle decorative border as the only way to identify a form contr
 
 Calculated from solid sRGB colors using relative luminance (ratios rounded to two decimals):
 
-| Pair | Ratio | Decision |
-| --- | --- | --- |
-| Export brand #F05023 / white | 3.57:1 | Reject for normal white button text |
-| Light primary / white | 5.21:1 | Use for filled action buttons |
-| Light primary / warm canvas | 4.96:1 | Use for action text |
-| Light muted / warm canvas | 4.83:1 | Use instead of exported #7A726C (4.49:1) |
-| Dark muted / surface | 6.03:1 | Keep |
-| Dark primary / onPrimary | 7.83:1 | Use together |
-| Light controlOutline / white | 3.98:1 | Suitable for control identification |
-| Light overdue / overdueSurface | 4.60:1 | Use together |
-| Dark overdue / overdueSurface | 7.80:1 | Use together |
+| Pair                           | Ratio  | Decision                                 |
+| ------------------------------ | ------ | ---------------------------------------- |
+| Export brand #F05023 / white   | 3.57:1 | Reject for normal white button text      |
+| Light primary / white          | 5.21:1 | Use for filled action buttons            |
+| Light primary / warm canvas    | 4.96:1 | Use for action text                      |
+| Light muted / warm canvas      | 4.83:1 | Use instead of exported #7A726C (4.49:1) |
+| Dark muted / surface           | 6.03:1 | Keep                                     |
+| Dark primary / onPrimary       | 7.83:1 | Use together                             |
+| Light controlOutline / white   | 3.98:1 | Suitable for control identification      |
+| Light overdue / overdueSurface | 4.60:1 | Use together                             |
+| Dark overdue / overdueSurface  | 7.80:1 | Use together                             |
 
 These calculations do not certify the complete interface. Verify rendered hover/focus states, transparency, overlays, and actual control boundaries during implementation. Never lower completed-task text opacity indiscriminately; use readable muted text plus a checkmark and optional strikethrough.
 
@@ -55,6 +55,16 @@ Preserve the exported Daylo check/sunrise logo as the approved mark proposal. Ex
 
 ## Responsive layout
 
+M05-02 scope agreement (2026-10-14): the current session contract contains no
+profile image, so this shell slice renders initials derived from `displayName`.
+Google profile-image delivery remains deferred. Sidebar collapse defaults to
+expanded and persists in this browser; mobile layout preserves that choice.
+`Grupy` and `Ustawienia` remain visibly unavailable with `Wkrótce` until their
+feature tasks deliver usable destinations. Account sign-out remains available
+on desktop and mobile. Pending users receive simplified branding/account and
+invitation content without active-user navigation. These decisions do not add
+Today task content, group management or preference controls to this task.
+
 - Below 768 px viewport width: no sidebar; one-column content and bottom navigation (`Dzisiaj`, `Grupy`, `Ustawienia`). Outer margin 16 px, card padding 16 px, minimum bottom-nav height 72 px plus safe-area inset. Content bottom clearance includes the complete nav height and 16 px extra space.
 - From 768 px: sidebar with 256 px expanded / 80 px collapsed width. Main padding is 24 px, increasing to 48 px at wide desktop widths. Settings and account remain bottom-anchored via a flexible spacer. Preserve sidebar access when vertical space is limited.
 - Split task content into two columns only when the card's available inner width is at least 880 px, independent of the viewport breakpoint. Otherwise stack sections. Main content max width is 1280 px excluding sidebar and outer gutters. Column gap 32 px.
@@ -66,21 +76,21 @@ Breakpoint values are initial specifications, not a claim that the exports have 
 
 ## Angular Material mapping
 
-| Element | Material building block | Daylo composition / behavior |
-| --- | --- | --- |
-| Desktop sidebar | Sidenav, navigation list, icon button, tooltip | Expanded/collapsed shell; bottom settings/account; `aria-current` on active route |
-| Mobile navigation | Buttons and icons | Semantic `nav` with router links, custom bottom layout; no dedicated bottom-nav assumption |
-| Main content card | Card | One main surface; compact semantic task rows inside |
-| Quick creation | Form field, input, button | Always-visible accessible title label; preserve values on failed save |
-| More options | Button and disclosure region | `aria-expanded`, controlled region; date/time/description/group fields |
-| Date / time | Datepicker; input in form field | Date required; optional validated point time in user timezone |
-| Visibility | Select | `Osobiste` or specific group; label `Widoczność`, not assignment; immutable on edit in MVP |
-| Task completion | Checkbox | Accessible task-title label; shared state; no nested interactive row click target |
-| Task details | Button/link and dialog | Separate from checkbox; title, date, optional time/description |
-| Task actions / deletion | Menu and dialog | Edit/delete actions; explicit delete confirmation |
-| Completed section | Expansion panel | Collapsed by default, accurate count; no double toggle control |
-| Errors / feedback | Form-field errors and snackbar | Durable inline retry for save failures; toast only supplemental |
-| Timeline, group badge, logo, avatar | Custom semantic layout / SVG / image | Layout and content assets, not invented Material components |
+| Element                             | Material building block                        | Daylo composition / behavior                                                               |
+| ----------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Desktop sidebar                     | Sidenav, navigation list, icon button, tooltip | Expanded/collapsed shell; bottom settings/account; `aria-current` on active route          |
+| Mobile navigation                   | Buttons and icons                              | Semantic `nav` with router links, custom bottom layout; no dedicated bottom-nav assumption |
+| Main content card                   | Card                                           | One main surface; compact semantic task rows inside                                        |
+| Quick creation                      | Form field, input, button                      | Always-visible accessible title label; preserve values on failed save                      |
+| More options                        | Button and disclosure region                   | `aria-expanded`, controlled region; date/time/description/group fields                     |
+| Date / time                         | Datepicker; input in form field                | Date required; optional validated point time in user timezone                              |
+| Visibility                          | Select                                         | `Osobiste` or specific group; label `Widoczność`, not assignment; immutable on edit in MVP |
+| Task completion                     | Checkbox                                       | Accessible task-title label; shared state; no nested interactive row click target          |
+| Task details                        | Button/link and dialog                         | Separate from checkbox; title, date, optional time/description                             |
+| Task actions / deletion             | Menu and dialog                                | Edit/delete actions; explicit delete confirmation                                          |
+| Completed section                   | Expansion panel                                | Collapsed by default, accurate count; no double toggle control                             |
+| Errors / feedback                   | Form-field errors and snackbar                 | Durable inline retry for save failures; toast only supplemental                            |
+| Timeline, group badge, logo, avatar | Custom semantic layout / SVG / image           | Layout and content assets, not invented Material components                                |
 
 No checkbox rounding or internal `.mat-mdc-*` / `.mdc-*` selectors are justified by pixel matching. Use supported theming/override APIs in the installed version. Apply themes at the document/overlay scope so dialogs, datepickers, selects, and tooltips inherit the active theme.
 

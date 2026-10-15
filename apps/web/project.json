@@ -4,11 +4,7 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/web/src",
-  "tags": [
-    "platform:web",
-    "scope:app",
-    "type:app"
-  ],
+  "tags": ["platform:web", "scope:app", "type:app"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -17,9 +13,7 @@
         { "projects": ["web-shared-api-client"], "target": "check" },
         { "projects": ["web-shared-api-client"], "target": "typecheck" }
       ],
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/web",
@@ -61,10 +55,30 @@
       }
     },
     "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "defaultConfiguration": "development",
+      "options": {
+        "command": "nx run web:serve-app",
+        "env": {
+          "PORT": "4200"
+        }
+      },
+      "configurations": {
+        "development": {
+          "command": "nx run web:serve-app:development"
+        },
+        "production": {
+          "command": "nx run web:serve-app:production"
+        }
+      }
+    },
+    "serve-app": {
       "continuous": true,
       "executor": "@angular/build:dev-server",
       "defaultConfiguration": "development",
       "options": {
+        "port": 4200,
         "proxyConfig": "apps/web/proxy.conf.json"
       },
       "configurations": {
@@ -81,9 +95,7 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
-      "outputs": [
-        "{options.reportsDirectory}"
-      ],
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/apps/web"
       }
