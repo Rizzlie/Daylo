@@ -290,4 +290,13 @@ it does not add a per-user preference or authorize later Today functionality.
 - No additional checks were run for this documentation-only acceptance update.
   No commit, publication, deployment or subsequent implementation was requested.
 
+### Publication — 2026-10-16
+
+- Owner requested a ready-for-review PR. Published
+  [PR #30](https://github.com/Rizzlie/Daylo/pull/30) from
+  `feat/personal-task-editor` to `main` and linked it to the current agent thread.
+- The PR includes the accepted M01-02 scope and recorded refinements/corrections.
+  CI results remain pending; local verification limitations are unchanged.
+- The unrelated local `nx.json` generator-style change is excluded.
+
 Keep this record and the parent backlog aligned with any subsequent review findings.
