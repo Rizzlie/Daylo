@@ -42,7 +42,12 @@
         "./libs/web/groups/features/invitations/src/index.ts"
       ],
       "@daylo/api/tasks/feature": ["./libs/api/tasks/feature/src/index.ts"],
-      "@daylo/api/tasks/data-access": ["./libs/api/tasks/data-access/src/index.ts"]
+      "@daylo/api/tasks/data-access": ["./libs/api/tasks/data-access/src/index.ts"],
+      "@daylo/web/tasks/data-access": ["./libs/web/tasks/data-access/src/index.ts"],
+      "@daylo/shared/util-date": ["./libs/shared/util-date/src/index.ts"],
+      "@daylo/web/core/configuration/data-access": [
+        "./libs/web/core/configuration/data-access/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -8,6 +8,7 @@ export * from './http-error-response-output';
 export * from './personal-task-list-response-dto-output';
 export * from './personal-task-list-response-dto-output-items-inner';
 export * from './personal-task-response-dto-output';
+export * from './public-configuration-response-dto-output';
 export * from './session-user-output';
 export * from './task-version-dto';
 export * from './validation-issue-output';

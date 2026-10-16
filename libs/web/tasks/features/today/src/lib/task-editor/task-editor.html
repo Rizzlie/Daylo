@@ -1,0 +1,66 @@
+<h2 mat-dialog-title>{{ heading() }}</h2>
+<form novalidate (submit)="save($event)" [attr.aria-busy]="busy()">
+  <mat-dialog-content>
+    <p class="hint">
+      Osobiste · Widoczne tylko dla Ciebie · Strefa czasowa: {{ configuration.timeZone }}
+    </p>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Tytuł</mat-label>
+      <input matInput [formField]="editor.title" cdkFocusInitial />
+      @for (error of editor.title().errors(); track error.kind) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    </mat-form-field>
+    <div class="schedule">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Data</mat-label>
+        <input matInput type="date" [formField]="editor.scheduledDate" />
+        @for (error of editor.scheduledDate().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Godzina (opcjonalnie)</mat-label>
+        <input matInput type="time" [formField]="editor.scheduledTime" />
+        @for (error of editor.scheduledTime().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Opis (opcjonalnie)</mat-label>
+      <textarea matInput rows="4" [formField]="editor.description"></textarea>
+      @for (error of editor.description().errors(); track error.kind) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    </mat-form-field>
+    @if (error()) {
+      <div class="feedback" role="alert">
+        <p>{{ error() }}</p>
+        @if (conflict()) {
+          <button mat-button type="button" (click)="reloadCurrent()" [disabled]="busy()">
+            Wczytaj aktualną wersję
+          </button>
+        }
+      </div>
+    }
+    @if (currentLoaded()) {
+      <section class="feedback" aria-label="Aktualna wersja zadania">
+        <h3>Aktualna wersja</h3>
+        <p>{{ task()?.title }}</p>
+        <p>{{ task()?.scheduledDate }} {{ task()?.scheduledTime }}</p>
+        <p class="description">{{ task()?.description || 'Bez opisu' }}</p>
+        <p>Twoje wpisane dane pozostały w formularzu. Porównaj je przed zapisem.</p>
+        <button mat-button type="button" (click)="useCurrent()" [disabled]="busy()">
+          Zastąp formularz aktualnymi danymi
+        </button>
+      </section>
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="busy()">Anuluj</button>
+    <button mat-flat-button type="submit" [disabled]="busy() || conflict()">
+      {{ editor().submitting() ? 'Zapisywanie…' : 'Zapisz' }}
+    </button>
+  </mat-dialog-actions>
+</form>

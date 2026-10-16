@@ -145,7 +145,7 @@ Constraints and behavior:
 - The owner can cancel or replace pending invitations.
 - Accepting an invitation is idempotent and cannot create duplicate membership.
 - Completing a task records `completedAt` and `completedById`; reopening clears both.
-- Task dates use PostgreSQL date values; optional times are wall-clock times. The MVP interprets both in `Europe/Warsaw`.
+- Task dates use PostgreSQL date values; optional times are wall-clock times. The MVP interprets both in the installation's configured timezone (`DAYLO_TIME_ZONE`, default `Europe/Warsaw`).
 - Task updates use optimistic concurrency with an incrementing version.
 
 ## 4. Schemas and API contracts
@@ -179,6 +179,7 @@ Expose REST endpoints under `/api`. Provide Swagger UI at `/api/docs` and OpenAP
 | Area           | Operations                                                          |
 | -------------- | ------------------------------------------------------------------- |
 | Authentication | Google redirect and callback, current session, CSRF token, sign-out |
+| Configuration  | Public installation timezone, without environment secrets           |
 | Preferences    | Read and update appearance and greeting preferences                 |
 | Groups         | Create and list accessible groups, list members                     |
 | Invitations    | Create, list, cancel, accept, reject                                |
@@ -233,7 +234,7 @@ Nx targets own export and generation. CI regenerates into temporary locations an
 
 ## 7. Today data and shared updates
 
-The backend uses its clock and `Europe/Warsaw` to return accessible tasks needed for Today, overdue, and completed sections. The frontend applies the grouping and ordering described in product requirements.
+The backend uses its clock and configured installation timezone to return accessible tasks needed for Today, overdue, and completed sections. The frontend applies the grouping and ordering described in product requirements.
 
 Use SSE for updates. A handwritten `EventSource` adapter handles streaming; generated services handle REST requests.
 

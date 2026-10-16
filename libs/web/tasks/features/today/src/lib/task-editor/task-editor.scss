@@ -1,0 +1,40 @@
+mat-form-field {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+}
+.schedule {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.hint {
+  color: var(--daylo-muted);
+  margin-top: 0;
+}
+.feedback {
+  padding: 16px;
+  margin-block: 16px;
+  border: 1px solid var(--daylo-control-outline);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.feedback h3 {
+  margin-top: 0;
+}
+.description {
+  white-space: pre-wrap;
+}
+mat-dialog-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+button {
+  min-height: 44px;
+}
+@media (width < 600px) {
+  .schedule {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

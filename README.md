@@ -192,6 +192,16 @@ npm exec nx -- run api:build
 
 The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, `FRONTEND_ORIGIN`, `INITIAL_OWNER_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, and `OAUTH_PKCE_ENCRYPTION_KEY` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error without echoing their values. Set `INITIAL_OWNER_EMAIL` to the owner's verified Google email; it is trimmed and lowercased. Routes use the `/api` prefix.
 
+The optional `DAYLO_TIME_ZONE` environment variable selects the installation-wide
+IANA time zone (default: `Europe/Warsaw`). Unsupported or empty values stop API
+startup. `GET /api/configuration` exposes only the public time zone, with
+`Cache-Control: no-cache` and ETag; it never returns secrets. The frontend waits
+for one configuration request before bootstrap and exposes an immutable
+`DAYLO_CONFIG` token. Subsequent page loads revalidate the HTTP cache (304 when
+unchanged). Startup failure shows a persistent error with a reload action.
+Restart the API and reload browser tabs after changing it. Existing task dates
+and wall-clock times are preserved; this is not a per-user preference.
+
 `GET /api/health/ready` checks PostgreSQL with a `SELECT 1` query and a 1000 ms deadline. It returns HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when the database is available. A failed or timed-out check returns HTTP 503 with the standard `SERVICE_UNAVAILABLE` error envelope established in F04-01; the response does not expose connection details or raw database errors. Configuration validation tests live in `api-core-configuration`; readiness tests live in `api-core-database` and `api`.
 
 Swagger UI is at `http://localhost:3000/api/docs`, and OpenAPI 3.0 JSON is at `/api/openapi.json`. `GET /api/auth/session` returns `status: pending | active` and `user: { id, email, displayName }` for a valid cookie, renewing the session and cookie for seven days from that request. Missing/expired/revoked sessions return HTTP 401 with `AUTHENTICATION_REQUIRED` and cannot be renewed. See [API conventions](docs/api-conventions.md). Run schema/API tests with `npm exec nx -- run-many -t test -p shared-schemas api`.

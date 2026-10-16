@@ -8,6 +8,21 @@ Zod 4 schemas are the source of truth for public request and response shapes. Th
 
 Optional text and wall-clock time fields are represented as `null` in responses when their value is absent or empty. Required text rejects empty or whitespace-only values. Public task times use `HH:mm`; public dates and timestamps use the formats defined in the architecture.
 
+## Public installation configuration
+
+`GET /api/configuration` is public, rate-limited and returns only
+`{ "timeZone": "Europe/Warsaw" }` (or the configured installation override).
+It sends `Cache-Control: no-cache` and ETag, allowing storage with mandatory
+revalidation. A matching `If-None-Match` returns 304 without a response body;
+changed configuration returns 200 with a new ETag. It never serializes environment
+variables or secrets. OpenAPI declares 200, 304, 429 and 500 responses. This read does not renew a
+session. `DAYLO_TIME_ZONE` is validated as a supported IANA identifier at startup;
+omission uses `Europe/Warsaw`, while empty or invalid values reject startup.
+The web client waits for the generated service before bootstrap and provides an
+immutable `DAYLO_CONFIG` token. Startup failure has a persistent error/reload action;
+it never uses stale offline configuration.
+Restart the API and reload browser tabs after changing installation configuration.
+
 ## Personal tasks (M01-01)
 
 Active sessions can create/list personal tasks at `/api/tasks/personal` and
@@ -19,7 +34,8 @@ session-bound CSRF and exact-Origin policy below.
 
 Creation requires a title trimmed to 1–200 characters. Description has a 5000
 character limit; blank description/time normalize to null. Omitted creation date
-defaults to the backend's current date in Europe/Warsaw, including midnight and
+defaults to the backend's current date in the configured installation timezone
+(`DAYLO_TIME_ZONE`, default `Europe/Warsaw`), including midnight and
 DST transitions. Past dates are allowed. Calendar dates use YYYY-MM-DD (years
 0001–9999) and optional times use HH:mm. Clients cannot set creator, visibility,
 completion actor/time, timestamps or initial version.

@@ -13,6 +13,7 @@ export default defineConfig({
     '**/environment.spec.ts',
     '**/access.spec.ts',
     '**/personal-tasks.spec.ts',
+    '**/personal-task-editor.spec.ts',
     '**/xsrf.spec.ts',
   ],
   reporter: [['list'], ...preset.reporter],

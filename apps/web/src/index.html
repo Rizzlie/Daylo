@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
   <head>
     <meta charset="utf-8" />
@@ -8,9 +8,20 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <app-root></app-root>
+    <app-root>
+      <main class="startup" aria-labelledby="startup-heading">
+        <section class="startup-card">
+          <h1 id="startup-heading">Daylo</h1>
+          <p id="startup-status" role="status">Wczytywanie konfiguracji…</p>
+          <button id="startup-retry" type="button" hidden>Spróbuj ponownie</button>
+        </section>
+      </main>
+    </app-root>
   </body>
 </html>

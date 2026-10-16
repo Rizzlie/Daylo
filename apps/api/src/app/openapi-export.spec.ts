@@ -19,6 +19,7 @@ describe('offline OpenAPI export', () => {
         '/api/auth/google/callback',
         '/api/auth/session',
         '/api/auth/sign-out',
+        '/api/configuration',
         '/api/health/ready',
         '/api/tasks/personal',
         '/api/tasks/personal/{id}',

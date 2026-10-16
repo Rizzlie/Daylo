@@ -95,7 +95,7 @@ Closed: implemented, locally verified and owner-accepted on 2026-10-15.
 | Task                                           | Title                               | Delivery status                                                                                                                                                                                              |
 | ---------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [M01-01](tasks/M01-01-personal-task-api.md)    | Personal-task API and authorization | Implemented and locally verified on 2026-10-15: private CRUD/state API, PostgreSQL concurrency/authorization checks, generated client and four real-stack desktop/mobile cases; owner-accepted on 2026-10-15 |
-| [M01-02](tasks/M01-02-personal-task-editor.md) | Personal-task editor and actions    | Pending                                                                                                                                                                                                      |
+| [M01-02](tasks/M01-02-personal-task-editor.md) | Personal-task editor and actions    | Implemented, locally verified and owner-accepted on 2026-10-16, including schema/type/configuration refinements and list-freshness/focus corrections; parent M01 closed with recorded verification limits    |
 
 ### M02
 

@@ -123,7 +123,7 @@ export class PersonalTasksService extends BaseService {
 
     /**
      * Create a private personal task
-     * Omitted date defaults to today in Europe/Warsaw; past dates are allowed. Blank optional description/time normalize to null. Ownership, visibility and completion fields are server-owned.
+     * Omitted date defaults to today in the configured installation time zone (Europe/Warsaw by default); past dates are allowed. Blank optional description/time normalize to null. Ownership, visibility and completion fields are server-owned.
      * @endpoint post /api/tasks/personal
      * @param createPersonalTaskDto 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

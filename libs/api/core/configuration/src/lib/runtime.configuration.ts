@@ -1,8 +1,10 @@
 import { registerAs } from '@nestjs/config';
+import { dayloTimeZoneSchema } from './daylo-time-zone';
 
 export type NodeEnvironment = 'development' | 'production' | 'test';
 
 export interface RuntimeConfiguration {
+  timeZone: string;
   databaseUrl: string;
   environment: NodeEnvironment;
   frontendOrigin: string;
@@ -14,18 +16,15 @@ export interface RuntimeConfiguration {
   port: number;
 }
 
-export const runtimeConfiguration = registerAs(
-  'runtime',
-  (): RuntimeConfiguration => ({
-    databaseUrl: process.env['DATABASE_URL']?.trim() as string,
-    environment: process.env['NODE_ENV']?.trim() as NodeEnvironment,
-    frontendOrigin: new URL(process.env['FRONTEND_ORIGIN'] as string).origin,
-    initialOwnerEmail: process.env['INITIAL_OWNER_EMAIL']
-      ?.trim().toLowerCase() as string,
-    googleClientId: process.env['GOOGLE_CLIENT_ID']?.trim() as string,
-    googleClientSecret: process.env['GOOGLE_CLIENT_SECRET']?.trim() as string,
-    oauthPkceEncryptionKey: process.env['OAUTH_PKCE_ENCRYPTION_KEY']?.trim() as string,
-    googleCallbackUrl: process.env['GOOGLE_CALLBACK_URL']?.trim() as string,
-    port: Number(process.env['PORT']),
-  }),
-);
+export const runtimeConfiguration = registerAs('runtime', (): RuntimeConfiguration => ({
+  timeZone: dayloTimeZoneSchema.parse(process.env['DAYLO_TIME_ZONE']),
+  databaseUrl: process.env['DATABASE_URL']?.trim() as string,
+  environment: process.env['NODE_ENV']?.trim() as NodeEnvironment,
+  frontendOrigin: new URL(process.env['FRONTEND_ORIGIN'] as string).origin,
+  initialOwnerEmail: process.env['INITIAL_OWNER_EMAIL']?.trim().toLowerCase() as string,
+  googleClientId: process.env['GOOGLE_CLIENT_ID']?.trim() as string,
+  googleClientSecret: process.env['GOOGLE_CLIENT_SECRET']?.trim() as string,
+  oauthPkceEncryptionKey: process.env['OAUTH_PKCE_ENCRYPTION_KEY']?.trim() as string,
+  googleCallbackUrl: process.env['GOOGLE_CALLBACK_URL']?.trim() as string,
+  port: Number(process.env['PORT']),
+}));

@@ -361,6 +361,23 @@
         ],
         "type": "object"
       },
+      "PublicConfigurationErrorDto_Output": {
+        "$ref": "#/components/schemas/HttpErrorResponse_Output"
+      },
+      "PublicConfigurationResponseDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "timeZone": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "timeZone"
+        ],
+        "type": "object"
+      },
       "RateLimitErrorResponseDto_Output": {
         "$ref": "#/components/schemas/HttpErrorResponse_Output"
       },
@@ -949,6 +966,69 @@
         ]
       }
     },
+    "/api/configuration": {
+      "get": {
+        "description": "Browser HTTP cache may store the public response, but must revalidate its ETag before reuse.",
+        "operationId": "getPublicConfiguration",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicConfigurationResponseDto_Output"
+                }
+              }
+            },
+            "description": ""
+          },
+          "304": {
+            "description": "The cached public configuration is still current (ETag revalidation)."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseDto_Output"
+                }
+              }
+            },
+            "description": "Per-IP API budget exceeded. HTML Google navigation redirects to /login?error=rate-limit instead. Rejections do not revoke sessions.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "enum": [
+                    "no-store"
+                  ],
+                  "type": "string"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds until this quota recovers.",
+                "schema": {
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicConfigurationErrorDto_Output"
+                }
+              }
+            },
+            "description": "An unexpected internal error."
+          }
+        },
+        "summary": "Read public application configuration",
+        "tags": [
+          "Configuration"
+        ]
+      }
+    },
     "/api/health/ready": {
       "get": {
         "operationId": "getReadiness",
@@ -1155,7 +1235,7 @@
         ]
       },
       "post": {
-        "description": "Omitted date defaults to today in Europe/Warsaw; past dates are allowed. Blank optional description/time normalize to null. Ownership, visibility and completion fields are server-owned.",
+        "description": "Omitted date defaults to today in the configured installation time zone (Europe/Warsaw by default); past dates are allowed. Blank optional description/time normalize to null. Ownership, visibility and completion fields are server-owned.",
         "operationId": "createPersonalTask",
         "parameters": [],
         "requestBody": {

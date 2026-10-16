@@ -1,3 +1,5 @@
+import { ConfigService } from '@nestjs/config';
+import { todayInTimeZone } from '@daylo/shared/util-date';
 import {
   ConflictException,
   HttpException,
@@ -18,21 +20,6 @@ import {
 } from '@daylo/api/tasks/data-access';
 import { CreatePersonalTask, EditPersonalTask } from '@daylo/shared/schemas';
 
-export function warsawToday(now: Date): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Warsaw',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now);
-  const part = (type: string) => {
-    const value = parts.find((value) => value.type === type);
-    if (!value) throw new Error('Missing Warsaw date part');
-    return value.value;
-  };
-  return `${part('year')}-${part('month')}-${part('day')}`;
-}
-
 function optionalText(value: string | null | undefined): string | null {
   return value && value.trim() ? value : null;
 }
@@ -42,6 +29,7 @@ export class PersonalTaskService {
   constructor(
     @Inject(PersonalTaskStore) private readonly tasks: PersonalTaskStore,
     @Inject(TRANSACTION_RUNNER) private readonly transactions: TransactionRunner,
+    private readonly config: ConfigService,
   ) {}
 
   create(userId: string, input: CreatePersonalTask) {
@@ -52,7 +40,9 @@ export class PersonalTaskService {
           {
             title: input.title,
             description: optionalText(input.description),
-            scheduledDate: input.scheduledDate ?? warsawToday(new Date()),
+            scheduledDate:
+              input.scheduledDate ??
+              todayInTimeZone(this.config.getOrThrow<string>('runtime.timeZone')),
             scheduledTime: input.scheduledTime || null,
           },
           context,

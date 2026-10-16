@@ -108,18 +108,18 @@ test.describe('real-stack API rate limiting', () => {
     }
   });
 
-  test('a limited session check recovers through a user action without an expiry notice', async ({
+  test('limited startup configuration recovers before checking the session', async ({
     page,
     request,
   }) => {
     await exhaustBurst(request);
     await page.goto('/today');
-    await expect(page).toHaveURL(/\/login\?error=rate-limit$/);
-    await expect(page.getByRole('alert')).toHaveText(message);
+    await expect(page).toHaveURL(/\/today$/);
+    await expect(page.getByRole('alert')).toContainText('Nie udało się wczytać konfiguracji Daylo');
     await waitForApiBudget(request);
     await page.getByRole('button', { name: 'Spróbuj ponownie' }).click();
-    await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/login\?error=expired$/);
+    await expect(page.getByRole('alert')).toHaveText('Sesja wygasła. Zaloguj się ponownie.');
     await expect(page.getByRole('link', { name: 'Zaloguj się przez Google' })).toBeVisible();
   });
 });

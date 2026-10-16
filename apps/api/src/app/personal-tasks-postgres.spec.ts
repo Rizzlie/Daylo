@@ -39,6 +39,7 @@ describe.skipIf(!enabled)('Personal task PostgreSQL HTTP acceptance', () => {
             () => ({
               runtime: {
                 databaseUrl,
+                timeZone: 'Europe/Warsaw',
                 frontendOrigin: origin,
                 environment: 'development',
                 initialOwnerEmail: `${prefix}@example.test`,
