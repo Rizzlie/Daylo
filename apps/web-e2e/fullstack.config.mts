@@ -21,6 +21,7 @@ export default defineConfig({
     '**/environment.spec.ts',
     '**/access.spec.ts',
     '**/personal-tasks.spec.ts',
+    '**/personal-task-editor.spec.ts',
     '**/xsrf.spec.ts',
   ],
   use: { ...base.use, baseURL: process.env['DAYLO_E2E_BASE_URL'] },

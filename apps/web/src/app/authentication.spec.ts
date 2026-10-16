@@ -1,4 +1,5 @@
 import { DOCUMENT } from '@angular/common';
+import { DAYLO_CONFIG } from '@daylo/web/core/configuration/data-access';
 import { HttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -22,6 +23,7 @@ describe('authentication screens and routing', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
+        { provide: DAYLO_CONFIG, useValue: { timeZone: 'Europe/Warsaw' } },
         provideRouter(appRoutes),
         provideAuthentication(),
         provideAuthSessionLifecycle(),
@@ -31,6 +33,12 @@ describe('authentication screens and routing', () => {
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => http.verify());
+
+  async function loadEmptyTaskList() {
+    await vi.waitFor(() =>
+      http.expectOne('/api/tasks/personal?limit=50').flush({ items: [], nextCursor: null }),
+    );
+  }
 
   async function signOut(harness: RouterTestingHarness) {
     const menu = await TestbedHarnessEnvironment.loader(harness.fixture).getHarness(
@@ -80,6 +88,7 @@ describe('authentication screens and routing', () => {
     const navigate = harness.navigateByUrl(destination);
     await vi.waitFor(() => http.expectOne('/api/auth/session').flush({ status, user }));
     await navigate;
+    if (status === 'active') await loadEmptyTaskList();
     expect(TestBed.inject(Router).url).toBe(destination);
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe(heading);
     expect(harness.routeNativeElement?.querySelector(pageSelector)).not.toBeNull();
@@ -115,6 +124,7 @@ describe('authentication screens and routing', () => {
     const navigate = harness.navigateByUrl('/today');
     await vi.waitFor(() => http.expectOne('/api/auth/session').flush({ status: 'active', user }));
     await navigate;
+    await loadEmptyTaskList();
     const document = TestBed.inject(DOCUMENT);
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
     document.dispatchEvent(new Event('visibilitychange'));
@@ -133,6 +143,7 @@ describe('authentication screens and routing', () => {
     harness.routeNativeElement?.querySelector('button')?.click();
     await vi.waitFor(() => http.expectOne('/api/auth/session').flush({ status: 'active', user }));
     await vi.waitFor(() => http.expectOne('/api/auth/session').flush({ status: 'active', user }));
+    await loadEmptyTaskList();
     await harness.fixture.whenStable();
 
     expect(TestBed.inject(Router).url).toBe('/today');
@@ -144,6 +155,7 @@ describe('authentication screens and routing', () => {
     const navigate = harness.navigateByUrl('/today');
     await vi.waitFor(() => http.expectOne('/api/auth/session').flush({ status: 'active', user }));
     await navigate;
+    await loadEmptyTaskList();
 
     TestBed.inject(HttpClient)
       .get('/api/protected')
@@ -162,6 +174,7 @@ describe('authentication screens and routing', () => {
     const navigate = harness.navigateByUrl('/today');
     await vi.waitFor(() => http.expectOne('/api/auth/session').flush({ status: 'active', user }));
     await navigate;
+    await loadEmptyTaskList();
 
     await signOut(harness);
 
@@ -180,6 +193,7 @@ describe('authentication screens and routing', () => {
     const navigate = harness.navigateByUrl('/today');
     await vi.waitFor(() => http.expectOne('/api/auth/session').flush({ status: 'active', user }));
     await navigate;
+    await loadEmptyTaskList();
 
     await signOut(harness);
     http.expectOne('/api/auth/sign-out').flush({}, { status: 503, statusText: 'Unavailable' });

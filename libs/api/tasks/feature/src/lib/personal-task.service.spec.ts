@@ -1,17 +1,30 @@
-import { warsawToday } from './personal-task.service';
+import { ConfigService } from '@nestjs/config';
+import { PersonalTaskStore } from '@daylo/api/tasks/data-access';
+import { TransactionRunner } from '@daylo/api/core/transactions/contracts';
+import { PersonalTaskService } from './personal-task.service';
 
-describe('Personal task Warsaw date default', () => {
-  it.each([
-    ['2026-01-15T22:59:59Z', '2026-01-15'],
-    ['2026-01-15T23:00:00Z', '2026-01-16'],
-    ['2026-07-15T21:59:59Z', '2026-07-15'],
-    ['2026-07-15T22:00:00Z', '2026-07-16'],
-    ['2026-03-29T00:59:59Z', '2026-03-29'],
-    ['2026-03-29T01:00:00Z', '2026-03-29'],
-    ['2026-10-25T00:59:59Z', '2026-10-25'],
-    ['2026-10-25T01:00:00Z', '2026-10-25'],
-    ['2026-12-31T23:00:00Z', '2027-01-01'],
-  ])('maps %s to %s independently of host timezone', (instant, expected) => {
-    expect(warsawToday(new Date(instant))).toBe(expected);
-  });
+describe('Configured personal task date default', () => {
+  afterEach(() => vi.useRealTimers());
+  it.each([undefined, '2020-02-29'])(
+    'uses runtime zone only when date is omitted (%s)',
+    async (scheduledDate) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2030-01-15T23:30:00Z'));
+      const create = vi.fn().mockResolvedValue({});
+      const tasks = { create } as unknown as PersonalTaskStore;
+      const transactions = {
+        run: (action: (context: unknown) => unknown) => action({}),
+      } as TransactionRunner;
+      const config = new ConfigService({ runtime: { timeZone: 'Pacific/Kiritimati' } });
+      await new PersonalTaskService(tasks, transactions, config).create('user', {
+        title: 'Task',
+        scheduledDate,
+      });
+      expect(create).toHaveBeenCalledWith(
+        'user',
+        expect.objectContaining({ scheduledDate: scheduledDate ?? '2030-01-16' }),
+        expect.anything(),
+      );
+    },
+  );
 });

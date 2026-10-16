@@ -62,11 +62,35 @@ Application routing composes and lazily loads login and the protected responsive
 shell. The shell exposes a child router outlet. `Today` lives in
 `libs/web/tasks/features/today` and `Invitations` in
 `libs/web/groups/features/invitations`; application routing lazily loads each
-through its public entrypoint. Both currently contain only their existing page
-frame and session-based greeting; task content and invitation actions remain in
-their pending backlog tasks. The core shell does not import these pages or the
+through its public entrypoint. Today now includes the M01-02 minimal personal-task
+list and local create/edit/delete dialogs; full Today grouping remains in M02.
+Invitations retains its existing page frame and session-based greeting, with
+invitation actions pending. The core shell does not import these pages or the
 login feature. Prefer separate named signals in
 templates over a combined `vm` or view model, as requested by the owner.
+
+`libs/web/tasks/data-access` owns generated personal-task API calls, explicit
+presentation mapping and cursor-page resource state. Today provides its list
+state locally; the shared editor stays inside that feature because creation and
+editing are one local workflow. No separate task-editor feature is required for
+this slice, and no feature-to-feature dependency is introduced. Signal Forms own
+the draft and validation; computed signals derive dialog state. Imperative code
+is confined to user actions, request outcomes, Material dialog lifecycle and
+keyboard focus restoration. Conflicts require an explicit current-version read
+and comparison before retry; the draft remains intact.
+
+`libs/web/core/configuration/data-access` reads the generated public configuration
+endpoint once through `provideAppInitializer` before bootstrap completes, then
+exposes a frozen plain value through `DAYLO_CONFIG`. The editor injects the token
+directly. The HTTP cache uses ETag with mandatory revalidation on page loads;
+startup failure leaves a persistent error/reload action without a local fallback.
+The native startup DOM is the boundary for that pre-Angular error handling.
+The `capability:configuration-bootstrap` tag permits app bootstrap to import this
+provider, following the narrow authentication-bootstrap exception; general
+app-to-data-access restrictions remain enforced. `libs/shared/util-date` supplies framework-independent
+`todayInTimeZone(timeZone, now?)`; both frontend and backend use it. The backend
+alone owns the validated `DAYLO_TIME_ZONE` environment default. Reload the browser
+after restarting the API with changed installation configuration.
 
 `libs/web/shared/ui` exposes `AppLayout`, the presentational Daylo application
 frame built with Angular Material. It owns responsive geometry, branding and
@@ -119,6 +143,7 @@ for a route that has changed cannot redirect the new screen.
 The auth data-access project alone carries `capability:auth-bootstrap`.
 The web app type rule allows that capability alongside ordinary feature/UI/util
 dependencies, so bootstrap and route composition can import auth directly.
+Configuration has the separately scoped bootstrap capability described above.
 Other data-access libraries are not generally allowed for app imports. Existing
 platform and scope constraints still apply, with no global `allow` exception.
 This is a library-level exception, not symbol-level enforcement; application
@@ -187,7 +212,8 @@ Configure `@nx/enforce-module-boundaries` at error severity in the root flat ESL
         "type:feature",
         "type:ui",
         "type:util",
-        "capability:auth-bootstrap"
+        "capability:auth-bootstrap",
+        "capability:configuration-bootstrap"
       ]
     },
     {

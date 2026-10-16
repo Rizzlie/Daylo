@@ -1,8 +1,63 @@
 # Daylo — Backlog and Verification
 
-Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-15. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; M05-02 is implemented, locally verified and owner-accepted on 2026-10-15 with recorded limits; other M05 work remains pending. F07-01 and F07-02 are implemented, locally verified and owner-accepted on 2026-10-14; parent F07 is closed with recorded verification limits. Undelivered work remains pending.
+Status: Planning baseline, version 1.0, with delivery/acceptance updates through 2026-10-16. F02, F03 and F04 are implemented, verified and owner-accepted. F05 is closed: both task scopes are implemented, locally verified and owner-accepted; F05-02 hosted CI passed on PR #13. F06-01 through F06-04 and the final F06-06 hardening scope are owner-accepted; F06-05 recorded manual smoke scope is owner-accepted with independent technical inspection incomplete; F06-07 is implemented, locally verified and owner-accepted on 2026-10-13; F06-08 is implemented, locally verified and owner-accepted on 2026-10-13; F06-10 is implemented, locally verified and owner-accepted on 2026-10-13; F06-11 is implemented, locally verified and owner-accepted on 2026-10-14; F06-12 is implemented, locally verified and owner-accepted on 2026-10-14 with recorded limits; F06-09 remains deferred, so parent F06 is incomplete. All delivered F01 task scopes are owner-accepted; recorded F01 browser/hosted-CI verification gaps remain incomplete. The delivered global theme slice is owner-accepted; M05-02 is implemented, locally verified and owner-accepted on 2026-10-15 with recorded limits; other M05 work remains pending. F07-01 and F07-02 are implemented, locally verified and owner-accepted on 2026-10-14; parent F07 is closed with recorded verification limits. M01-02 and all recorded refinements/review corrections are implemented, locally verified and owner-accepted on 2026-10-16; parent M01 is closed with recorded verification limits. Undelivered work remains pending.
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
+
+M01-02 review correction (2026-10-16): mutation invalidation now supersedes an
+outstanding personal-task list read through reactive resource parameters, avoiding
+lost reloads after creation. Both controlled HTTP race regressions, related
+unit/component/lint/build checks and real-stack browser creation smoke pass.
+Owner accepted the changes on 2026-10-16; details are in the M01-02 delivery record.
+The subsequent focus regression is corrected: same-page refreshes retain rows,
+and completion/reopening keep the focused button while blocking duplicate actions.
+Controlled HTTP and component tests cover both transitions and the original race.
+
+### M01-02 installation timezone refinement — 2026-10-16
+
+Owner-authorized `DAYLO_TIME_ZONE` configuration now defaults to `Europe/Warsaw`,
+rejects invalid IANA zones at API startup and reaches the browser through the
+public, rate-limited configuration endpoint with ETag revalidation. The generated client and
+shared date utility keep API creation defaults and editor dates consistent.
+The owner-requested follow-up loads configuration before bootstrap and exposes an
+immutable `DAYLO_CONFIG` token. HTTP cache entries require revalidation on each
+page load; startup failures show a persistent error with a reload action.
+The token/cache follow-up passed 18 distinct real-stack desktop/mobile
+editor/configuration/XSRF/rate-limit scenarios across the recorded runs and
+targeted reruns, plus unit/API checks, lint, builds and independent startup
+failure/recovery inspection. All temporary stacks were cleaned up.
+
+All 261 relevant unit/component/API/router/schema cases passed; 96 opt-in
+database cases were skipped in the ordinary API unit target. Ten real-stack
+desktop/mobile cases passed across default Warsaw and overridden
+`Pacific/Kiritimati` runs, including CRUD, conflicts, date agreement and XSRF.
+Relevant lint, production builds, OpenAPI/client generation/drift/typechecks and
+independent light/dark desktop/mobile browser inspection passed within the
+recorded preview-image limitations. Temporary stacks reported successful cleanup.
+See [M01-02](tasks/M01-02-personal-task-editor.md) for evidence, limits and
+retrospective. Owner acceptance remains pending; no commit, publication,
+deployment or subsequent task was performed.
+
+### M01-02 personal-task editor delivery — 2026-10-16
+
+Implemented the owner-authorized minimal personal-task list, shared Material
+create/edit dialog, deletion confirmation and complete/reopen actions. Signal
+Forms and computed state retain drafts through request failures and version
+conflicts; explicit current-version comparison precedes retry. Generated API
+calls remain behind handwritten data-access, with existing session/XSRF policy.
+Full Today grouping, timeline and quick creation remain in M02.
+
+All 35 relevant unit/component/router tests passed. Twelve distinct real-stack
+desktop/mobile scenarios passed across the API, UI, login-shell and XSRF runs;
+all four editor cases passed after correcting the delayed-autofocus race.
+Relevant lint/typechecks, production builds and source-preserving client drift
+checks passed. Independent final-build browser inspection covered 360, 390,
+768, 1024 and 1440 px, long text, validation, focus and light/dark dialogs.
+All temporary stacks reported successful cleanup. See
+[M01-02](tasks/M01-02-personal-task-editor.md) for evidence and remaining
+browser/runtime/hosted verification limits. M01-02 is implemented and locally
+verified; owner acceptance and parent M01 closure remain pending. No commit,
+publication, deployment or subsequent task was performed.
 
 ### Accepted M01-01/F06-13 publication — 2026-10-15
 

@@ -1,4 +1,88 @@
 <p class="greeting">Cześć, {{ user()?.displayName }}</p>
 <mat-card class="surface" appearance="raised" aria-labelledby="page-heading">
   <h1 id="page-heading" tabindex="-1">Dzisiaj</h1>
+  <section aria-labelledby="personal-tasks-heading" [attr.aria-busy]="list.loading()">
+    <div class="toolbar">
+      <h2 #listHeading id="personal-tasks-heading" tabindex="-1">Zadania osobiste</h2>
+      <button mat-flat-button (click)="edit()" [disabled]="!!busyId()">Dodaj zadanie</button>
+      <button mat-button (click)="list.refresh()" [disabled]="list.loading() || !!busyId()">
+        Odśwież listę
+      </button>
+    </div>
+    @if (notice()) {
+      <p role="status">{{ notice() }}</p>
+    }
+    @if (actionError()) {
+      <div class="feedback" role="alert">
+        <p>{{ actionError() }}</p>
+        <button mat-button (click)="list.refresh()" [disabled]="list.loading()">
+          Odśwież listę
+        </button>
+      </div>
+    }
+    @if (list.loading()) {
+      <p role="status">Wczytywanie zadań…</p>
+    }
+    @if (list.error()) {
+      <div class="feedback" role="alert">
+        <p>{{ list.error() }}</p>
+        <button mat-button (click)="list.refresh()">Spróbuj ponownie</button>
+      </div>
+    } @else if (!list.loading() && !list.tasks().length) {
+      <p>Nie ma tu jeszcze zadań. Dodaj swoje pierwsze zadanie.</p>
+    }
+    <ul class="tasks" aria-label="Zadania osobiste">
+      @for (task of list.tasks(); track task.id) {
+        <li [class.completed]="task.completed">
+          <div class="task-copy">
+            <h3>{{ task.title }}</h3>
+            <p>
+              Termin: <time [attr.datetime]="task.scheduledDate">{{ task.scheduledDate }}</time>
+              @if (task.scheduledTime) {
+                · {{ task.scheduledTime }}
+              } @else {
+                · Bez godziny
+              }
+            </p>
+            <p>{{ task.completed ? 'Ukończone' : 'Do zrobienia' }}</p>
+            @if (task.description) {
+              <p class="description">{{ task.description }}</p>
+            }
+          </div>
+          <div class="task-actions" [attr.aria-label]="'Akcje: ' + task.title">
+            <button
+              mat-button
+              (click)="toggle(task)"
+              [disabled]="!!busyId() || list.loading()"
+              [disabledInteractive]="true"
+            >
+              {{
+                busyId() === task.id
+                  ? 'Zapisywanie…'
+                  : task.completed
+                    ? 'Otwórz ponownie'
+                    : 'Ukończ'
+              }}
+            </button>
+            <button mat-button (click)="edit(task)" [disabled]="!!busyId() || list.loading()">
+              Edytuj
+            </button>
+            <button mat-button (click)="remove(task)" [disabled]="!!busyId() || list.loading()">
+              Usuń
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+    @if (list.cursor() || list.nextCursor()) {
+      <nav class="pagination" aria-label="Strony zadań">
+        <button mat-button (click)="list.first()" [disabled]="!list.cursor() || list.loading()">
+          Pierwsza strona
+        </button>
+        <button mat-button (click)="list.next()" [disabled]="!list.nextCursor() || list.loading()">
+          Następna strona
+        </button>
+      </nav>
+    }
+  </section>
 </mat-card>

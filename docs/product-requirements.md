@@ -20,7 +20,7 @@ The first user is the application owner. A second person joins once the basic fu
 - Local execution for the first release; an internet connection is required for Google sign-in.
 - English code, identifiers, filenames, comments, API contracts, and documentation.
 - Polish user-facing UI text.
-- Initial application timezone: `Europe/Warsaw`.
+- Installation timezone: backend environment variable `DAYLO_TIME_ZONE`, defaulting to `Europe/Warsaw`. The browser reads the same value through public configuration; there is no per-user timezone preference in the MVP.
 
 Google Calendar integration, system notifications, automatic overdue task rollover, weekly planning, priorities, and PWA installation are deferred to subsequent releases.
 
@@ -99,9 +99,9 @@ Use a minimalist design with two themes:
 
 Use Angular Material components for standard controls. Review the Today mockups before implementing feature screens. See [Today design brief](design-brief.md).
 
-| Theme | Background | Accent |
-| --- | --- | --- |
-| Dark | Dark gray | Red-orange |
+| Theme | Background        | Accent     |
+| ----- | ----------------- | ---------- |
+| Dark  | Dark gray         | Red-orange |
 | Light | Very light orange | Red-orange |
 
 - Follow the operating system theme by default.
@@ -125,7 +125,7 @@ The Group screen lists groups, members, and pending invitations; owner-only cont
 - Data persists after page reload, sign-out, and application restart.
 - Shared completion and reopening update a second member's session without refreshing it.
 - Timeline, untimed, overdue, and completed sections contain the correct tasks.
-- Day boundaries are interpreted in `Europe/Warsaw`.
+- Day boundaries use the configured installation timezone (`Europe/Warsaw` by default).
 - Both themes, preference persistence, mobile navigation, and task forms work.
 - Relevant tests, lint, production builds, frontend E2E tests, and agent browser verification pass.
 
