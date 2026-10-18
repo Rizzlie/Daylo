@@ -79,10 +79,14 @@ jobs:
         if: github.event_name == 'push'
         run: npm exec nx -- run-many -t lint test build
 
-  e2e:
-    name: Real-stack E2E
+  e2e-shards:
+    name: Real-stack E2E shard ${{ matrix.shard }}/4
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -108,17 +112,29 @@ jobs:
         run: npm exec --no -- playwright install --with-deps chromium
       - name: Run affected PR E2E
         if: steps.selection.outputs.run == 'true' && github.event_name == 'pull_request'
-        run: npm exec nx -- affected -t e2e-fullstack --base="$NX_BASE" --head="$NX_HEAD"
+        run: npm exec nx -- affected -t e2e-fullstack --base="$NX_BASE" --head="$NX_HEAD" --args='--shard=${{ matrix.shard }}/4'
       - name: Run full main E2E
         if: steps.selection.outputs.run == 'true' && github.event_name == 'push'
-        run: npm exec nx -- run-many -t e2e-fullstack
+        run: npm exec nx -- run-many -t e2e-fullstack --args='--shard=${{ matrix.shard }}/4'
       - name: Upload Playwright reports and failure artifacts
         if: ${{ !cancelled() && steps.selection.outputs.run == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-results
+          name: playwright-results-shard-${{ matrix.shard }}
           path: |
             dist/.playwright/apps/web-e2e/playwright-report
             dist/.playwright/apps/web-e2e/test-output
           if-no-files-found: ignore
           retention-days: 7
+
+  e2e:
+    name: Real-stack E2E
+    needs: e2e-shards
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every E2E shard to pass
+        env:
+          SHARD_RESULT: ${{ needs.e2e-shards.result }}
+        run: test "$SHARD_RESULT" = success
