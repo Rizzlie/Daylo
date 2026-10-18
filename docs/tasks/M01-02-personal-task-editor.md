@@ -319,5 +319,16 @@ it does not add a per-user preference or authorize later Today functionality.
   remain in progress; this record does not claim they passed.
 - Retrospective: when bootstrap gains a mandatory API dependency, revisit the CI
   entrypoint and local smoke documentation, not just feature acceptance targets.
+- Full local initial run: 56 of 62 browser cases passed in 18.7 minutes; six
+  failures were the owner/member session and repeated responsive-reload cases
+  already identified above, on both browser projects. Their targeted rerun on
+  the corrected test code is in progress. Stack cleanup completed.
+- The E2E job budget is raised from 20 to 30 minutes: the measured suite duration
+  needs room for dependency/browser installation, builds and genuine quota waits.
+  This changes neither test timeouts nor production rate limits.
+- The targeted repeat also identified budget exhaustion during sign-out's
+  follow-up session read. The session lifecycle now awaits budget before sign-out
+  as well as before its final protected navigation. The required 204/revocation
+  and expired-session redirect assertions remain unchanged.
 
 Keep this record and the parent backlog aligned with any subsequent review findings.

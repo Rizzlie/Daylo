@@ -35,6 +35,7 @@ for (const account of ['owner', 'member', 'invited'] satisfies Account[]) {
           .filter(Boolean),
       })),
     ).toEqual({ local: 0, session: 0, cookieNames: ['daylo_xsrf'] });
+    await waitForApiBudget(request);
     const signOut = page.waitForResponse((response) =>
       response.url().endsWith('/api/auth/sign-out'),
     );
