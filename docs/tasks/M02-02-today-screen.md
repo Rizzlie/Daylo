@@ -13,7 +13,7 @@ unimplemented and requires its own discussion and authorization.
 
 ## Assumptions and sources
 
-- Today uses Europe/Warsaw and the approved timed, untimed, overdue and completed-union rules. Overdue dates are never rolled over. Counters derive from visible section data.
+- Today uses the configured installation timezone (default Europe/Warsaw) and the approved timed, untimed, overdue and completed-union rules. Overdue dates are never rolled over. Counters derive from visible section data.
 - Dependencies: M02-01, M05-02. Confirm their delivered and verified behavior before dependent work.
 - Read [product requirements](../product-requirements.md), [architecture](../architecture.md) and [backlog](../backlog.md). Apply the relevant [frontend](../frontend-architecture.md), [backend](../backend-architecture.md) and [design-system](../design/design-system.md) rules.
 - This is a proposed bounded task. Inspect discoverable implementation facts; resolve material product decisions with the owner during the discussion.

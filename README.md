@@ -99,17 +99,14 @@ Development requests under `/api` are proxied to the NestJS server at `http://lo
 Install the Playwright Chromium browser once after `npm ci` with `npm exec playwright -- install chromium`. Use the existing Nx project for test runs and debugging:
 
 ```powershell
-npm exec nx -- run web-e2e:e2e --skipNxCache
+npm exec nx -- run web-e2e:e2e-fullstack
 npm exec nx -- run web-e2e:lint
-npm exec nx -- run web-e2e:e2e:headed --skipNxCache
-npm exec nx -- run web-e2e:e2e:debug --skipNxCache
-npm exec nx -- run web-e2e:e2e:ui --skipNxCache
 npm exec nx -- run web-e2e:e2e-report
 ```
 
-The smoke test opens the real Angular shell and checks its `Daylo` heading, document title and Polish preparation message. Projects `chromium-desktop` (1440 × 900) and `chromium-mobile` (390 × 844, touch/mobile emulation) run by default. Mobile emulation does not replace a physical phone check. To select one project, append `--project=chromium-desktop` or `--project=chromium-mobile` to the E2E command.
+The managed suite includes the login shell, authentication, task workflows and configuration checks against the real API and isolated PostgreSQL. Projects `chromium-desktop` (1440 × 900) and `chromium-mobile` (390 × 844, touch/mobile emulation) run by default. Mobile emulation does not replace a physical phone check. To select one project, pass `--args='--project=chromium-desktop'` or `--args='--project=chromium-mobile'` to the managed target.
 
-Nx starts `web:serve` and waits for `http://localhost:4200` before the tests. Keep that port free when starting a run; Playwright reuses the server owned by the Nx task graph. The normal E2E target disables cache; retain `--skipNxCache` when requesting fresh evidence or using inferred CI targets. Tests do not mock responses. This endpoint-free shell needs only the frontend. The separate `e2e-fullstack` target owns API, isolated PostgreSQL and controlled-provider startup.
+The uncached `e2e-fullstack` target owns the frontend, API, isolated PostgreSQL and controlled-provider startup on run-private ports. Tests do not mock Daylo responses. The legacy `e2e`, headed, debug and UI configurations start only `web:serve` at port 4200 and require a separately running API at the configured proxy target. Since application bootstrap reads `/api/configuration`, the login shell also requires the API.
 
 The headed configuration shows both browser projects; debug opens the Playwright Inspector for desktop, and UI opens the interactive test runner. Stop interactive sessions with Ctrl+C. The report target serves the latest HTML report at a loopback address (default port 9323) until stopped. These interactive commands are for local debugging, not CI verification.
 
@@ -191,6 +188,16 @@ npm exec nx -- run api:build
 ```
 
 The API loads `.env.local` before `.env` and validates `NODE_ENV`, `PORT`, `DATABASE_URL`, `FRONTEND_ORIGIN`, `INITIAL_OWNER_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, and `OAUTH_PKCE_ENCRYPTION_KEY` with Zod before listening. Missing or invalid required values stop startup with a specific configuration error without echoing their values. Set `INITIAL_OWNER_EMAIL` to the owner's verified Google email; it is trimmed and lowercased. Routes use the `/api` prefix.
+
+The optional `DAYLO_TIME_ZONE` environment variable selects the installation-wide
+IANA time zone (default: `Europe/Warsaw`). Unsupported or empty values stop API
+startup. `GET /api/configuration` exposes only the public time zone, with
+`Cache-Control: no-cache` and ETag; it never returns secrets. The frontend waits
+for one configuration request before bootstrap and exposes an immutable
+`DAYLO_CONFIG` token. Subsequent page loads revalidate the HTTP cache (304 when
+unchanged). Startup failure shows a persistent error with a reload action.
+Restart the API and reload browser tabs after changing it. Existing task dates
+and wall-clock times are preserved; this is not a per-user preference.
 
 `GET /api/health/ready` checks PostgreSQL with a `SELECT 1` query and a 1000 ms deadline. It returns HTTP 200 with `{"status":"ok","checks":{"database":"up"}}` when the database is available. A failed or timed-out check returns HTTP 503 with the standard `SERVICE_UNAVAILABLE` error envelope established in F04-01; the response does not expose connection details or raw database errors. Configuration validation tests live in `api-core-configuration`; readiness tests live in `api-core-database` and `api`.
 
@@ -291,7 +298,7 @@ Every run owns its database/container and fresh browser contexts. No reset/drop 
 npm exec nx -- run web-e2e:e2e-fullstack:inspect --output-style=stream
 ```
 
-Open the printed loopback URL. Stop normally with Ctrl+C, or create the exact run-private `stop` file printed by the runner to request cleanup (useful from another PowerShell terminal). Forced termination of the runner or Docker can prevent cleanup; inspect containers by their `daylo.e2e.run` label and remove only the exact run-owned container after checking its identity. Reports, synthetic API logs and public-address/cleanup records stay under ignored `dist/.playwright`; browser authentication state and database credentials are not written to manifests. Hosted CI still runs the existing shell suite; hosted full-stack execution is not claimed.
+Open the printed loopback URL. Stop normally with Ctrl+C, or create the exact run-private `stop` file printed by the runner to request cleanup (useful from another PowerShell terminal). Forced termination of the runner or Docker can prevent cleanup; inspect containers by their `daylo.e2e.run` label and remove only the exact run-owned container after checking its identity. Reports, synthetic API logs and public-address/cleanup records stay under ignored `dist/.playwright`; browser authentication state and database credentials are not written to manifests. Hosted CI now invokes the managed real-stack target; results are recorded separately from local verification.
 
 Inspect separately from Playwright: navigate to `/login`, select a synthetic account through the provider, check owner access and reload, invited `/today` recovery to `/invitations`, outsider denial and sign-out. At desktop and mobile widths inspect the visible states, keyboard operation, overflow, browser storage and console/network diagnostics. For manual expiry use only the exact session created in that inspection run's isolated database, then reload a protected route and verify the persistent expiry notice. Anonymous/expired session HTTP 401 responses are expected. Do not treat controlled-provider checks as real Google verification. Reports, screenshots and retained failure traces can contain cookies, CSRF/OAuth values or synthetic identity data: keep them in ignored `dist` paths, review/redact before sharing and never commit or upload raw browser authentication state. Acceptance fixture contexts do not export storage state; custom actor contexts are closed at teardown, so use the independent inspection workflow for visual evidence rather than assuming a default-page failure screenshot captures them.
 
@@ -323,11 +330,11 @@ For PRs, Nx runs only affected projects and their dependents:
 $taskBase = git rev-parse origin/main
 $taskHead = git rev-parse HEAD
 npm exec nx -- affected -t lint test build --base=$taskBase --head=$taskHead
-npm exec nx -- affected -t e2e --base=$taskBase --head=$taskHead
+npm exec nx -- affected -t e2e-fullstack --base=$taskBase --head=$taskHead
 ```
 
-These commands compare committed revisions. For local work before committing, use `npm exec nx -- affected -t lint test build --uncommitted`. Pushes to `main` run the full `lint`, `test`, `build` and `e2e` targets. Quality currently covers web/API/E2E lint, web unit tests and both production builds. The root's obsolete failing test placeholder was removed; no API unit-test target exists yet.
+These commands compare committed revisions. For local work before committing, use `npm exec nx -- affected -t lint test build --uncommitted`. Pushes to `main` run the full `lint`, `test`, `build` and `e2e-fullstack` targets. Quality covers relevant workspace lint/unit tests and production builds.
 
-The E2E job selects projects first and installs Chromium with OS dependencies only when an E2E target is selected. The existing web-to-E2E dependency includes desktop/mobile smoke when the frontend changes. The uncached `e2e` target uses the real frontend. API/database integration remains in later tasks. Reports and failure artifacts are uploaded for seven days, including failed runs.
+The E2E job selects projects with `e2e-fullstack` first and installs Chromium with OS dependencies only when a project is selected. Web/API changes select the managed suite through the existing dependency graph. It starts the real frontend, API and isolated PostgreSQL, replacing only Google. Reports and failure artifacts are uploaded for seven days, including failed runs.
 
 `.node-version` pins Node.js 24.19.0. Workflow/runtime files are shared Nx inputs so their changes affect application checks too. Official checkout 7.0.1, setup-node 7.0.0 and upload-artifact 7.0.1 actions are pinned by commit SHA; npm download caching is enabled, with no Nx Cloud or persisted Nx result cache. Boundary checking remains the built-in Nx ESLint rule from F01-04. CI does not add custom metadata validation or change branch protection.

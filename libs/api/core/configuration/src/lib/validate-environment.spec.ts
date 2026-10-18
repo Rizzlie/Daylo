@@ -55,30 +55,27 @@ describe('validateEnvironment', () => {
     'http://localhost:4200/api/auth/google/callback#fragment',
     'http://user:secret@localhost:4200/api/auth/google/callback',
     'not-a-url',
-  ])(
-    'rejects unsafe callback configuration without exposing its value',
-    (callback) => {
-      expect(() =>
-        validateEnvironment({
-          ...validEnvironment,
-          GOOGLE_CALLBACK_URL: callback,
-        }),
-      ).toThrow('GOOGLE_CALLBACK_URL');
-      try {
-        validateEnvironment({
-          ...validEnvironment,
-          GOOGLE_CALLBACK_URL: callback,
-        });
-      } catch (error) {
-        expect(String(error)).not.toContain(callback);
-      }
-    },
-  );
+  ])('rejects unsafe callback configuration without exposing its value', (callback) => {
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        GOOGLE_CALLBACK_URL: callback,
+      }),
+    ).toThrow('GOOGLE_CALLBACK_URL');
+    try {
+      validateEnvironment({
+        ...validEnvironment,
+        GOOGLE_CALLBACK_URL: callback,
+      });
+    } catch (error) {
+      expect(String(error)).not.toContain(callback);
+    }
+  });
 
   it('requires HTTPS in production and for non-local callbacks', () => {
-    expect(() =>
-      validateEnvironment({ ...validEnvironment, NODE_ENV: 'production' }),
-    ).toThrow('must use HTTPS');
+    expect(() => validateEnvironment({ ...validEnvironment, NODE_ENV: 'production' })).toThrow(
+      'must use HTTPS',
+    );
     expect(() =>
       validateEnvironment({
         ...validEnvironment,
@@ -109,30 +106,35 @@ describe('validateEnvironment', () => {
   );
 
   it('rejects an empty secret without exposing configuration values', () => {
-    expect(() =>
-      validateEnvironment({ ...validEnvironment, GOOGLE_CLIENT_SECRET: ' ' }),
-    ).toThrow('GOOGLE_CLIENT_SECRET is required');
+    expect(() => validateEnvironment({ ...validEnvironment, GOOGLE_CLIENT_SECRET: ' ' })).toThrow(
+      'GOOGLE_CLIENT_SECRET is required',
+    );
   });
 
-  it.each(['', ' ', 'a'.repeat(63), 'a'.repeat(65), 'z'.repeat(64), 'private-key'])('rejects an invalid PKCE encryption key without exposing it', (key) => {
-    try {
-      validateEnvironment({ ...validEnvironment, OAUTH_PKCE_ENCRYPTION_KEY: key });
-      throw new Error('Expected configuration rejection');
-    } catch (error) {
-      expect(String(error)).toContain('OAUTH_PKCE_ENCRYPTION_KEY');
-      if (key.trim()) expect(String(error)).not.toContain(key);
-    }
-  });
+  it.each(['', ' ', 'a'.repeat(63), 'a'.repeat(65), 'z'.repeat(64), 'private-key'])(
+    'rejects an invalid PKCE encryption key without exposing it',
+    (key) => {
+      try {
+        validateEnvironment({ ...validEnvironment, OAUTH_PKCE_ENCRYPTION_KEY: key });
+        throw new Error('Expected configuration rejection');
+      } catch (error) {
+        expect(String(error)).toContain('OAUTH_PKCE_ENCRYPTION_KEY');
+        if (key.trim()) expect(String(error)).not.toContain(key);
+      }
+    },
+  );
 
   it('rejects invalid values with a specific startup error', () => {
-    expect(() => validateEnvironment({ ...validEnvironment, INITIAL_OWNER_EMAIL: 'invalid' })).toThrow('INITIAL_OWNER_EMAIL');
     expect(() =>
-      validateEnvironment({ ...validEnvironment, PORT: '70000' }),
-    ).toThrow('PORT must be an integer between 1 and 65535');
+      validateEnvironment({ ...validEnvironment, INITIAL_OWNER_EMAIL: 'invalid' }),
+    ).toThrow('INITIAL_OWNER_EMAIL');
+    expect(() => validateEnvironment({ ...validEnvironment, PORT: '70000' })).toThrow(
+      'PORT must be an integer between 1 and 65535',
+    );
 
-    expect(() =>
-      validateEnvironment({ ...validEnvironment, NODE_ENV: 'staging' }),
-    ).toThrow('NODE_ENV must be development, production, or test');
+    expect(() => validateEnvironment({ ...validEnvironment, NODE_ENV: 'staging' })).toThrow(
+      'NODE_ENV must be development, production, or test',
+    );
 
     expect(() =>
       validateEnvironment({
@@ -149,3 +151,21 @@ describe('validateEnvironment', () => {
     ).toThrow('FRONTEND_ORIGIN must be an HTTP(S) origin');
   });
 });
+
+it('defaults the installation time zone and accepts supported overrides', () => {
+  expect(validateEnvironment(validEnvironment)['DAYLO_TIME_ZONE']).toBe('Europe/Warsaw');
+  expect(
+    validateEnvironment({ ...validEnvironment, DAYLO_TIME_ZONE: ' Pacific/Kiritimati ' })[
+      'DAYLO_TIME_ZONE'
+    ],
+  ).toBe('Pacific/Kiritimati');
+});
+
+it.each(['', 'Invalid/Zone', '+02:00'])(
+  'rejects invalid installation zone %s at startup',
+  (timeZone) => {
+    expect(() => validateEnvironment({ ...validEnvironment, DAYLO_TIME_ZONE: timeZone })).toThrow(
+      'DAYLO_TIME_ZONE',
+    );
+  },
+);

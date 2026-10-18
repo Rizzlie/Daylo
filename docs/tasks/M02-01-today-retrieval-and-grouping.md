@@ -8,7 +8,7 @@ Delivery status: Pending. No implementation or verification is claimed by this t
 
 ## Assumptions and sources
 
-- Today uses Europe/Warsaw and the approved timed, untimed, overdue and completed-union rules. Overdue dates are never rolled over. Counters derive from visible section data.
+- Today uses the configured installation timezone (default Europe/Warsaw) and the approved timed, untimed, overdue and completed-union rules. Overdue dates are never rolled over. Counters derive from visible section data.
 - Dependencies: M01. Confirm their delivered and verified behavior before dependent work.
 - Read [product requirements](../product-requirements.md), [architecture](../architecture.md) and [backlog](../backlog.md). Apply the relevant [frontend](../frontend-architecture.md), [backend](../backend-architecture.md) and [design-system](../design/design-system.md) rules.
 - This is a proposed bounded task. Inspect discoverable implementation facts; resolve material product decisions with the owner during the discussion.
@@ -16,7 +16,7 @@ Delivery status: Pending. No implementation or verification is claimed by this t
 ## Work to perform
 
 - [ ] Add accessible Today retrieval and pure grouping/order rules: timed, untimed, overdue and completed union without duplicates.
-- [ ] Backend clock uses `Europe/Warsaw`; counters derive from displayed data.
+- [ ] Backend clock uses the configured installation timezone (default `Europe/Warsaw`); counters derive from displayed data.
 
 ## Acceptance criteria
 
@@ -41,7 +41,7 @@ The owner must confirm the final criteria during discussion. Applicable checks m
 
 Discuss this task with the owner before application changes:
 
-1. Which concrete fixture cases demonstrate the approved section ordering, completed union and Warsaw day boundaries?
+1. Which concrete fixture cases demonstrate the approved section ordering, completed union and configured-zone day boundaries?
 2. Confirm assumptions, dependencies, scope boundaries and the observable acceptance scenarios above.
 3. Agree on implementation approach, affected areas, required checks and any remaining limitations; resolve material ambiguities explicitly.
 

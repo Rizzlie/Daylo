@@ -87,7 +87,7 @@ export class PersonalTaskController {
     operationId: 'createPersonalTask',
     summary: 'Create a private personal task',
     description:
-      'Omitted date defaults to today in Europe/Warsaw; past dates are allowed. Blank optional description/time normalize to null. Ownership, visibility and completion fields are server-owned.',
+      'Omitted date defaults to today in the configured installation time zone (Europe/Warsaw by default); past dates are allowed. Blank optional description/time normalize to null. Ownership, visibility and completion fields are server-owned.',
   })
   @ZodResponse({ status: 201, type: PersonalTaskResponseDto })
   create(@Req() request: TaskRequest, @Body() input: CreatePersonalTaskDto) {

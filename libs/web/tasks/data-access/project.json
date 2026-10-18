@@ -1,0 +1,20 @@
+{
+  "name": "web-tasks-data-access",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/web/tasks/data-access/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["platform:web", "scope:tasks", "type:data-access"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/web/tasks/data-access"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

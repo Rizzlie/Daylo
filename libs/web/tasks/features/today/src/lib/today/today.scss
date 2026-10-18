@@ -32,3 +32,67 @@ h1 {
     line-height: 36px;
   }
 }
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-block: 24px;
+}
+.toolbar h2 {
+  flex: 1 1 180px;
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+.tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.tasks li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--daylo-surface-raised);
+}
+.task-copy {
+  flex: 1 1 240px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.task-copy h3 {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+.task-copy p {
+  margin: 8px 0 0;
+  color: var(--daylo-muted);
+}
+.description {
+  white-space: pre-wrap;
+}
+.completed h3 {
+  text-decoration: line-through;
+}
+.task-actions,
+.pagination {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pagination {
+  margin-top: 24px;
+}
+.feedback {
+  padding: 16px;
+  border: 1px solid var(--daylo-control-outline);
+  border-radius: 12px;
+}
+button {
+  min-height: 44px;
+}

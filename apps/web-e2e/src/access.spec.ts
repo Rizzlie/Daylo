@@ -1,10 +1,12 @@
 import { test, expect, type Account, type AuthActor } from './support/authentication.fixture';
 import { Pool } from 'pg';
 import { isolatedDatabaseUrl } from './support/isolated-database';
+import { waitForApiBudget } from './support/rate-limit-budget';
 
 for (const account of ['owner', 'member', 'invited'] satisfies Account[]) {
   test(`${account} OAuth session persists on reload and signs out through real CSRF`, async ({
     actors,
+    request,
   }) => {
     const actor = await actors.login(account);
     const { page } = actor;
@@ -33,6 +35,7 @@ for (const account of ['owner', 'member', 'invited'] satisfies Account[]) {
           .filter(Boolean),
       })),
     ).toEqual({ local: 0, session: 0, cookieNames: ['daylo_xsrf'] });
+    await waitForApiBudget(request);
     const signOut = page.waitForResponse((response) =>
       response.url().endsWith('/api/auth/sign-out'),
     );
@@ -43,6 +46,7 @@ for (const account of ['owner', 'member', 'invited'] satisfies Account[]) {
     await expect(page.getByRole('alert')).toHaveCount(0);
     expect(await actor.sessionCount()).toBe(0);
     expect((await actor.session()).status).toBe(401);
+    await waitForApiBudget(request);
     await page.goto('/today');
     await expect(page).toHaveURL(/\/login\?error=expired$/);
   });
@@ -119,7 +123,7 @@ for (const { detection, kind, revalidate } of [
 test(
   'responsive navigation preserves the desktop choice across reload and mobile transitions',
   { tag: '@shell' },
-  async ({ actors }, testInfo) => {
+  async ({ actors, request }, testInfo) => {
     const { page } = await actors.login('owner');
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
@@ -166,6 +170,7 @@ test(
           await expect(sidebar).toHaveCSS('width', '256px');
           await page.getByRole('button', { name: 'Zwiń nawigację', exact: true }).click();
           await expect(sidebar).toHaveCSS('width', '80px');
+          await waitForApiBudget(request);
           await page.reload();
           await expect(
             page.getByRole('button', { name: 'Rozwiń nawigację', exact: true }),
