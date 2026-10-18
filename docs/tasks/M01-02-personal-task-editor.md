@@ -299,4 +299,25 @@ it does not add a per-user preference or authorize later Today functionality.
   CI results remain pending; local verification limitations are unchanged.
 - The unrelated local `nx.json` generator-style change is excluded.
 
+### GitHub Actions correction — 2026-10-18
+
+- The owner reported failed jobs on PR #30. The failed
+  [GitHub Actions run](https://github.com/Rizzlie/Daylo/actions/runs/38918228790)
+  passed conventions and quality checks, but both shell browser cases failed.
+  The frontend-only `e2e` target had no API for the new mandatory
+  `/api/configuration` bootstrap read (`ECONNREFUSED`). Nx Cloud is not connected.
+- The workflow now selects and runs existing `e2e-fullstack` targets for affected
+  PR projects and all applicable main projects. This provisions the real API and
+  isolated PostgreSQL and replaces only Google, retaining production bootstrap
+  and access checks. README commands and runtime prerequisites are aligned.
+- Verification: Nx affected selection identifies `web-e2e`; builds/typechecks and
+  generated-client checks pass. Workflow YAML parses, E2E lint/typecheck pass.
+  The full local managed suite exposed quota exhaustion before the final
+  unauthenticated navigation and repeated responsive reloads in `access.spec.ts`.
+  These tests now await real quota recovery through the existing helper; production
+  limits and assertions are preserved. The full local suite and hosted verification
+  remain in progress; this record does not claim they passed.
+- Retrospective: when bootstrap gains a mandatory API dependency, revisit the CI
+  entrypoint and local smoke documentation, not just feature acceptance targets.
+
 Keep this record and the parent backlog aligned with any subsequent review findings.

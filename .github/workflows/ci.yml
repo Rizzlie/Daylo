@@ -80,7 +80,7 @@ jobs:
         run: npm exec nx -- run-many -t lint test build
 
   e2e:
-    name: Affected shell E2E
+    name: Real-stack E2E
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -98,9 +98,9 @@ jobs:
         id: selection
         run: |
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            npm exec nx -- show projects --affected --withTarget=e2e --base="$NX_BASE" --head="$NX_HEAD" --json > "$RUNNER_TEMP/affected-e2e.json"
+            npm exec nx -- show projects --affected --withTarget=e2e-fullstack --base="$NX_BASE" --head="$NX_HEAD" --json > "$RUNNER_TEMP/affected-e2e.json"
           else
-            npm exec nx -- show projects --withTarget=e2e --json > "$RUNNER_TEMP/affected-e2e.json"
+            npm exec nx -- show projects --withTarget=e2e-fullstack --json > "$RUNNER_TEMP/affected-e2e.json"
           fi
           node -e 'const fs = require("node:fs"); const path = require("node:path"); const projects = JSON.parse(fs.readFileSync(path.join(process.env.RUNNER_TEMP, "affected-e2e.json"), "utf8")); console.log(`run=${projects.length > 0}`);' >> "$GITHUB_OUTPUT"
       - name: Install Chromium and OS dependencies
@@ -108,10 +108,10 @@ jobs:
         run: npm exec --no -- playwright install --with-deps chromium
       - name: Run affected PR E2E
         if: steps.selection.outputs.run == 'true' && github.event_name == 'pull_request'
-        run: npm exec nx -- affected -t e2e --base="$NX_BASE" --head="$NX_HEAD"
+        run: npm exec nx -- affected -t e2e-fullstack --base="$NX_BASE" --head="$NX_HEAD"
       - name: Run full main E2E
         if: steps.selection.outputs.run == 'true' && github.event_name == 'push'
-        run: npm exec nx -- run-many -t e2e
+        run: npm exec nx -- run-many -t e2e-fullstack
       - name: Upload Playwright reports and failure artifacts
         if: ${{ !cancelled() && steps.selection.outputs.run == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
