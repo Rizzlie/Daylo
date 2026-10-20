@@ -4,6 +4,19 @@ Status: Planning baseline, version 1.0, with delivery/acceptance updates through
 
 See [Task index](tasks.md) for the 2026-10-05 breakdown. Every task has a separate file under `docs/tasks/` with assumptions, work to perform, acceptance criteria, verification and discussion/decision records. Discuss each task with the owner before implementation, record agreed decisions, and wait for an explicit implementation request for that scope. The breakdown and discussion do not authorize implementation or change parent-item acceptance status.
 
+### M02-01 Today retrieval and grouping — 2026-10-19
+
+[M02-01](tasks/M02-01-today-retrieval-and-grouping.md) is implemented and locally
+verified on 2026-10-19 and owner-accepted with "akceptuje" on 2026-10-20.
+M02-01 is closed with the recorded verification limits. The complete private Today feed uses the
+backend date/installation timezone; frontend domain rules derive four sections,
+stable order and counts. All 345 relevant API/PostgreSQL/library/component/router
+checks and two real-stack desktop/mobile E2E scenarios passed, as did relevant
+lint, production builds and generated-client drift/typechecks. Independent Swagger
+browser inspection confirmed the new operation. Full Today UI remains M02-02,
+automatic refresh M02-03 and group tasks M04. Parent M02 remains incomplete;
+hosted/runtime verification limits are recorded in the task.
+
 F07 follow-up: [F07-03](tasks/F07-03-parallel-e2e-checks.md) is authorized on
 2026-10-18 to optimize the complete real-stack E2E suite with isolated parallel
 jobs in a separate PR. All 62 tests passed in four simultaneous local stacks in 5 min 47 s; hosted timing and owner

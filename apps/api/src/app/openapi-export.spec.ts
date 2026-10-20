@@ -25,9 +25,16 @@ describe('offline OpenAPI export', () => {
         '/api/tasks/personal/{id}',
         '/api/tasks/personal/{id}/complete',
         '/api/tasks/personal/{id}/reopen',
+        '/api/tasks/today',
       ]);
       expect(document.paths['/api/auth/session'].get?.operationId).toBe('getCurrentSession');
       expect(document.paths['/api/health/ready'].get?.operationId).toBe('getReadiness');
+      const today = document.paths['/api/tasks/today'].get;
+      expect(today?.operationId).toBe('getTodayTasks');
+      expect(today?.security).toEqual([{ dayloSession: [] }]);
+      expect(Object.keys(today?.responses ?? {})).toEqual(
+        expect.arrayContaining(['200', '401', '403', '503']),
+      );
       await SwaggerParser.validate(JSON.parse(JSON.stringify(document)));
       expect(listen).not.toHaveBeenCalled();
       expect(connect).not.toHaveBeenCalled();

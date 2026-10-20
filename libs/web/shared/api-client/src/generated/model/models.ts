@@ -11,4 +11,5 @@ export * from './personal-task-response-dto-output';
 export * from './public-configuration-response-dto-output';
 export * from './session-user-output';
 export * from './task-version-dto';
+export * from './today-response-dto-output';
 export * from './validation-issue-output';

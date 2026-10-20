@@ -1,0 +1,16 @@
+{
+  "name": "web-tasks-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/web/tasks/domain/src",
+  "projectType": "library",
+  "tags": ["platform:web", "scope:tasks", "type:domain"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/web/tasks/domain"
+      }
+    }
+  }
+}

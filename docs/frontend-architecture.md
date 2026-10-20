@@ -69,6 +69,14 @@ invitation actions pending. The core shell does not import these pages or the
 login feature. Prefer separate named signals in
 templates over a combined `vm` or view model, as requested by the owner.
 
+M02-01 adds the framework-independent `libs/web/tasks/domain` library for Today
+models, grouping, ordering, deduplication and derived counts. The separate
+`TodayTasks` read resource in task data-access consumes generated Today transport,
+maps explicit domain fields and uses the response's date/timezone. It retains the
+displayed dated snapshot on refresh failure and supersedes in-flight reads on
+explicit refresh. Existing list/editor UI remains unchanged until M02-02;
+automatic midnight/foreground triggers remain M02-03 and group inclusion M04.
+
 `libs/web/tasks/data-access` owns generated personal-task API calls, explicit
 presentation mapping and cursor-page resource state. Today provides its list
 state locally; the shared editor stays inside that feature because creation and

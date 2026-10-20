@@ -100,11 +100,11 @@ Closed: implemented, locally verified and owner-accepted on 2026-10-15.
 
 ### M02
 
-| Task                                                      | Title                           | Delivery status |
-| --------------------------------------------------------- | ------------------------------- | --------------- |
-| [M02-01](tasks/M02-01-today-retrieval-and-grouping.md)    | Today retrieval and grouping    | Pending         |
-| [M02-02](tasks/M02-02-today-screen.md)                    | Today screen and quick creation | Pending         |
-| [M02-03](tasks/M02-03-midnight-and-foreground-refresh.md) | Midnight and foreground refresh | Pending         |
+| Task                                                      | Title                           | Delivery status                                                                                           |
+| --------------------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [M02-01](tasks/M02-01-today-retrieval-and-grouping.md)    | Today retrieval and grouping    | Closed: implemented and locally verified on 2026-10-19; owner-accepted on 2026-10-20 with recorded limits |
+| [M02-02](tasks/M02-02-today-screen.md)                    | Today screen and quick creation | Pending                                                                                                   |
+| [M02-03](tasks/M02-03-midnight-and-foreground-refresh.md) | Midnight and foreground refresh | Pending                                                                                                   |
 
 ### M03
 

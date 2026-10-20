@@ -88,6 +88,29 @@ export class PersonalTaskStore {
     return { items, nextCursor: rows.length > limit ? items[items.length - 1].id : null };
   }
 
+  async today(userId: string, date: string, timeZone: string) {
+    // PostgreSQL resolves each local midnight independently: DST days need not be 24 hours.
+    // Keep authorization in the same query as selection, including the completed union.
+    const rows = await this.prisma.client.$queryRaw<PersonalTaskRow[]>`
+      SELECT id, created_by_id AS "createdById", title, description,
+        scheduled_date AS "scheduledDate", scheduled_time AS "scheduledTime",
+        completed_at AS "completedAt", completed_by_id AS "completedById",
+        version, created_at AS "createdAt", updated_at AS "updatedAt"
+      FROM tasks
+      WHERE created_by_id = ${userId}::uuid AND group_id IS NULL
+        AND (
+          (completed_at IS NULL AND scheduled_date <= ${date}::date)
+          OR (completed_at IS NOT NULL AND (
+            scheduled_date = ${date}::date
+            OR (completed_at >= (${date}::date::timestamp AT TIME ZONE ${timeZone})
+              AND completed_at < ((${date}::date + 1)::timestamp AT TIME ZONE ${timeZone}))
+          ))
+        )
+      ORDER BY id
+    `;
+    return rows.map(mapTask);
+  }
+
   async lock(userId: string, id: string, context: TransactionContext) {
     const client = this.prisma.getTransactionClient(context);
     // Keep the lock until the use-case transaction ends, including no-op checks.

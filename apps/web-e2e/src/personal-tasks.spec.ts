@@ -39,6 +39,88 @@ async function taskRequest(page: Page, method: string, path = '', body?: object,
   );
 }
 
+test('Today feed follows task lifecycle and preserves privacy through real browser sessions', async ({
+  actors,
+  request,
+}) => {
+  const owner = await actors.login('owner');
+  const member = await actors.login('member');
+  const invited = await actors.login('invited');
+  await waitForApiBudget(request);
+  const proof = await csrf(owner.page);
+  const created = await taskRequest(
+    owner.page,
+    'POST',
+    '',
+    {
+      title: 'Today browser acceptance',
+      scheduledDate: '2020-02-29',
+      scheduledTime: '09:30',
+    },
+    proof,
+  );
+  expect(created.status).toBe(201);
+  expect(created.body).toBeTruthy();
+  const task = created.body as TaskBody;
+  async function read(page: Page) {
+    return page.evaluate(async () => {
+      const response = await fetch('/api/tasks/today');
+      return {
+        status: response.status,
+        cache: response.headers.get('cache-control'),
+        body: (await response.json()) as {
+          date: string;
+          timeZone: string;
+          items: { id: string; scheduledDate: string; completedAt: string | null }[];
+        },
+      };
+    });
+  }
+  try {
+    const before = await read(owner.page);
+    expect(before.status).toBe(200);
+    expect(before.cache).toBe('no-store');
+    expect(before.body.items.find((row) => row.id === task.id)).toMatchObject({
+      scheduledDate: '2020-02-29',
+      completedAt: null,
+    });
+    expect((await read(member.page)).body.items.map((row) => row.id)).not.toContain(task.id);
+    expect((await read(invited.page)).status).toBe(403);
+    expect((await request.get('/api/tasks/today')).status()).toBe(401);
+    expect(
+      (await taskRequest(owner.page, 'POST', `/${task.id}/complete`, { version: 1 }, proof)).status,
+    ).toBe(200);
+    const completed = await read(owner.page);
+    expect(completed.body.items.filter((row) => row.id === task.id)).toHaveLength(1);
+    expect(completed.body.items.find((row) => row.id === task.id)?.completedAt).toBeTruthy();
+    expect(
+      (await taskRequest(owner.page, 'POST', `/${task.id}/reopen`, { version: 2 }, proof)).status,
+    ).toBe(200);
+    await owner.page.reload();
+    await expect(owner.page.getByRole('heading', { name: 'Dzisiaj', exact: true })).toBeVisible();
+    const reopened = await read(owner.page);
+    expect(reopened.body.items.find((row) => row.id === task.id)).toMatchObject({
+      scheduledDate: '2020-02-29',
+      completedAt: null,
+    });
+  } finally {
+    // Resolve the current version so a failed assertion still removes this owned fixture.
+    const current = await taskRequest(owner.page, 'GET', `/${task.id}`);
+    expect(current.status).toBe(200);
+    expect(
+      (
+        await taskRequest(
+          owner.page,
+          'DELETE',
+          `/${task.id}?version=${current.body?.version}`,
+          undefined,
+          proof,
+        )
+      ).status,
+    ).toBe(204);
+  }
+});
+
 test('personal-task API persists the complete lifecycle through real browser sessions', async ({
   actors,
   request,

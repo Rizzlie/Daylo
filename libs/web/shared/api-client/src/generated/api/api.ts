@@ -6,4 +6,6 @@ export * from './health.service';
 import { HealthService } from './health.service';
 export * from './personal-tasks.service';
 import { PersonalTasksService } from './personal-tasks.service';
-export const APIS = [AuthenticationService, ConfigurationService, HealthService, PersonalTasksService];
+export * from './today.service';
+import { TodayService } from './today.service';
+export const APIS = [AuthenticationService, ConfigurationService, HealthService, PersonalTasksService, TodayService];
