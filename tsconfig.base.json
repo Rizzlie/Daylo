@@ -47,7 +47,8 @@
       "@daylo/shared/util-date": ["./libs/shared/util-date/src/index.ts"],
       "@daylo/web/core/configuration/data-access": [
         "./libs/web/core/configuration/data-access/src/index.ts"
-      ]
+      ],
+      "@daylo/web/tasks/domain": ["./libs/web/tasks/domain/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -4,7 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { GOOGLE_OAUTH_CLIENT, SessionService } from '@daylo/api/auth/feature';
 import { PrismaService } from '@daylo/api/core/database';
-import { personalTaskResponseSchema } from '@daylo/shared/schemas';
+import { personalTaskResponseSchema, todayResponseSchema } from '@daylo/shared/schemas';
+import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import type { Request, Response } from 'express';
 import { AppModule } from './app.module';
@@ -140,6 +141,170 @@ describe.skipIf(!enabled)('Personal task PostgreSQL HTTP acceptance', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     return personalTaskResponseSchema.parse(await response.json());
   }
+
+  async function today(user: Actor | null = owner, query = '') {
+    return fetch(`${await app.getUrl()}/api/tasks/today${query}`, {
+      headers: user ? { Cookie: user.cookie } : {},
+    });
+  }
+
+  async function withTodayClock(now: string, action: () => Promise<void>) {
+    const sessions = await prisma.client.session.findMany({ where: { userId: owner.id } });
+    const instant = new Date(now);
+    // Keep the real session valid under the controlled business clock, without bypassing access checks.
+    await prisma.client.session.updateMany({
+      where: { userId: owner.id },
+      data: {
+        createdAt: instant,
+        expiresAt: new Date(instant.getTime() + 7 * 86400000),
+      },
+    });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(instant);
+    try {
+      await action();
+    } finally {
+      vi.useRealTimers();
+      for (const session of sessions)
+        await prisma.client.session.update({
+          where: { id: session.id },
+          data: { createdAt: session.createdAt, expiresAt: session.expiresAt },
+        });
+    }
+  }
+
+  it('returns the complete private Today union without pagination and maps SQL date/time values', async () => {
+    const date = '2030-01-15';
+    const due = new Date(`${date}T00:00:00Z`);
+    await prisma.client.task.createMany({
+      data: Array.from({ length: 125 }, (_, index) => ({
+        title: `Visible ${index}`,
+        createdById: owner.id,
+        scheduledDate: due,
+        scheduledTime: index === 0 ? new Date('1970-01-01T09:30:00Z') : null,
+      })),
+    });
+    const overdue = await create({ scheduledDate: '2020-02-29', scheduledTime: '23:59' });
+    const completed = await prisma.client.task.createManyAndReturn({
+      data: [
+        { title: 'Both', scheduledDate: due, completedAt: new Date('2030-01-15T11:00:00Z') },
+        {
+          title: 'Due today, completed earlier',
+          scheduledDate: due,
+          completedAt: new Date('2030-01-10T11:00:00Z'),
+        },
+        {
+          title: 'Past completed today',
+          scheduledDate: new Date('2020-02-29'),
+          completedAt: new Date('2030-01-15T11:00:00Z'),
+        },
+        {
+          title: 'Future completed today',
+          scheduledDate: new Date('2030-02-01'),
+          completedAt: new Date('2030-01-15T11:00:00Z'),
+        },
+      ].map((row) => ({ ...row, createdById: owner.id, completedById: owner.id })),
+    });
+    await prisma.client.task.createMany({
+      data: [
+        { title: 'Other personal', createdById: member.id, scheduledDate: due },
+        { title: 'Group task', createdById: owner.id, scheduledDate: due, groupId },
+        { title: 'Future open', createdById: owner.id, scheduledDate: new Date('2030-02-01') },
+        {
+          title: 'Old completed',
+          createdById: owner.id,
+          scheduledDate: new Date('2020-02-29'),
+          completedAt: new Date('2030-01-14T11:00:00Z'),
+          completedById: owner.id,
+        },
+      ],
+    });
+    await withTodayClock('2030-01-15T12:00:00Z', async () => {
+      const response = await today(owner, '?date=2020-01-01&userId=ignored&limit=1');
+      expect(response.status).toBe(200);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      const body = todayResponseSchema.parse(await response.json());
+      expect(body).toMatchObject({ date, timeZone: 'Europe/Warsaw' });
+      expect(body.items).toHaveLength(130);
+      expect(new Set(body.items.map((row) => row.id)).size).toBe(130);
+      expect(body.items.every((row) => row.createdById === owner.id && row.groupId === null)).toBe(
+        true,
+      );
+      expect(body.items.find((row) => row.title === 'Visible 0')?.scheduledTime).toBe('09:30');
+      expect(body.items.find((row) => row.id === overdue.id)).toEqual(overdue);
+      expect(
+        body.items
+          .filter((row) => row.completedAt !== null)
+          .map((row) => row.id)
+          .sort(),
+      ).toEqual(completed.map((row) => row.id).sort());
+    });
+  });
+
+  it.each([
+    ['Europe/Warsaw', '2026-03-29', '2026-03-28T23:00:00Z', '2026-03-29T22:00:00Z'],
+    ['Europe/Warsaw', '2026-10-25', '2026-10-24T22:00:00Z', '2026-10-25T23:00:00Z'],
+    ['Pacific/Kiritimati', '2030-01-15', '2030-01-14T10:00:00Z', '2030-01-15T10:00:00Z'],
+  ])('selects the exact local completion day in %s on %s', async (zone, date, start, end) => {
+    const config = app.get(ConfigService);
+    const previous = config.get('runtime.timeZone');
+    config.set('runtime.timeZone', zone);
+    const instants = [
+      new Date(Date.parse(start) - 1),
+      new Date(start),
+      new Date(Date.parse(end) - 1),
+      new Date(end),
+    ];
+    await prisma.client.task.createMany({
+      data: instants.map((completedAt, index) => ({
+        title: `Boundary ${index}`,
+        createdById: owner.id,
+        completedById: owner.id,
+        scheduledDate: new Date('2020-02-29'),
+        completedAt,
+      })),
+    });
+    try {
+      await withTodayClock(new Date(Date.parse(start) + 60 * 60 * 1000).toISOString(), async () => {
+        const response = await today();
+        expect(response.status).toBe(200);
+        const body = todayResponseSchema.parse(await response.json());
+        expect(body).toMatchObject({ date, timeZone: zone });
+        expect(body.items.map((row) => row.title).sort()).toEqual(['Boundary 1', 'Boundary 2']);
+      });
+    } finally {
+      config.set('runtime.timeZone', previous);
+    }
+  });
+
+  it('updates feed inclusion on complete/reopen and midnight without changing scheduled dates', async () => {
+    const task = await create({ scheduledDate: '2030-01-16' });
+    await withTodayClock('2030-01-15T12:00:00Z', async () => {
+      expect((await (await today()).json()).items).toEqual([]);
+      expect((await call('POST', `/${task.id}/complete`, { version: 1 })).status).toBe(200);
+      expect((await (await today()).json()).items.map((row: { id: string }) => row.id)).toEqual([
+        task.id,
+      ]);
+      expect((await call('POST', `/${task.id}/reopen`, { version: 2 })).status).toBe(200);
+      expect((await (await today()).json()).items).toEqual([]);
+      vi.setSystemTime(new Date('2030-01-15T23:00:00Z'));
+      expect((await (await today()).json()).items).toMatchObject([
+        { id: task.id, scheduledDate: '2030-01-16', completedAt: null },
+      ]);
+      vi.setSystemTime(new Date('2030-01-16T23:00:00Z'));
+      expect((await (await today()).json()).items).toMatchObject([
+        { id: task.id, scheduledDate: '2030-01-16' },
+      ]);
+    });
+  });
+
+  it('requires an active valid session for Today', async () => {
+    expect((await today(null)).status).toBe(401);
+    expect((await today(pending)).status).toBe(403);
+    const response = await today(member);
+    expect(response.status).toBe(200);
+    expect(todayResponseSchema.parse(await response.json()).items).toEqual([]);
+  });
 
   it('creates, reads, edits, completes, reopens and deletes with durable explicit fields', async () => {
     const task = await create({
